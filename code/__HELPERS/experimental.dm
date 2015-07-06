@@ -34,7 +34,8 @@ var/list/exclude = list("inhand_states", "loc", "locs", "parent_type", "vars", "
 	B += (args - A)
 	if(length(masterPool["[A]"]) <= 0)
 		#ifdef DEBUG_OBJECT_POOL
-		world << text("DEBUG_OBJECT_POOL: new proc has been called ([] | []).", A, list2params(B))
+		if(ticker)
+			world << text("DEBUG_OBJECT_POOL: new proc has been called ([] | []).", A, list2params(B))
 		#endif
 		//so the GC knows we're pooling this type.
 		if(isnull(masterPool["[A]"]))
@@ -82,7 +83,6 @@ var/list/exclude = list("inhand_states", "loc", "locs", "parent_type", "vars", "
 
 	if(isnull(masterPool["[AM.type]"]))
 		masterPool["[AM.type]"] = list()
-
 	AM.Destroy()
 	AM.resetVariables()
 	masterPool["[AM.type]"] |= AM
@@ -121,23 +121,4 @@ var/list/exclude = list("inhand_states", "loc", "locs", "parent_type", "vars", "
 
 /atom/movable/resetVariables()
 	loc = null
-
-	var/list/exclude = global.exclude + args // explicit var exclusion
-
-	for(var/key in vars)
-		if(key in exclude)
-			continue
-
-		vars[key] = initial(vars[key])
-
-/proc/isInTypes(atom/Object, types)
-	if(!Object)
-		return 0
-	var/prototype = Object.type
-	Object = null
-
-	for (var/type in params2list(types))
-		if (ispath(prototype, text2path(type)))
-			return 1
-
-	return 0
+	..("loc",args)

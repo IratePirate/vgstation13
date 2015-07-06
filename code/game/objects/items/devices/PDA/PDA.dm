@@ -172,14 +172,6 @@ var/global/list/obj/item/device/pda/PDAs = list()
 	var/onthisday = null
 	var/didyouknow = null
 
-
-/obj/item/device/pda/GetJobName() //Used in secHUD icon generation
-	if(!src.id)
-		return "Unknown"
-
-	return src.id.GetJobName() //isn't it beautiful?
-
-
 /obj/item/device/pda/medical
 	name = "Medical PDA"
 	default_cartridge = /obj/item/weapon/cartridge/medical
@@ -554,15 +546,6 @@ var/global/list/obj/item/device/pda/PDAs = list()
 /*
  *	The Actual PDA
  */
-/obj/item/device/pda/pickup(mob/user)
-	if(fon)
-		SetLuminosity(0)
-		user.SetLuminosity(user.luminosity + f_lum)
-
-/obj/item/device/pda/dropped(mob/user)
-	if(fon && !luminosity)
-		user.SetLuminosity(user.luminosity - f_lum)
-		SetLuminosity(f_lum)
 
 /obj/item/device/pda/New()
 	..()
@@ -1626,12 +1609,10 @@ var/global/list/obj/item/device/pda/PDAs = list()
 			if("Light")
 				if(fon)
 					fon = 0
-					if(src in U.contents)	U.SetLuminosity(U.luminosity - f_lum)
-					else					SetLuminosity(0)
+					set_light(0)
 				else
 					fon = 1
-					if(src in U.contents)	U.SetLuminosity(U.luminosity + f_lum)
-					else					SetLuminosity(f_lum)
+					set_light(f_lum)
 			if("Medical Scan")
 				if(scanmode == 1)
 					scanmode = 0

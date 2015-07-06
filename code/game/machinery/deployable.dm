@@ -69,7 +69,7 @@ for reference:
 		if (istype(W, /obj/item/stack/sheet/wood))
 			if (src.health < src.maxhealth)
 				visible_message("<span class='warning'>[user] begins to repair the [src]!</span>")
-				if(do_after(user,20))
+				if(do_after(user, src,20))
 					src.health = src.maxhealth
 					W:use(1)
 					visible_message("<span class='warning'>[user] repairs the [src]!</span>")
@@ -105,14 +105,6 @@ for reference:
 					new /obj/item/stack/sheet/wood(get_turf(src))
 					qdel(src)
 				return
-
-	meteorhit()
-		visible_message("<span class='danger'>The barricade is smashed apart!</span>")
-		new /obj/item/stack/sheet/wood(get_turf(src))
-		new /obj/item/stack/sheet/wood(get_turf(src))
-		new /obj/item/stack/sheet/wood(get_turf(src))
-		del(src)
-		return
 
 	blob_act()
 		src.health -= 25
@@ -247,10 +239,6 @@ for reference:
 		locked = !locked
 		anchored = !anchored
 		icon_state = "barrier[src.locked]"
-
-/obj/machinery/deployable/barrier/meteorhit()
-	src.explode()
-	return
 
 /obj/machinery/deployable/barrier/blob_act()
 	src.health -= 25

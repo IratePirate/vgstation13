@@ -34,8 +34,8 @@
 			src << "<span class='warning'>Your powers are useless on this holy ground.</span>"
 			return 0
 	if(check_holy(src) && !fullpower)
-		var/turf/simulated/T = get_turf(src)
-		if(T.lighting_lumcount > 2)
+		var/turf/T = get_turf(src)
+		if((T.get_lumcount() * 10) > 2)
 			src << "<span class='warning'>This ground has been blessed and illuminated, suppressing your abilities.</span>"
 			return 0
 	return 1
@@ -95,8 +95,8 @@
 					M.current.adjustFireLoss(-2)
 					sleep(35)
 		M.current.verbs -= /client/proc/vampire_rejuvinate
-		spawn(200)
-			M.current.verbs += /client/proc/vampire_rejuvinate
+		sleep(200)
+		M.current.verbs += /client/proc/vampire_rejuvinate
 
 /client/proc/vampire_returntolife()
 	set category = "Vampire"
@@ -136,9 +136,9 @@
 		M.current.update_canmove()
 		M.current.remove_vampire_powers()
 
-		spawn(rand(30,45))
-			src << "<span class='sinister'>Your corpse twitches slightly. It's safe to assume nobody noticed.</span>"
-			src.verbs += /client/proc/vampire_returntolife
+		sleep(rand(300,450))
+		src << "<span class='sinister'>Your corpse twitches slightly. It's safe to assume nobody noticed.</span>"
+		src.verbs += /client/proc/vampire_returntolife
 		return 1
 
 /client/proc/vampire_hypnotise()
@@ -204,7 +204,8 @@
 	infect_virus2(C,shutdown,0)
 	M.current.remove_vampire_blood(50)
 	M.current.verbs -= /client/proc/vampire_disease
-	spawn(1800) M.current.verbs += /client/proc/vampire_disease
+	sleep(1800)
+	M.current.verbs += /client/proc/vampire_disease
 
 /client/proc/vampire_glare()
 	set category = "Vampire"
@@ -260,7 +261,8 @@
 		M.current.client.prefs.randomize_appearance_for(M.current)
 		M.current.regenerate_icons()
 		M.current.verbs -= /client/proc/vampire_shapeshift
-		spawn(1800) M.current.verbs += /client/proc/vampire_shapeshift
+		sleep(1800)
+		M.current.verbs += /client/proc/vampire_shapeshift
 
 /client/proc/vampire_screech()
 	set category = "Vampire"
@@ -285,7 +287,8 @@
 		playsound(M.current.loc, 'sound/effects/creepyshriek.ogg', 100, 1)
 		M.current.remove_vampire_blood(10)
 		M.current.verbs -= /client/proc/vampire_screech
-		spawn(1800) M.current.verbs += /client/proc/vampire_screech
+		sleep(1800)
+		M.current.verbs += /client/proc/vampire_screech
 
 /client/proc/vampire_enthrall()
 	set category = "Vampire"
@@ -298,17 +301,18 @@
 	M.current.visible_message("<span class='warning'>[M.current.name] bites [C.name]'s neck!</span>", "<span class='warning'>You bite [C.name]'s neck and begin the flow of power.</span>")
 	C << "<span class='sinister'>You feel the tendrils of evil [VAMP_CHARISMA in M.vampire.powers ? "aggressively" : "slowly"] invade your mind.</span>"
 	if(!ishuman(C))
-		M.current << "<span class='warning'>You can only enthrall humans.</span>"
+		M.current << "<span class='warning'>You can only enthrall humanoids.</span>"
 		return
 
 	if(M.current.can_enthrall(C) && do_mob(M.current, C, (VAMP_CHARISMA in M.vampire.powers) ? 25 : 50)) //takes half the time with Charisma unlocked
 		if(!M.current.can_enthrall(C))
 			M.current << "<span class='warning'>Either you or your target moved, and you couldn't finish enthralling them!</span>"
 			return
-		if(!M.current.vampire_power(300, 0)) // recheck
+		if(M.current.vampire_power(300, 0)) // recheck
 			M.current.handle_enthrall(C)
 			M.current.verbs -= /client/proc/vampire_enthrall
-			spawn((VAMP_CHARISMA in M.vampire.powers) ? 600 : 1800) M.current.verbs += /client/proc/vampire_enthrall
+			sleep((VAMP_CHARISMA in M.vampire.powers) ? 600 : 1800)
+			M.current.verbs += /client/proc/vampire_enthrall
 			return
 
 
@@ -328,16 +332,15 @@
 		alpha = 255
 		color = "#FFFFFF"
 		return
-	var/turf/simulated/T = get_turf(src)
 
-	if(!istype(T))
-		return 0
+	var/turf/T = get_turf(src)
 
 	if(!mind.vampire.iscloaking)
 		alpha = 255
 		color = "#FFFFFF"
 		return 0
-	if(T.lighting_lumcount <= 2)
+
+	if((T.get_lumcount() * 10) <= 2)
 		alpha = round((255 * 0.15))
 		if(VAMP_SHADOW in mind.vampire.powers)
 			color = "#000000"
@@ -419,7 +422,8 @@
 			new /mob/living/simple_animal/hostile/scarybat(M.current.loc, M.current)
 		M.current.remove_vampire_blood(75)
 		M.current.verbs -= /client/proc/vampire_bats
-		spawn(1200) M.current.verbs += /client/proc/vampire_bats
+		sleep(1200)
+		M.current.verbs += /client/proc/vampire_bats
 
 /client/proc/vampire_jaunt()
 	//AHOY COPY PASTE INCOMING
@@ -473,7 +477,8 @@
 			qdel(animation)
 			qdel(holder)
 		M.current.verbs -= /client/proc/vampire_jaunt
-		spawn(600) M.current.verbs += /client/proc/vampire_jaunt
+		sleep(600)
+		M.current.verbs += /client/proc/vampire_jaunt
 
 // Blink for vamps
 // Less smoke spam.
@@ -501,9 +506,7 @@
 				if(T.density) continue
 				if(T.x>world.maxx-outer_tele_radius || T.x<outer_tele_radius)	continue	//putting them at the edge is dumb
 				if(T.y>world.maxy-outer_tele_radius || T.y<outer_tele_radius)	continue
-
-				// LIGHTING CHECK
-				if(T.lighting_lumcount > max_lum) continue
+				if((T.get_lumcount() * 10) > max_lum) continue
 				turfs += T
 
 			if(!turfs.len)
@@ -530,8 +533,8 @@
 				animation.master = null
 				qdel(animation)
 		M.current.verbs -= /client/proc/vampire_shadowstep
-		spawn(20)
-			M.current.verbs += /client/proc/vampire_shadowstep
+		sleep(20)
+		M.current.verbs += /client/proc/vampire_shadowstep
 
 /client/proc/vampire_shadowmenace()
 	set category = "Vampire"
@@ -548,15 +551,14 @@
 	if(!mind || !mind.vampire || !ishuman(src))
 		mind.vampire.ismenacing = 0
 		return
-	var/turf/simulated/T = get_turf(src)
-
-	if(!istype(T))
-		return 0
 
 	if(!mind.vampire.ismenacing)
 		mind.vampire.ismenacing = 0
 		return 0
-	if(T.lighting_lumcount > 2)
+
+	var/turf/T = get_turf(src)
+
+	if(T.get_lumcount() > 2)
 		mind.vampire.ismenacing = 0
 		return 0
 
@@ -579,8 +581,8 @@
 		var/obj/item/clothing/suit/storage/draculacoat/D = new /obj/item/clothing/suit/storage/draculacoat(M.current.loc, M.current)
 		M.current.put_in_any_hand_if_possible(D)
 		M.current.verbs -= /client/proc/vampire_spawncape
-		spawn(300)
-			M.current.verbs += /client/proc/vampire_spawncape
+		sleep(300)
+		M.current.verbs += /client/proc/vampire_spawncape
 
 /mob/proc/remove_vampire_blood(amount = 0)
 	var/bloodold

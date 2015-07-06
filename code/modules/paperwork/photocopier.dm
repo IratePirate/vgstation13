@@ -226,11 +226,11 @@
 			var/datum/picture/selection
 			var/mob/living/silicon/ai/tempAI = usr
 			if(tempAI.aicamera.aipictures.len == 0)
-				usr << "<FONT COLOR=red><B>No images saved<B>"
+				usr << "<font color=red><B>No images saved<B></font>"
 				return
 			for(var/datum/picture/t in tempAI.aicamera.aipictures)
 				nametemp += t.fields["name"]
-			find = input("Select image (numbered in order taken)") in nametemp
+			find = input("Select image") in nametemp
 			var/obj/item/weapon/photo/p = new /obj/item/weapon/photo (loc)
 			for(var/datum/picture/q in tempAI.aicamera.aipictures)
 				if(q.fields["name"] == find)
@@ -328,11 +328,10 @@
 		if(istype(O, /obj/item/weapon/crowbar))
 			user << "You begin to remove the circuits from the [src]."
 			playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
-			if(do_after(user, 50))
+			if(do_after(user, src, 50))
 				var/obj/machinery/constructable_frame/machine_frame/M = new /obj/machinery/constructable_frame/machine_frame(src.loc)
 				M.state = 1
-				M.build_state = 2
-				M.icon_state = "box_1"
+				M.set_build_state(2)
 				for(var/obj/I in component_parts)
 					if(I.reliability != 100 && crit_fail)
 						I.crit_fail = 1

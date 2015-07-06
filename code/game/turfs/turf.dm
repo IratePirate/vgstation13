@@ -2,6 +2,8 @@
 	icon = 'icons/turf/floors.dmi'
 	level = 1.0
 
+	luminosity = 1
+
 	//for floors, use is_plating(), is_plasteel_floor() and is_light_floor()
 	var/intact = 1
 
@@ -36,10 +38,18 @@
 	// holy water
 	var/holy = 0
 
-	// For building on the asteroid.
-	var/under_turf = /turf/space
+/*
+ * Technically obsoleted by base_turf
+	//For building on the asteroid.
+ 	var/under_turf = /turf/space
+ */
 
 	var/explosion_block = 0
+
+	var/dynamic_lighting = 1
+
+/turf/proc/process()
+	universe.OnTurfTick(src)
 
 /turf/New()
 	..()
@@ -162,13 +172,13 @@
 			Obj:inertia_dir = 0
 	..()
 	var/objects = 0
-	for(var/atom/A as mob|obj|turf|area in range(1))
-		if(objects > loopsanity)	break
-		objects++
-		spawn( 0 )
-			if ((A && Obj))
-				A.HasProximity(Obj, 1)
-			return
+	if(Obj && Obj.flags & PROXMOVE)
+		for(var/atom/A as mob|obj|turf|area in range(1))
+			if(objects > loopsanity)	break
+			objects++
+			spawn( 0 )
+				if ((A && Obj) && A.flags & PROXMOVE)
+					A.HasProximity(Obj, 1)
 	return
 
 /turf/proc/is_plating()
@@ -184,6 +194,8 @@
 /turf/proc/is_wood_floor()
 	return 0
 /turf/proc/is_carpet_floor()
+	return 0
+/turf/proc/is_mineral_floor()
 	return 0
 /turf/proc/return_siding_icon_state()		//used for grass floors, which have siding.
 	return 0
@@ -219,13 +231,14 @@
 			return
 		spawn(5)
 			if((M && !(M.anchored) && !(M.pulledby) && (M.loc == src)))
+				var/mob/living/carbon/carbons = M
+				if(istype(carbons))
+					carbons.update_minimap() //Should this even be here, oh well whatever
 				if(M.inertia_dir)
 					step(M, M.inertia_dir)
-					call(/datum/pda_app/station_map/proc/minimap_update)(M)
 					return
 				M.inertia_dir = M.last_move
 				step(M, M.inertia_dir)
-				call(/datum/pda_app/station_map/proc/minimap_update)(M)
 	return
 
 /turf/proc/levelupdate()
@@ -250,7 +263,6 @@
 	if (!N)
 		return
 
-	var/initialOpacity = opacity
 #ifdef ENABLE_TRI_LEVEL
 // Fuck this, for now - N3X
 ///// Z-Level Stuff ///// This makes sure that turfs are not changed to space when one side is part of a zone
@@ -272,8 +284,12 @@
 ///// Z-Level Stuff
 #endif
 
-	var/old_lumcount = lighting_lumcount - initial(lighting_lumcount)
 	var/datum/gas_mixture/env
+
+	var/old_opacity = opacity
+	var/old_dynamic_lighting = dynamic_lighting
+	var/list/old_affecting_lights = affecting_lights
+	var/old_lighting_overlay = lighting_overlay
 
 	//world << "Replacing [src.type] with [N]"
 
@@ -304,11 +320,6 @@
 		if(env)
 			W.air = env //Copy the old environment data over if both turfs were simulated
 
-		W.lighting_lumcount += old_lumcount
-		if((old_lumcount != W.lighting_lumcount) || (loc.name != "Space" && force_lighting_update))
-			W.lighting_changed = 1
-			lighting_controller.changed_turfs += W
-
 		if (istype(W,/turf/simulated/floor))
 			W.RemoveLattice()
 
@@ -320,10 +331,7 @@
 
 		W.levelupdate()
 
-		if((opacity != initialOpacity) && W.lighting_lumcount)
-			UpdateAffectingLights()
-
-		return W
+		. = W
 
 	else
 		//if(zone)
@@ -332,10 +340,6 @@
 		//		zone.SetStatus(ZONE_ACTIVE)
 
 		var/turf/W = new N( locate(src.x, src.y, src.z) )
-		W.lighting_lumcount += old_lumcount
-		if((old_lumcount != W.lighting_lumcount) || (loc.name != "Space" && force_lighting_update))
-			W.lighting_changed = 1
-			lighting_controller.changed_turfs += W
 
 		if(tell_universe)
 			universe.OnTurfChange(W)
@@ -345,10 +349,17 @@
 
 		W.levelupdate()
 
-		if((opacity != initialOpacity) && W.lighting_lumcount)
-			UpdateAffectingLights()
+		. = W
 
-		return W
+	lighting_overlay = old_lighting_overlay
+	affecting_lights = old_affecting_lights
+	if((old_opacity != opacity) || (dynamic_lighting != old_dynamic_lighting) || force_lighting_update)
+		reconsider_lights()
+	if(dynamic_lighting != old_dynamic_lighting)
+		if(dynamic_lighting)
+			lighting_build_overlays()
+		else
+			lighting_clear_overlays()
 
 /turf/proc/AddDecal(const/image/decal)
 	if(!decals)
@@ -419,8 +430,9 @@
 */
 
 /turf/proc/ReplaceWithLattice()
-	src.ChangeTurf(/turf/space)
-	new /obj/structure/lattice( locate(src.x, src.y, src.z) )
+	src.ChangeTurf(get_base_turf(src.z))
+	if(istype(src, /turf/space))
+		new /obj/structure/lattice(src)
 
 /turf/proc/kill_creatures(mob/U = null)//Will kill people/creatures and damage mechs./N
 //Useful to batch-add creatures to the list.
@@ -537,17 +549,20 @@
 
 
 /turf/proc/cultify()
-	ChangeTurf(/turf/space)
-	return
+	if(istype(src, get_base_turf(src.z))) //Don't cultify the base turf, ever
+		return
+	ChangeTurf(get_base_turf(src.z))
 
 /turf/singularity_act()
+	if(istype(src, get_base_turf(src.z))) //Don't singulo the base turf, ever
+		return
 	if(intact)
 		for(var/obj/O in contents)
 			if(O.level != 1)
 				continue
 			if(O.invisibility == 101)
 				O.singularity_act()
-	ChangeTurf(/turf/space)
+	ChangeTurf(get_base_turf(src.z))
 	return(2)
 
 //Return a lattice to allow catwalk building
@@ -564,6 +579,9 @@
 
 /turf/proc/dismantle_wall()
 	return
+
+/turf/change_area(oldarea, newarea)
+	lighting_build_overlays()
 
 /////////////////////////////////////////////////////
 

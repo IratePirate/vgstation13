@@ -10,7 +10,7 @@
 	anchored = 0
 	density = 0
 	pressure_resistance = 5*ONE_ATMOSPHERE
-	m_amt = 1850
+	starting_materials = list(MAT_IRON = 1850)
 	w_type = RECYK_METAL
 	level = 2
 	var/ptype = 0
@@ -218,7 +218,7 @@
 				if(W.remove_fuel(0,user))
 					playsound(get_turf(src), 'sound/items/Welder2.ogg', 100, 1)
 					user << "Welding the [nicetype] in place."
-					if(do_after(user, 20))
+					if(do_after(user, src, 20))
 						if(!src || !W.isOn()) return
 						user << "The [nicetype] has been welded in place!"
 						update() // TODO: Make this neat

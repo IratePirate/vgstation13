@@ -5,8 +5,7 @@
 	icon = 'icons/obj/doors/door_assembly.dmi'
 	icon_state = "door_electronics"
 	w_class = 2.0 //It should be tiny! -Agouri
-	m_amt = 50
-	g_amt = 50
+	starting_materials = list(MAT_IRON = 50, MAT_GLASS = 50)
 	w_type = RECYK_ELECTRONIC
 	melt_temperature = MELTPOINT_SILICON
 
@@ -31,7 +30,7 @@
 			if(!S.remove_fuel(4,user))
 				return
 			playsound(loc, 'sound/items/Welder.ogg', 100, 1)
-			if(do_after(user,40))
+			if(do_after(user, src,40))
 				playsound(loc, 'sound/items/Welder.ogg', 100, 1)
 				icon_state = "door_electronics"
 				user << "<span class='notice'>You repair the blown fuses on the circuitboard.</span>"

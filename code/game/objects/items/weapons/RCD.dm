@@ -19,7 +19,7 @@ RCD
 	throw_speed = 1
 	throw_range = 5
 	w_class = 3.0
-	m_amt = 50000
+	starting_materials = list(MAT_IRON = 50000)
 	w_type = RECYK_ELECTRONIC
 	melt_temperature = MELTPOINT_STEEL // Lots of metal
 	origin_tech = "engineering=4;materials=2"
@@ -120,6 +120,12 @@ RCD
 		playsound(get_turf(src), 'sound/machines/click.ogg', 20, 1)
 		user << "<span class='notice'>The RCD now holds [matter]/[max_matter] matter-units.</span>"
 		return
+	if(isscrewdriver(W))
+		user << "<span class='notice'>You unscrew the access panel and release the cartridge chamber.</span>"
+		while(matter>=10)
+			new /obj/item/weapon/rcd_ammo(user.loc)
+			matter -= 10
+		return
 
 
 /obj/item/weapon/rcd/attack_self(mob/user)
@@ -173,7 +179,7 @@ RCD
 				if(checkResource(wall_cost, user))
 					user << "Building Wall ..."
 					playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-					if(do_after(user, 20))
+					if(do_after(user,A, 20))
 						if(!useResource(wall_cost, user)) return 0
 						activate()
 						A:ChangeTurf(/turf/simulated/wall)
@@ -184,7 +190,7 @@ RCD
 			if(checkResource(airlock_cost, user))
 				user << "Building Airlock..."
 				playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-				if(do_after(user, 50))
+				if(do_after(user,A, 50))
 					if(!useResource(airlock_cost, user)) return 0
 					if(locate(/obj/machinery/door/airlock) in A) return 0
 					activate()
@@ -201,7 +207,7 @@ RCD
 				if(checkResource(decon_cost, user))
 					user << "Deconstructing Wall..."
 					playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-					if(do_after(user, 40))
+					if(do_after(user,A, 40))
 						if(!useResource(decon_cost, user)) return 0
 						activate()
 						A:ChangeTurf(/turf/simulated/floor/plating)
@@ -212,10 +218,10 @@ RCD
 				if(checkResource(decon_cost, user))
 					user << "Deconstructing Floor..."
 					playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-					if(do_after(user, 50))
+					if(do_after(user,A, 50))
 						if(!useResource(decon_cost, user)) return 0
 						activate()
-						A:ChangeTurf(A:under_turf)
+						A:ChangeTurf(get_base_turf(A.z))
 						return 1
 				return 0
 
@@ -223,7 +229,7 @@ RCD
 				if(checkResource((decon_cost * 2), user))
 					user << "Deconstructing Airlock..."
 					playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-					if(do_after(user, 50))
+					if(do_after(user,A, 50))
 						if(!useResource((decon_cost * 2), user)) return 0
 						activate()
 						del(A)
@@ -267,8 +273,7 @@ RCD
 	anchored = 0.0
 	origin_tech = "materials=2"
 	w_class = 2.0
-	m_amt = 30000
-	g_amt = 15000
+	starting_materials = list(MAT_IRON = 30000, MAT_GLASS = 15000)
 	w_type = RECYK_ELECTRONIC
 
 /obj/item/weapon/rcd_ammo/attackby(var/obj/O, mob/user)

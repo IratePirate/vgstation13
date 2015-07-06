@@ -131,6 +131,11 @@ Class Procs:
 	var/panel_open = 0
 	var/state = 0 //0 is unanchored, 1 is anchored and unwelded, 2 is anchored and welded for most things
 
+	//These are some values to automatically set the light power/range on machines if they have power
+	var/light_range_on = 0
+	var/light_power_on = 0
+	var/use_auto_lights = 0//Incase you want to use it, set this to 0, defaulting to 1 so machinery with no lights doesn't call set_light()
+
 	/**
 	 * Machine construction/destruction/emag flags.
 	 */
@@ -155,7 +160,13 @@ Class Procs:
 
 /obj/machinery/New()
 	machines += src
+	//if(ticker) initialize()
 	return ..()
+
+/obj/machinery/initialize()
+	if(machine_flags & PURCHASER)
+		reconnect_database()
+		linked_account = vendor_account
 
 /obj/machinery/examine(mob/user)
 	..()
@@ -282,9 +293,6 @@ Class Procs:
 
 			var/obj/O = getLink(idx)
 			if(!O)
-				return 1
-			if(!canLink(O))
-				usr << "<span class='warning'>You can't link with that device.</span>"
 				return 1
 
 			if(unlinkFrom(usr, O))
@@ -432,7 +440,6 @@ Class Procs:
 
 /obj/machinery/proc/RefreshParts() //Placeholder proc for machines that are built using frames.
 	return
-	return 0
 
 /obj/machinery/proc/assign_uid()
 	uid = gl_uid
@@ -440,14 +447,13 @@ Class Procs:
 
 /obj/machinery/proc/dropFrame()
 	var/obj/machinery/constructable_frame/machine_frame/M = new /obj/machinery/constructable_frame/machine_frame(src.loc)
-	M.build_state = 2
+	M.set_build_state(2)
 	M.state = 1
-	M.icon_state = "box_1"
 
 /obj/machinery/proc/crowbarDestroy(mob/user)
 	user.visible_message(	"[user] begins to pry out the circuitboard from \the [src].",
 							"You begin to pry out the circuitboard from \the [src]...")
-	if(do_after(user, 40))
+	if(do_after(user, src, 40))
 		playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
 		dropFrame()
 		for(var/obj/I in component_parts)
@@ -491,7 +497,7 @@ Class Procs:
 	user.visible_message(	"[user] begins to [anchored ? "undo" : "wrench"] \the [src]'s securing bolts.",
 							"You begin to [anchored ? "undo" : "wrench"] \the [src]'s securing bolts...")
 	playsound(loc, 'sound/items/Ratchet.ogg', 50, 1)
-	if(do_after(user, 30))
+	if(do_after(user, src, 30))
 		anchored = !anchored
 		if(machine_flags & FIXED2WORK)
 			power_change() //updates us to turn on or off as necessary
@@ -512,7 +518,7 @@ Class Procs:
 		user.visible_message("[user.name] starts to [state - 1 ? "unweld": "weld" ] the [src] [state - 1 ? "from" : "to"] the floor.", \
 				"You start to [state - 1 ? "unweld": "weld" ] the [src] [state - 1 ? "from" : "to"] the floor.", \
 				"You hear welding.")
-		if (do_after(user,20))
+		if (do_after(user, src,20))
 			if(!src || !WT.isOn())
 				return -1
 			switch(state)

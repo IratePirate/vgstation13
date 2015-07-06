@@ -10,6 +10,8 @@
 	var/valve_open = 0
 	var/toggle = 1
 
+	flags = FPRINT | PROXMOVE
+
 /obj/item/device/transfer_valve/proc/process_activation(var/obj/item/device/D)
 
 /obj/item/device/transfer_valve/IsAssemblyHolder()
@@ -18,6 +20,11 @@
 /obj/item/device/transfer_valve/Crossed(AM as mob|obj)
 	if(attached_device)
 		attached_device.Crossed(AM)
+	..()
+
+/obj/item/device/transfer_valve/on_found(AM as mob|obj)
+	if(attached_device)
+		attached_device.on_found(AM)
 	..()
 
 /obj/item/device/transfer_valve/attackby(obj/item/item, mob/user)

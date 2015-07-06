@@ -1,3 +1,15 @@
+/obj/screen/fuckstat
+	name = "Toggle Stat"
+	desc = "Fuck It"
+	icon = 'icons/fuckstat.dmi'
+	icon_state = "fuckstat"
+
+	Click()
+		var/mob/M = usr
+		if(!istype(M)) return
+		M.stat_fucked = !M.stat_fucked
+
+var/global/obj/screen/fuckstat/FUCK = new
 /mob/recycle(var/datum/materials)
 	return RECYK_BIOLOGICAL
 
@@ -7,9 +19,12 @@
 	unset_machine()
 	qdel(hud_used)
 	if(client)
+		for(var/obj/screen/movable/spell_master/spell_master in spell_masters)
+			returnToPool(spell_master)
 		remove_screen_obj_references()
 		for(var/atom/movable/AM in client.screen)
-			if(istype(AM,/obj/screen))
+			var/obj/screen/screenobj = AM
+			if(istype(screenobj) && screenobj.pool_on_reset())
 				returnToPool(AM)
 			else
 				qdel(AM)
@@ -209,7 +224,7 @@
 			narsimage = image('icons/obj/narsie.dmi',src.loc,"narsie",9,1)
 			narsimage.mouse_opacity = 0
 		if(!narglow) //Create narglow
-			narglow = image('icons/obj/narsie.dmi',narsimage.loc,"glow-narsie",LIGHTING_LAYER+2,1)
+			narglow = image('icons/obj/narsie.dmi',narsimage.loc,"glow-narsie", LIGHTING_LAYER + 2, 1)
 			narglow.mouse_opacity = 0
 /* Animating narsie works like shit thanks to fucking byond
 		if(!N.old_x || !N.old_y)
@@ -273,7 +288,7 @@
 	var/turf/T_mob = get_turf(src)
 	if((R.z == T_mob.z) && (get_dist(R,T_mob) <= (R.consume_range+10)) && !(R in view(T_mob)))
 		if(!riftimage)
-			riftimage = image('icons/obj/rift.dmi',T_mob,"rift",LIGHTING_LAYER+2,1)
+			riftimage = image('icons/obj/rift.dmi',T_mob,"rift", LIGHTING_LAYER + 2, 1)
 			riftimage.mouse_opacity = 0
 
 		var/new_x = 32 * (R.x - T_mob.x) + R.pixel_x
@@ -732,21 +747,29 @@ var/list/slot_equipment_priority = list( \
 /mob/proc/start_pulling(var/atom/movable/AM)
 	if ( !AM || !src || src==AM || !isturf(src.loc) )	//if there's no person pulling OR the person is pulling themself OR the object being pulled is inside something: abort!
 		return
-	if (!( AM.anchored ))
-		AM.add_fingerprint(src)
+
+	var/atom/movable/P = AM
+
+	if (ismob(AM))
+		var/mob/M = AM
+		if (M.buckled) //If the mob is buckled on something, let's just try to pull the thing they're buckled to for convenience's sake.
+			P = M.buckled
+
+	if (!( P.anchored ))
+		P.add_fingerprint(src)
 
 		// If we're pulling something then drop what we're currently pulling and pull this instead.
 		if(pulling)
-			// Are we trying to pull something we are already pulling? Then just stop here, no need to continue.
-			var/p = pulling
+			// Are we trying to pull something we are already pulling? Then just stop here, no need to continue
+			var/temp_P = pulling
 			stop_pulling()
-			if(AM == p)
+			if(P == temp_P)
 				return
 
-		src.pulling = AM
-		AM.pulledby = src
-		if(ismob(AM))
-			var/mob/M = AM
+		src.pulling = P
+		P.pulledby = src
+		if(ismob(P))
+			var/mob/M = P
 			if(!iscarbon(src))
 				M.LAssailant = null
 			else
@@ -1065,12 +1088,16 @@ var/list/slot_equipment_priority = list( \
 
 /mob/verb/cancel_camera()
 	set name = "Cancel Camera View"
-	set category = "OOC"
-	reset_view(null)
+	set category = "OOC" //Why the fuck?
 	unset_machine()
+	reset_view(null)
 	if(istype(src, /mob/living))
-		if(src:cameraFollow)
-			src:cameraFollow = null
+		var/mob/living/M = src
+		if(M.cameraFollow)
+			M.cameraFollow = null
+		if(istype(src, /mob/living/carbon/human))
+			var/mob/living/carbon/human/H = M
+			H.handle_regular_hud_updates()
 
 /mob/Topic(href,href_list[])
 	if(href_list["mach_close"])
@@ -1131,86 +1158,87 @@ var/list/slot_equipment_priority = list( \
 			stat(null, "Location:\t([x], [y], [z])")
 			stat(null, "CPU:\t[world.cpu]")
 			stat(null, "Instances:\t[world.contents.len]")
+			stat(null, FUCK)
+			if(!src.stat_fucked)
+				if (garbageCollector)
+					/*stat(null, "MasterController-[last_tick_duration] ([master_controller.processing?"On":"Off"]-[master_controller.iteration])")
+					stat(null, "Air-[master_controller.air_cost]")
+					stat(null, "Sun-[master_controller.sun_cost]")
+					stat(null, "Mob-[master_controller.mobs_cost]\t#[mob_list.len]")
+					stat(null, "Dis-[master_controller.diseases_cost]\t#[active_diseases.len]")
+					stat(null, "Mch-[master_controller.machines_cost]\t#[machines.len]")
+					stat(null, "Obj-[master_controller.objects_cost]\t#[processing_objects.len]")
+					stat(null, "PiNet-[master_controller.networks_cost]\t#[pipe_networks.len]")
+					stat(null, "Ponet-[master_controller.powernets_cost]\t#[powernets.len]")
+					stat(null, "NanoUI-[master_controller.nano_cost]\t#[nanomanager.processing_uis.len]")
+					stat(null, "Tick-[master_controller.ticker_cost]")
+					stat(null, "garbage collector - [master_controller.garbageCollectorCost]")*/
+					stat(null, "\tqdel - [garbageCollector.del_everything ? "off" : "on"]")
+					stat(null, "\ton queue - [garbageCollector.queue.len]")
+					stat(null, "\ttotal delete - [garbageCollector.dels_count]")
+					stat(null, "\tsoft delete - [soft_dels]")
+					stat(null, "\thard delete - [garbageCollector.hard_dels]")
+				else
+					stat(null, "Garbage Controller is not running.")
 
-			if (garbageCollector)
-				/*stat(null, "MasterController-[last_tick_duration] ([master_controller.processing?"On":"Off"]-[master_controller.iteration])")
-				stat(null, "Air-[master_controller.air_cost]")
-				stat(null, "Sun-[master_controller.sun_cost]")
-				stat(null, "Mob-[master_controller.mobs_cost]\t#[mob_list.len]")
-				stat(null, "Dis-[master_controller.diseases_cost]\t#[active_diseases.len]")
-				stat(null, "Mch-[master_controller.machines_cost]\t#[machines.len]")
-				stat(null, "Obj-[master_controller.objects_cost]\t#[processing_objects.len]")
-				stat(null, "PiNet-[master_controller.networks_cost]\t#[pipe_networks.len]")
-				stat(null, "Ponet-[master_controller.powernets_cost]\t#[powernets.len]")
-				stat(null, "NanoUI-[master_controller.nano_cost]\t#[nanomanager.processing_uis.len]")
-				stat(null, "Tick-[master_controller.ticker_cost]")
-				stat(null, "garbage collector - [master_controller.garbageCollectorCost]")*/
-				stat(null, "\tqdel - [garbageCollector.del_everything ? "off" : "on"]")
-				stat(null, "\ton queue - [garbageCollector.queue.len]")
-				stat(null, "\ttotal delete - [garbageCollector.dels_count]")
-				stat(null, "\tsoft delete - [soft_dels]")
-				stat(null, "\thard delete - [garbageCollector.hard_dels]")
-			else
-				stat(null, "Garbage Controller is not running.")
+				if(processScheduler && processScheduler.getIsRunning())
+					var/datum/controller/process/process
 
-			if(processScheduler && processScheduler.getIsRunning())
-				var/datum/controller/process/process
+					process = processScheduler.getProcess("vote")
+					stat(null, "VOT\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("vote")
-				stat(null, "VOT\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("air")
+					stat(null, "AIR\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("air")
-				stat(null, "AIR\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("sun")
+					stat(null, "SUN\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("sun")
-				stat(null, "SUN\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("ticker")
+					stat(null, "TIC\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("ticker")
-				stat(null, "TIC\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("garbage")
+					stat(null, "GAR\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("garbage")
-				stat(null, "GAR\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("lighting")
+					stat(null, "LIG\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("lighting")
-				stat(null, "LIG\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("supply shuttle")
+					stat(null, "SUP\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("supply shuttle")
-				stat(null, "SUP\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("emergency shuttle")
+					stat(null, "EME\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("emergency shuttle")
-				stat(null, "EME\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("inactivity")
+					stat(null, "IAC\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("inactivity")
-				stat(null, "IAC\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("mob")
+					stat(null, "MOB([mob_list.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("mob")
-				stat(null, "MOB([mob_list.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("disease")
+					stat(null, "DIS([active_diseases.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("disease")
-				stat(null, "DIS([active_diseases.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("machinery")
+					stat(null, "MAC([machines.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("machinery")
-				stat(null, "MAC([machines.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("pow_machine")
+					stat(null, "POM([power_machines.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("pow_machine")
-				stat(null, "POM([power_machines.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("obj")
+					stat(null, "OBJ([processing_objects.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("obj")
-				stat(null, "OBJ([processing_objects.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("pipenet")
+					stat(null, "PIP([pipe_networks.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("pipenet")
-				stat(null, "PIP([pipe_networks.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("powernet")
+					stat(null, "POW([powernets.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("powernet")
-				stat(null, "POW([powernets.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+					process = processScheduler.getProcess("nanoui")
+					stat(null, "NAN([nanomanager.processing_uis.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
 
-				process = processScheduler.getProcess("nanoui")
-				stat(null, "NAN([nanomanager.processing_uis.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
-
-				process = processScheduler.getProcess("event")
-				stat(null, "EVE([events.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
-			else
-				stat(null, "processScheduler is not running.")
+					process = processScheduler.getProcess("event")
+					stat(null, "EVE([events.len])\t - #[process.getTicks()]\t - [process.getLastRunTime()]")
+				else
+					stat(null, "processScheduler is not running.")
 
 	if(client && client.inactivity < (1200))
 		if(listed_turf)
@@ -1225,16 +1253,16 @@ var/list/slot_equipment_priority = list( \
 
 		if(spell_list && spell_list.len)
 			for(var/spell/S in spell_list)
-				if(istype(S, /spell/noclothes) || !statpanel(S.panel))
+				if((!S.connected_button) || !statpanel(S.panel))
 					continue //Not showing the noclothes spell
 				switch(S.charge_type)
 					if(Sp_RECHARGE)
-						statpanel(S.panel,"[S.charge_counter/10.0]/[S.charge_max/10]",S)
+						statpanel(S.panel,"[S.charge_counter/10.0]/[S.charge_max/10]",S.connected_button)
 					if(Sp_CHARGES)
-						statpanel(S.panel,"[S.charge_counter]/[S.charge_max]",S)
+						statpanel(S.panel,"[S.charge_counter]/[S.charge_max]",S.connected_button)
 					if(Sp_HOLDVAR)
-						statpanel(S.panel,"[S.holder_var_type] [S.holder_var_amount]",S)
-	sleep(4) //Prevent updating the stat panel for the next .4 seconds, prevents clientside latency from updates
+						statpanel(S.panel,"[S.holder_var_type] [S.holder_var_amount]",S.connected_button)
+	sleep(4/world.tick_lag) //Prevent updating the stat panel for the next .4 seconds, prevents clientside latency from updates
 
 
 
@@ -1474,7 +1502,7 @@ var/list/slot_equipment_priority = list( \
 	else
 		U << "<span class='warning'>You attempt to get a good grip on the [selection] in [S]'s body.</span>"
 
-	if(!do_after(U, 80))
+	if(!do_after(U, src, 80))
 		return
 	if(!selection || !S || !U)
 		return

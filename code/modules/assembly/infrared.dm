@@ -4,8 +4,7 @@
 	name = "infrared emitter"
 	desc = "Emits a visible or invisible beam and is triggered when the beam is interrupted."
 	icon_state = "infrared"
-	m_amt = 1000
-	g_amt = 500
+	starting_materials = list(MAT_IRON = 1000, MAT_GLASS = 500)
 	w_type = RECYK_ELECTRONIC
 	origin_tech = "magnets=2"
 
@@ -16,6 +15,7 @@
 	var/on = 0
 	var/visible = 0
 	var/obj/effect/beam/infrared/beam = null
+	New() del(src)
 
 
 ///obj/item/device/assembly/infra/describe()
@@ -55,13 +55,14 @@
 
 
 /obj/item/device/assembly/infra/process()//Old code
+	if(1) return PROCESS_KILL
 	if(!on && beam)
 		qdel(beam)
 		return
 	if(beam || !secured) return
 	var/turf/T = null
 	if(isturf(loc))
-		T = loc
+		T = get_turf(src)
 	else if (holder)
 		if (istype(holder.loc,/turf))
 			T = holder.loc
@@ -172,6 +173,7 @@
 	var/left = null
 	anchored = 1.0
 	flags = 0
+
 
 	var/obj/item/device/assembly/infra/assembly
 

@@ -37,9 +37,6 @@
 				log_admin("[key_name(usr)] has spawned a nuke team.")
 				if(!src.makeNukeTeam())
 					usr << "<span class='warning'>Unfortunately there weren't enough candidates available.</span>"
-			if("8")
-				log_admin("[key_name(usr)] has spawned a ninja.")
-				src.makeSpaceNinja()
 			if("9")
 				log_admin("[key_name(usr)] has spawned aliens.")
 				src.makeAliens()
@@ -1002,7 +999,7 @@
 		var/mob/M = locate(href_list["newban"])
 		if(!ismob(M)) return
 
-		if(M.client && M.client.holder)	return	//admins cannot be banned. Even if they could, the ban doesn't affect them anyway
+		// now you can! if(M.client && M.client.holder)	return	//admins cannot be banned. Even if they could, the ban doesn't affect them anyway
 
 		switch(alert("Temporary Ban?",,"Yes","No", "Cancel"))
 			if("Yes")
@@ -1039,6 +1036,11 @@
 						AddBan(M.ckey, M.computer_id, reason, usr.ckey, 0, 0, M.lastKnownIP)
 					if("No")
 						AddBan(M.ckey, M.computer_id, reason, usr.ckey, 0, 0)
+				var/sticky = alert(usr,"Sticky Ban [M.ckey]? Use this only if you never intend to unban the player.","Sticky Icky","Yes", "No") == "Yes"
+				if(sticky)
+					world.SetConfig("APP/ban",M.ckey,"type=sticky&reason=[reason]&message=[reason]&IP=[M.lastKnownIP]&computer_id=[M.computer_id]&admin=[ckey(usr.key)]")
+					message_admins("[key_name_admin(usr)] has sticky banned [key_name(M)].")
+					log_admin("[key_name(usr)] has sticky banned [key_name(M)].")
 				M << "<span class='warning'><BIG><B>You have been banned by [usr.client.ckey].\nReason: [reason].</B></BIG></span>"
 				M << "<span class='warning'>This is a permanent ban.</span>"
 				if(config.banappeals)
@@ -1622,6 +1624,7 @@
 		var/datum/game_mode/cult/mode_ticker = ticker.mode
 		mode_ticker.bypass_phase()
 		message_admins("Admin [key_name_admin(usr)] has unlocked the Cult's next objective.")
+		log_admin("Admin [key_name_admin(usr)] has unlocked the Cult's next objective.")
 		check_antagonists()
 
 	else if(href_list["cult_mindspeak"])
@@ -1995,10 +1998,6 @@
 				if(!check_rights(R_FUN,0))
 					removed_paths += dirty_path
 					continue
-			else if(ispath(path, /obj/item/weapon/melee/energy/blade))//Not an item one should be able to spawn./N
-				if(!check_rights(R_FUN,0))
-					removed_paths += dirty_path
-					continue
 			else if(ispath(path, /obj/effect/bhole))
 				if(!check_rights(R_FUN,0))
 					removed_paths += dirty_path
@@ -2253,13 +2252,11 @@
 
 						H.Paralyse(5)
 
-						if (H.wear_id)
-							var/obj/item/weapon/card/id/id = H.get_idcard()
+						var/obj/item/weapon/card/id/id = H.get_id_card()
 
-							for (var/A in id.access)
-								if (A == access_security)
-									security = TRUE
-									break
+						if(id)
+							if (access_security in id.access)
+								security = TRUE
 
 						if (!security)
 							// strip their stuff before they teleport into a cell :downs:
@@ -2481,12 +2478,6 @@
 				feedback_add_details("admin_secrets_fun_used","PDA")
 				new /datum/event/pda_spam
 
-			if("spaceninja")
-				feedback_inc("admin_secrets_fun_used",1)
-				feedback_add_details("admin_secrets_fun_used","SN")
-				if(toggle_space_ninja)
-					if(space_ninja_arrival())//If the ninja is actually spawned. They may not be depending on a few factors.
-						message_admins("[key_name_admin(usr)] has sent in a space ninja", 1)
 			if("carp")
 				feedback_inc("admin_secrets_fun_used",1)
 				feedback_add_details("admin_secrets_fun_used","C")
@@ -2647,7 +2638,7 @@
 			if("ionstorm")
 				feedback_inc("admin_secrets_fun_used",1)
 				feedback_add_details("admin_secrets_fun_used","I")
-				IonStorm()
+				generate_ion_law()
 				message_admins("[key_name_admin(usr)] triggered an ion storm")
 				var/show_log = alert(usr, "Show ion message?", "Message", "Yes", "No")
 				if(show_log == "Yes")

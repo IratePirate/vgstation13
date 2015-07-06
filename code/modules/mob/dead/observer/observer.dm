@@ -251,8 +251,6 @@ Works together with spawning an observer, noted above.
 					U.client.images += image(tempHud,target,"hudalien")
 				if("Death Commando")
 					U.client.images += image(tempHud,target,"huddeathsquad")
-				if("Ninja")
-					U.client.images += image(tempHud,target,"hudninja")
 				if("Vampire")
 					U.client.images += image(tempHud,target,"vampire")
 				if("VampThrall")
@@ -382,6 +380,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		mind.current.ajourn.ajourn = null
 		mind.current.ajourn = null
 	mind.current.key = key
+	mind.isScrying = 0
 	return 1
 
 /mob/dead/observer/verb/toggle_medHUD()

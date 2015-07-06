@@ -44,19 +44,19 @@ ADDING CREDITS?  EDIT templates/header.html (or footer.html if they're for old t
 					Code:
 				</dt>
 				<dd>
-					Cloroxygen, Duny, Emisune, IconLeap, N3X15, Pomf123, SarahJohnson, Deity Link
+					Cloroxygen, Duny, Emisune, IconLeap, N3X15, Pomf123, SarahJohnson, Deity Link, ComicIronic, Clusterfack, 9600bauds, PJB3005, Kurfursten, Dylanstrategie, Velard Amakar, Exxion, Unfit, Iamgoofball
 				</dd>
 				<dt class="creditsection">
 					Sprites:
 				</dt>
 				<dd>
-					Bustatime, Cloroxygen, Cogwerks, Dbuhos, Emisune, ISaidNo, Kokuten, N3X15, Osaifh, Rei1226, Skowron, Deity Link
+					Bustatime, Cloroxygen, Cogwerks, Dbuhos, Emisune, ISaidNo, Kokuten, N3X15, Osaifh, Rei1226, Skowron, Deity Link, NigglyWiggly
 				</dd>
 				<dt class="creditsection">
 					Sounds:
 				</dt>
 				<dd>
-					NOBODY ;_;
+					IratePirate
 				</dd>
 				<dt class="creditsection">
 					Thanks To:
@@ -79,6 +79,319 @@ ADDING CREDITS?  EDIT templates/header.html (or footer.html if they're for old t
 		
 		-->
 		<div class="commit sansserif">
+
+			<h2 class="date">2015.07.05</h2>
+			<h3 class="author">Deity Link updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Bloody Floors are now automatically counted if the round is cult, no longer only if the current objective is bloodspill. (blood splatters being cleaned always decreased the counter, which caused the round end report to almost always show something among the lines of "18 tiles out of 100 covered, SUCCESS!!")</li>
+				<li class="tweak">The Round End Information will now indicate what was the peak number of bloody floors during the round, instead of the number of bloody floors at round end.</li>
+				<li class="tweak">bloodspill now requires the cultists to cover a random number of tiles in blood, minimum being 100, maximum being 101 + (number of players X 3)</li>
+				<li class="experiment">Admins now get notified if a player disconnects/ghosts right after being converted.</li>
+				<li class="rscadd">The Summon Cultist rune will give its user the list of all the current living and conscious (non-braindead/catatonic) cultists if used without 3 cultists around it.</li>
+				<li class="tweak">The Free Cultist rune will now only list cultists that are currently restrained.</li>
+				<li class="rscadd">The Free Cultist rune will give its user the list of all the currently restrained culists if used without 3 cultists around it.</li>
+				<li class="rscadd">The target of the Free Cultist rune now gets notified that they got freed from their restraints.</li>
+				<li class="rscadd">Just like cultists, observers can now examine a rune to learn which spell it procs. So deadchat can laugh at bad cultists trying to summon Nar-Sie around a convert rune.</li>
+			</ul>
+			<h3 class="author">Dylanstrategie updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="experiment">New base_turf system that allows custom tiles to be set to replace turfs instead of space. Please, please report any serious oddities with turfs that should be replaced to space (do mind that the admins now have a verb to change base_turf during the round from space to something like grass or live supermatter)</li>
+			</ul>
+			<h3 class="author">Intigracy updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">fixed vampire enthrall not working correctly</li>
+			</ul>
+			<h3 class="author">PJB3005 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscdel">Bluespace crystals no longer work on centcomm.</li>
+				<li class="bugfix">Fixes the AAC vent mode control automation.</li>
+				<li class="bugfix">Fixed ghosts being able to fuck with the AAC.</li>
+				<li class="tweak">Makes the code that changes the charge meter on an energy weapon round up below 50% and down above 50%.</li>
+				<li class="rscadd">The teleporter now has a nicer UI for selecting the destination.</li>
+				<li class="rscadd">On top of that, you can see the current destination in the UI or by examining it.</li>
+				<li class="bugfix">Dissasembling a windoor now drops the correct materials.</li>
+			</ul>
+			<h3 class="author">Unid updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Added wheelchairs to the game. Two can be found in medbay, more can be ordered from cargo.</li>
+				<li class="rscadd">Characters missing both of their feet now spawn with a wheelchair.</li>
+			</ul>
+
+			<h2 class="date">2015.06.26</h2>
+			<h3 class="author">Kurfurst updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Suit storage icons now properly work</li>
+				<li class="tweak">You can now properly reach the maintenace panel on suit storage units</li>
+				<li class="tweak">You can now repair suit storage units with a solder</li>
+			</ul>
+
+			<h2 class="date">2015.06.24</h2>
+			<h3 class="author">Deity Link updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Vending machines articles can now be given a "category". Items of the same category will show together in the vending machine's menu.</li>
+				<li class="rscadd">Contraband and premium items will still appear at the bottom of the window, in their own category.</li>
+				<li class="rscadd">Added categories for most seeds. Categories are made from a culinary standpoint, thus tomatoes and pumpkins are among vegetables.</li>
+				<li class="rscadd">YOU CAN FINALLY ADD SEEDS TO THE MEGASEED VENDOR, WOO!! You can load a bunch of them at once by using a plant bag.</li>
+			</ul>
+			<h3 class="author">PJB3005 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Boosted the R-UST gyrotron damage, to make them charge the R-UST field faster.</li>
+			</ul>
+
+			<h2 class="date">2015.06.23</h2>
+			<h3 class="author">9600bauds updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Ripleys now automatically pick up sand after drilling the Asteroid floor, provided the mech has a Hydraulic Clamp installed and an Ore Box loaded.</li>
+			</ul>
+			<h3 class="author">Clusterfack updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Mice no longer increase the growth of singularities or make supermatters active when bumped, their total time to respawn is now a 5 minute interval</li>
+			</ul>
+			<h3 class="author">Dylanstrategie updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="experiment">Singularity now has movement bias. When roaming randomly, it will prefer repeating its previous movement, leading to more significant "movement streaks"</li>
+				<li class="experiment">Introduce reagent_filling bottles. Basically, you can now see reagent amount and color in bottles dynamically, akin to beakers</li>
+				<li class="tweak">Singularity name and description no longer resets, useful for admins feeling poetic*</li>
+				<li class="tweak">Singularities are now a tiny bit more likely to head towards beacons</li>
+				<li class="rscdel">Old colored bottles are no longer used due to not being compatible with the new bottle system. Option to choose bottles also removed. Reagent color should make up for it partially</li>
+			</ul>
+
+			<h2 class="date">2015.06.22</h2>
+			<h3 class="author">9600bauds updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Fixed mousetrap assemblies losing their boobytrap properties when attached to bombs/grenades.</li>
+				<li class="tweak">Removed the delay (2 seconds) when placing people into sleepers. To prevent this from being abused to surprise-sleeptoxin people, the patient needs to have been inside the sleeper for 3 seconds before being able to inject sleep toxin.</li>
+			</ul>
+			<h3 class="author">Clusterfack updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Mommis once again, can no longer pick up the normal material synth, which bugs out when they try to use it</li>
+				<li class="rscadd">Posibrains should now have their appearance turned back to the original after death, they also have a death message.</li>
+				<li class="bugfix">Spiderbots wont be prevented from ventcrawling thanks to holding their own brain</li>
+				<li class="bugfix">Corpses from human-like simple mobs should now spawn correctly again</li>
+				<li class="tweak">Plastic flaps previously used both airtight mining flaps and regular station flaps. However constructable flaps were automatically airtight. Build stages have been adjusted so you can wrench down a flap to anchor it, and crowbar a normal plastic flap to make it airtight.</li>
+				<li class="experimental">Drastically balance changes vampires by making them respawn after the intended 30-45 second delay instead of 3-4.5 second delay</li>
+			</ul>
+			<h3 class="author">PJB3005 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Silicons can no longer put their modules into potted plants or smartfridges.</li>
+				<li class="bugfix">Fixed the R-UST Mk. 7 Gyrotrons and fuel injectors.</li>
+				<li class="rscadd">Gyrotron control computers can now be built.</li>
+				<li class="tweak">Gyrotrons now need to be linked to the computer with a multitool.</li>
+				<li class="rscdel">Removed the interface from the R-UST Mk. 7 tokamak, don't worry there's still the core control computer.</li>
+				<li class="tweak">R-UST Mk. 7 tokamaks now need to be linked to their control computers via multitool.</li>
+				<li class="tweak">Cleaned up the code for R-UST Mk. 7 core control computers.</li>
+				<li class="rscadd">Added the R-UST Mk. 7 tokamak core monitoring computer.</li>
+				<li class="rscdel">Removes substantial features from disabling the R-UST Mk. 7 EM field.</li>
+			</ul>
+			<h3 class="author">Shadowmech88 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Pens now have font tags. See paper help menu for usage.</li>
+			</ul>
+
+			<h2 class="date">2015.06.21</h2>
+			<h3 class="author">Pomf123 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Fixed getting ghosted when your brain is put into an MMI.</li>
+			</ul>
+
+			<h2 class="date">2015.06.20</h2>
+			<h3 class="author">Pomf123 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Added area fill/delete to buildmode, enter advanced buildmode and ctrl+shift leftclick for bottom left corner, ctrl+shift right click for top right corner. It either fills with what type you have chosen or deletes EVERYTHING in the selection area.</li>
+			</ul>
+
+			<h2 class="date">2015.06.19</h2>
+			<h3 class="author">Deity Link updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">When the Firebird drives into an airlock, it'll go through without having to wait for the airlock to fully open (the airlock will still open, and the firebird won't go through at all if the driver doesn't have access)</li>
+				<li class="tweak">Vehicles can now push un-anchored structures (closets, crates, etc)</li>
+				<li class="tweak">Firebird can drive into tables/racks and break them.</li>
+				<li class="tweak">You DON'T want to drive into a welding fuel tank.</li>
+			</ul>
+
+			<h2 class="date">2015.06.17</h2>
+			<h3 class="author">9600bauds updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Added an option to the Exosuit Control console to lockdown a tracked mech, as an alternative to blowing it.</li>
+				<li class="rscadd">You can now rig mechs with electropacks When activated, will stun and eject their pilot.</li>
+				<li class="tweak">Exosuit tracking beacons may now be removed in the same way as a battery.</li>
+				<li class="tweak">De-clunkified mech maintenance, accessing the panel is now simply activating maintenance mode -> wrench (+crowbar to remove internal components)</li>
+				<li class="tweak">Thrown exosuit tracking beacons now only have a 25% chance of attaching on hit (considering removal)</li>
+				<li class="soundadd">Added common sounds to some mech maintenance actions (nothing new)</li>
+				<li class="bugfix">Fixed being able to attach multiple tracking beacons to a single mech.</li>
+				<li class="bugfix">Fixed Odysseus constantly dropping it's HUD and it becoming magical.</li>
+			</ul>
+			<h3 class="author">Deity Link updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Vending machines articles can now be given a "category". Items of the same category will show together in the vending machine's menu.</li>
+				<li class="rscadd">Contraband and premium items will still appear at the bottom of the window, in their own category.</li>
+				<li class="rscadd">Added categories for most seeds. Categories are made from a culinary standpoint, thus tomatoes and pumpkins are among vegetables.</li>
+				<li class="rscadd">YOU CAN FINALLY ADD SEEDS TO THE MEGASEED VENDOR, WOO!! You can load a bunch of them at once by using a plant bag.</li>
+			</ul>
+			<h3 class="author">PJB3005 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">The AAC's vent pump mode & power automations can now interact with DP vents again.</li>
+				<li class="bugfix">The AAC's scrubber power automation will no longer toggle the power of vents with the same ID and frequency.</li>
+			</ul>
+			<h3 class="author">Probe1 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Beepsky will now report arrests he makes by default.</li>
+			</ul>
+			<h3 class="author">Unid updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Added floor tiles made from minerals. Floors made from normal minerals don't do anything, bananium floors honk and phazon floors increase running speed.</li>
+			</ul>
+
+			<h2 class="date">2015.06.13</h2>
+			<h3 class="author">9600bauds updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Fixes Circuit Imprinter not letting you eject materials (Friendly reminder to use the in-game bug reporter)</li>
+				<li class="imageadd">Declunkified Mech fabricator menu.</li>
+				<li class="tweak">Sharp weapons and hot items such as lighters are now better at cutting spiderwebs.</li>
+				<li class="tweak">Small spider cocoons now have less health than their bigger counterparts.</li>
+			</ul>
+			<h3 class="author">Kurfurst updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">The advanced toolbelt now can hold compressed matter cartridges, like the normal toolbelt.</li>
+				<li class="tweak">The advanced toolbelt can now carry the chief engineer's blueprints.</li>
+				<li class="tweak">The normal toolbelt now informs you what fits on it.</li>
+				<li class="tweak">Normal and advanced toolbelts can now carry the light replacer.</li>
+				<li class="tweak">You can now properly fill an extinguisher with a reagent_container without stuffing that container inside.</li>
+				<li class="rscadd">Engineers can find a new fuel can available at the Engi-Vend. It fits on your toolbelt and switches between two partitions.</li>
+			</ul>
+			<h3 class="author">PJB005 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rcdadd">Adds a system allowing players to choose between NanoUI and RetroUIs (switch using a verb in your preferences tab).</li>
+				<li class="rscadd">Don't get your hopes up yet though because only the telescience console is supported right now.</li>
+			</ul>
+			<h3 class="author">Pomf123 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">110% plagiarized progress bar from goofball who couldn't get it working clientside. Preference verb to toggle whether you see them or not!</li>
+			</ul>
+			<h3 class="author">Unid updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Fixed stacks not disappearing from silicons when used up.</li>
+			</ul>
+
+			<h2 class="date">2015.06.06</h2>
+			<h3 class="author">9600bauds updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Advanced surgery tools (laser scalpels, incision manager) now speed up surgery steps depending on how advanced they are.</li>
+				<li class="tweak">Laser scalpels now only come in two tiers, the first only requires iron and glass to be produced. Low tier laser scalpels will no longer randomly fail.</li>
+				<li class="rscadd">Laser scalpels can now properly be used as a scalpel for any surgery steps that require one, and can be switched to a cautery mode to make them work as a cautery.</li>
+				<li class="tweak">The Incision Manager can now be used as a retractor for any surgery steps that require one, and no longer costs diamond to produce at the Protolathe.</li>
+				<li class="tweak">Butcher's cleavers can now be used as bonesaws in ghetto surgery (like hatchets).</li>
+				<li class="tweak">Debraining severed heads now accepts ghetto surgery tools.</li>
+				<li class="bugfix">You can now properly cut biomass and kudzu with laser scalpels.</li>
+				<li class="bugfix">Laser scalpels now properly change their icon for all surgery steps.</li>
+				<li class="tweak">Buffed Ripley's running speed by about 33%, to bring it in line with other mechs.</li>
+				<li class="tweak">Exosuit mining drills now roughly match the speed of handheld drills (previously were significantly slower)</li>
+				<li class="tweak">The Ripley's Hydraulic Clamp now picks up loose ore like a mining satchel.</li>
+				<li class="tweak">Firefighter Ripley's fire extinguisher module has gotten an upgrade to a foam fire extinguisher.</li>
+				<li class="rscadd">Added Exosuit Jetpacks, which were previously just lying around unimplemented in the code. Please report any bugs.</li>
+				<li class="bugfix">Fixes bug where ripleys would drop their spaghetti when the driver ejected, said spaghetti would then gain the ability to teleport back under the ripley's feet at command.</li>
+			</ul>
+			<h3 class="author">Comic updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="experiment">Some of the firelocks on every station have been replaced with border-only firelocks.</li>
+			</ul>
+
+			<h2 class="date">2015.06.04</h2>
+			<h3 class="author">Clusterfack updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Fixes a bug where you could lose your spell icons as wizard by leaving your body</li>
+				<li class="bugfix">Another fix that should hopefully resolve all issues revolving around storage containers</li>
+			</ul>
+			<h3 class="author">Deity Link updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Admins now get notified when one of them gives an achievement. (Including who gave it)</li>
+				<li class="bugfix">Ghosts now get notified when someone receives an achievement.</li>
+				<li class="bugfix">Fixed an exception in case you tried to give a trophy to a non-carbon mob (the trophy will now appear on the floor)</li>
+			</ul>
+			<h3 class="author">Dylanstrategie updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="imageadd">Add 'cigar2on' sprite, thereby fixing Havana and Cobana cigars no showing up on the mob's sprite when lit</li>
+				<li class="rscadd">Shaft Miners now have their very own headset with a special Cargo/Mining encryption key. Roboticists and Research Directors everywhere rejoice as their bitching about the miners being too busy jacking off in a cavern to deliver minerals no longer falls on deaf ears</li>
+				<li class="imageadd">Modify the existing and unsued Mining headset and encryption key, and the existing Cargo ones to look more distinct and related to their functions</li>
+			</ul>
+
+			<h2 class="date">2015.06.02</h2>
+			<h3 class="author">IratePirate updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Energy Sword has a melee sound.</li>
+				<li class="tweak">Toolbox has a melee sound.</li>
+				<li class="tweak">Glass shard has a melee sound.</li>
+				<li class="tweak">Toolbox made more robust.</li>
+			</ul>
+			<h3 class="author">Kurfurst updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Battering rams now properly cancel when you move away from the target door</li>
+				<li class="tweak">Electrolyzers are now compatible with a much wider variety of reagent_containers, including cans</li>
+				<li class="tweak">HE lights now no longer prevent you from downgrading the light fixture to a non-HE version</li>
+			</ul>
+			<h3 class="author">Pomf123 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Clarify cultist deconversion message making it more clear that you lose all memories of cult activity -except- the person who converted you.</li>
+			</ul>
+
+			<h2 class="date">2015.05.28</h2>
+			<h3 class="author">9600bauds updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">You no longer need Science access to eject an item from a Destructive Analyzer, and you can now do so by clicking it with an empty hand if the R&D console is destroyed or the power goes out.</li>
+				<li class="tweak">You now need Science access to eject materials or purge chemicals from the Protolathe and Circuit Imprinter.</li>
+			</ul>
+			<h3 class="author">Comic updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Flatpacks now make the machine straight out of the box. Flatpack instructions have been removed.</li>
+			</ul>
+			<h3 class="author">Deity Link updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">Fixed a missing exception that would cause a mecha to endlessly bump into a borg when thrown from a mass driver.</li>
+				<li class="rscadd">ERT and Deathsquad now have their own headsets with their own encryption keys</li>
+				<li class="rscadd">The ERT's channel letter is "r"</li>
+				<li class="rscadd">The Deathsquad's channel letter (number technically) is "0"</li>
+			</ul>
+			<h3 class="author">Probe1 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Added food delivery bags to the dinnerware vending machine to facilitate delivery boys.</li>
+			</ul>
+			<h3 class="author">Unid updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Added the ability to change colour of light tiles by using a multitool on them.</li>
+			</ul>
+
+			<h2 class="date">2015.05.26</h2>
+			<h3 class="author">Deity Link updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Gyro tea now makes you spin, and heals leg and foot damage.</li>
+				<li class="bugfix">Monkey mobs no longer have the before their emotes if they have a proper name. No more The Pun Pun jumps.</li>
+				<li class="tweak">The teleporter on the Syndicate Mothership is now always accurate (won't ever send things into deep space instead of its designated destination again)</li>
+			</ul>
+			<h3 class="author">Pomf123 updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="tweak">Gave aliens monkeys and whatnot proper custom emoting, abuse it and lose it.</li>
+			</ul>
+
+			<h2 class="date">2015.05.25</h2>
+			<h3 class="author">Deity Link updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="bugfix">TAXISTATION FIXED TAXI CALLER BUTTONS</li>
+				<li class="bugfix">TAXISTATION Greatly improved camera coverage (singularity, theatre, research outpost, etc...)</li>
+				<li class="bugfix">TAXISTATION Fixes access to the Asteroid outpost for both Miners and Xenoarchaeologists</li>
+				<li class="bugfix">TAXISTATION Added Xenobotany machines to Hydroponics backroom, and moved stuff around in Hydroponics</li>
+				<li class="bugfix">TAXISTATION Added a bunch of PDA terminals</li>
+				<li class="bugfix">TAXISTATION Added a PDA painter to the HoP's office</li>
+				<li class="bugfix">TAXISTATION Added Ion Rifles to the Secure Armory</li>
+				<li class="bugfix">TAXISTATION Added missing virus dishes and other stuff in Virology</li>
+				<li class="bugfix">TAXISTATION The Library's windoor now requires the Librarian's access.</li>
+				<li class="tweak">and more various small Taxistation tweaks...</li>
+			</ul>
+			<h3 class="author">Dylanstrategie updated:</h3>
+			<ul class="changes bgimages16">
+				<li class="rscadd">Medical E.V.A. is back</li>
+				<li class="tweak">Change the layout of the Mining Bases and the Research Airbridge</li>
+				<li class="bugfix">Fix Waste and Distribution being connected together at roundstart</li>
+			</ul>
 
 			<h2 class="date">2015.05.23</h2>
 			<h3 class="author">9600bauds updated:</h3>

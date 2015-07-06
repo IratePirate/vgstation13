@@ -202,6 +202,7 @@
 	src.u_equip(O,1)
 	if (src.client)
 		src.client.screen -= O
+	if(!O) return
 	O.layer = initial(O.layer)
 	O.screen_loc = null
 	return 1
@@ -311,4 +312,10 @@
 			if(EQUIP_FAILACTION_DROP)
 				W.loc=get_turf(src) // I think.
 	return equipped
+
+/mob/proc/get_id_card()
+	for(var/obj/item/I in src.get_all_slots())
+		. = I.GetID()
+		if(.)
+			break
 

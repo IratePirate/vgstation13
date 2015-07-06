@@ -3,6 +3,10 @@
 #define BLOB_PROBABILITY 40
 #define HEADBUTT_PROBABILITY 40
 #define BRAINLOSS_FOR_HEADBUTT 60
+
+#define DOOR_LAYER		2.7
+#define DOOR_CLOSED_MOD	0.3 //how much the layer is increased when the door is closed
+
 var/list/all_doors = list()
 /obj/machinery/door
 	name = "door"
@@ -12,7 +16,8 @@ var/list/all_doors = list()
 	anchored = 1
 	opacity = 1
 	density = 1
-	layer = 2.7
+	layer = DOOR_LAYER
+	var/base_layer = DOOR_LAYER
 
 	var/secondsElectrified = 0
 	var/visible = 1
@@ -88,6 +93,8 @@ var/list/all_doors = list()
 
 		if (density)
 			if (vehicle.buckled_mob && !operating && allowed(vehicle.buckled_mob))
+				if(istype(vehicle, /obj/structure/stool/bed/chair/vehicle/wizmobile))
+					vehicle.forceMove(get_step(vehicle,vehicle.dir))//Firebird doesn't wait for no slowpoke door to fully open before dashing through!
 				open()
 			else if(!operating)
 				door_animate("deny")
@@ -111,10 +118,6 @@ var/list/all_doors = list()
 	else if(!operating)
 		door_animate("deny")
 
-	return
-
-/obj/machinery/door/meteorhit(obj/M as obj)
-	open()
 	return
 
 /obj/machinery/door/attack_ai(mob/user as mob)
@@ -246,13 +249,13 @@ var/list/all_doors = list()
 	if(!operating)		operating = 1
 
 	door_animate("opening")
-	src.SetOpacity(0)
+	src.set_opacity(0)
 	sleep(10)
-	src.layer = 2.7
+	src.layer = base_layer
 	src.density = 0
 	explosion_resistance = 0
 	update_icon()
-	SetOpacity(0)
+	set_opacity(0)
 	update_nearby_tiles()
 	//update_freelook_sight()
 
@@ -274,13 +277,13 @@ var/list/all_doors = list()
 	operating = 1
 	door_animate("closing")
 
-	layer = 3.0
+	layer = base_layer + DOOR_CLOSED_MOD
 
 	density = 1
 	update_icon()
 
 	if (!glass)
-		src.SetOpacity(1)
+		src.set_opacity(1)
 		// Copypasta!!!
 		var/obj/effect/beam/B = locate() in loc
 		if(B)
@@ -300,12 +303,12 @@ var/list/all_doors = list()
 
 	if(density)
 		// above most items if closed
-		layer = 3.1
+		layer = base_layer + DOOR_CLOSED_MOD
 
 		explosion_resistance = initial(explosion_resistance)
 	else
 		// under all objects if opened. 2.7 due to tables being at 2.6
-		layer = 2.7
+		layer = base_layer
 
 		explosion_resistance = 0
 
@@ -395,6 +398,10 @@ var/list/all_doors = list()
 			source.thermal_conductivity = DOOR_HEAT_TRANSFER_COEFFICIENT
 		else
 			source.thermal_conductivity = initial(source.thermal_conductivity)
+
+/obj/machinery/door/change_area(oldarea, newarea)
+	..()
+	name = replacetext(name,oldarea,newarea)
 
 /obj/machinery/door/Move(new_loc, new_dir)
 	update_nearby_tiles()

@@ -3,8 +3,7 @@
 	desc = "An updated, modular intercom that fits over the head. Takes encryption keys"
 	icon_state = "headset"
 	item_state = "headset"
-	g_amt = 0
-	m_amt = 75
+	starting_materials = list(MAT_IRON = 75)
 	w_type = RECYK_ELECTRONIC
 	melt_temperature = MELTPOINT_PLASTIC
 	subspace_transmission = 1
@@ -186,6 +185,16 @@
 		keyslot2 = new /obj/item/device/encryptionkey/headset_cargo
 		..()
 
+/obj/item/device/radio/headset/headset_mining
+	name = "supply radio headset"
+	desc = "A headset used by the shaft miners to be yelled at from the QM and R&D at the same time. Channels are as follows: :u - supply, :n - science"
+	icon_state = "mine_headset"
+	item_state = "headset"
+
+	New()
+		keyslot2 = new /obj/item/device/encryptionkey/headset_mining
+		..()
+
 /obj/item/device/radio/headset/headset_service
 	name = "service radio headset"
 	desc = "A headset used by the chef, the bartender and the botanists to plan their poisoning of the entire crew. To access the service channel, use :d."
@@ -216,10 +225,21 @@
 		keyslot2 = new /obj/item/device/encryptionkey/headset_servsci
 		..()
 
+/obj/item/device/radio/headset/deathsquad
+	name = "Deathsquad headset"
+	desc = "A headset used by the dark side of Nanotrasen's Spec Ops. Channels are as follows: :0 - Deathsquad :c - command, :s - security, :e - engineering, :d - mining, :q - cargo, :m - medical, :n - science."
+	icon_state = "deathsquad_headset"
+	item_state = "headset"
+	freerange = 1
+
+	New()
+		keyslot2 = new /obj/item/device/encryptionkey/deathsquad
+		..()
+
 /obj/item/device/radio/headset/ert
 	name = "CentCom Response Team headset"
-	desc = "The headset of the boss's boss. Channels are as follows: :h - Response Team :c - command, :s - security, :e - engineering, :d - mining, :q - cargo, :m - medical, :n - science."
-	icon_state = "com_headset"
+	desc = "The headset of the boss's boss. Channels are as follows: :r - Response Team :c - command, :s - security, :e - engineering, :d - mining, :q - cargo, :m - medical, :n - science."
+	icon_state = "ert_headset"
 	item_state = "headset"
 	freerange = 1
 

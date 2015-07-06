@@ -15,7 +15,10 @@
 	var/trackdir = 1		//-1 = CCW, 1 = CW
 	var/nexttime = 0		//Next clock time that manual tracking will move the array
 
-	l_color = "#FF9933"
+	light_color = LIGHT_COLOR_YELLOW
+	use_auto_lights = 1
+	light_range_on = 3
+	light_power_on = 2
 
 /obj/machinery/power/solar/control/initialize()
 	..()
@@ -74,7 +77,7 @@
 /obj/machinery/power/solar/control/attackby(I as obj, user as mob)
 	if(istype(I, /obj/item/weapon/screwdriver))
 		playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 50, 1)
-		if(do_after(user, 20))
+		if(do_after(user, src, 20))
 			if(src.stat & BROKEN)
 				visible_message("<span class='notice'>[user] clears the broken monitor off of [src].</span>", \
 				"You clear the broken monitor off of [src]")
@@ -215,21 +218,12 @@ Manual Tracking Direction:"}
 			P.ndir = cdir
 
 /obj/machinery/power/solar/control/power_change()
-	if(powered())
-		stat &= ~NOPOWER
-		update_icon()
-	else
-		spawn(rand(0, 15))
-			stat |= NOPOWER
-			update_icon()
+	. = ..()
+	update_icon()
 
 /obj/machinery/power/solar/control/proc/broken()
 	stat |= BROKEN
 	update_icon()
-
-/obj/machinery/power/solar/control/meteorhit()
-	broken()
-	return
 
 /obj/machinery/power/solar/control/ex_act(severity)
 	switch(severity)

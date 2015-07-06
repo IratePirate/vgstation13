@@ -87,10 +87,6 @@
 	else
 		wires = new(src)
 
-	robot_modules_background = new()
-	robot_modules_background.icon_state = "block"
-	robot_modules_background.layer = 19
-
 	ident = rand(1, 999)
 	updatename("Default")
 	updateicon()
@@ -189,6 +185,13 @@
 			mmi.brainmob.locked_to_z = locked_to_z
 		mmi = null
 	..()
+
+/mob/living/silicon/robot/remove_screen_obj_references()
+	..()
+	cells = null //TODO: Move to mob level helper
+	inv1 = null
+	inv2 = null
+	inv3 = null
 
 /proc/getAvailableRobotModules()
 	var/list/modules = list("Standard", "Engineering", "Medical", "Miner", "Janitor", "Service", "Security")
@@ -539,16 +542,11 @@
 	else
 		stat(null, text("No Cell Inserted!"))
 
-
+/*
 /mob/living/silicon/robot/proc/show_cable_lengths()
 	var/obj/item/stack/cable_coil/coil = installed_module(/obj/item/stack/cable_coil)
 	if(coil)
 		stat(null, text("Cable Lengths: [coil.amount]/[coil.max_amount]"))
-
-/mob/living/silicon/robot/proc/show_welder_fuel()
-	var/obj/item/weapon/weldingtool/WT = installed_module(/obj/item/weapon/weldingtool)
-	if(WT)
-		stat(null, text("Welder Fuel: [WT.get_fuel()]/[WT.max_fuel]"))
 
 /mob/living/silicon/robot/proc/show_metal_sheets()
 	var/obj/item/stack/sheet/metal/cyborg/M = installed_module(/obj/item/stack/sheet/metal/cyborg)
@@ -564,7 +562,16 @@
 	var/obj/item/stack/sheet/glass/rglass/G = installed_module(/obj/item/stack/sheet/glass/rglass)
 	if(G)
 		stat(null, text("Reinforced Glass Sheets: [G.amount]/50"))
+*/
+/mob/living/silicon/robot/proc/show_welder_fuel()
+	var/obj/item/weapon/weldingtool/WT = installed_module(/obj/item/weapon/weldingtool)
+	if(WT)
+		stat(null, text("Welder Fuel: [WT.get_fuel()]/[WT.max_fuel]"))
 
+/mob/living/silicon/robot/proc/show_stacks()
+	if(!module) return
+	for(var/obj/item/stack/S in module.modules)
+		stat(null, text("[S.name]: [S.amount]/[S.max_amount]"))
 
 // update the status screen display
 /mob/living/silicon/robot/Stat()
@@ -572,11 +579,14 @@
 	if(statpanel("Status"))
 		show_cell_power()
 		show_jetpack_pressure()
+		/*
 		show_cable_lengths()
-		show_welder_fuel()
 		show_metal_sheets()
 		show_glass_sheets()
-		show_rglass_sheets()
+		show_rglass_sheets()*/
+		show_welder_fuel()
+		show_stacks()
+
 
 /mob/living/silicon/robot/restrained()
 	return 0
@@ -606,21 +616,6 @@
 				adjustBruteLoss(30)
 
 	updatehealth()
-
-
-/mob/living/silicon/robot/meteorhit(obj/O as obj)
-	if(flags & INVULNERABLE)
-		return
-	for(var/mob/M in viewers(src, null))
-		M.show_message(text("<span class='attack'>[src] has been hit by [O]</span>"), 1)
-		//Foreach goto(19)
-	if (health > 0)
-		adjustBruteLoss(30)
-		if ((O.icon_state == "flaming"))
-			adjustFireLoss(40)
-		updatehealth()
-	return
-
 
 /mob/living/silicon/robot/bullet_act(var/obj/item/projectile/Proj)
 	..(Proj)
@@ -782,7 +777,7 @@
 			else if(mmi && wiresexposed && wires.IsAllCut())
 				//Cell is out, wires are exposed, remove MMI, produce damaged chassis, baleet original mob.
 				user << "You jam the crowbar into the robot and begin levering [mmi]."
-				if (do_after(user,3))
+				if (do_after(user, src,3))
 					user << "You damage some parts of the chassis, but eventually manage to rip out [mmi]!"
 					var/obj/item/robot_parts/robot_suit/C = new/obj/item/robot_parts/robot_suit(loc)
 					C.l_leg = new/obj/item/robot_parts/l_leg(C)
@@ -1117,7 +1112,7 @@
 
 	overlays.len = 0
 	if(stat == 0 && cell != null)
-		overlays += image(icon,"eyes-[icon_state]",LIGHTING_LAYER+1)
+		overlays += image(icon,"eyes-[icon_state]", LIGHTING_LAYER + 1)
 
 	if(opened)
 		if(custom_sprite)//Custom borgs also have custom panels, heh

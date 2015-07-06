@@ -133,7 +133,7 @@
 			return
 		if (R.time)
 			usr << "<span class='notice'>Building [R.title] ...</span>"
-			if (!do_after(usr, R.time))
+			if (!do_after(usr, src, R.time))
 				return
 		if (src.amount < R.req_amount*multiplier)
 			return
@@ -146,7 +146,7 @@
 			var/obj/item/stack/new_item = O
 			new_item.amount = R.res_amount*multiplier
 			//new_item.add_to_stacks(usr)
-		src.amount-=R.req_amount*multiplier
+		src.use(R.req_amount*multiplier)
 		if (src.amount<=0)
 			var/oldsrc = src
 			//src = null //dont kill proc after del()
@@ -172,13 +172,31 @@
 
 /obj/item/stack/proc/use(var/amount)
 	ASSERT(isnum(src.amount))
+
 	if(src.amount>=amount)
 		src.amount-=amount
 	else
 		return 0
 	. = 1
-	if (src.amount<=0)
+	if (src.amount<=0) //If the stack is empty after removing the required amount of items!
 		if(usr)
+			if(istype(usr,/mob/living/silicon/robot))
+				var/mob/living/silicon/robot/R=usr
+				if(R.module)
+					R.module.modules -= src
+				if(R.module_active == src) R.module_active = null
+				if(R.module_state_1 == src)
+					R.uneq_module(R.module_state_1)
+					R.module_state_1 = null
+					R.inv1.icon_state = "inv1"
+				else if(R.module_state_2 == src)
+					R.uneq_module(R.module_state_2)
+					R.module_state_2 = null
+					R.inv2.icon_state = "inv2"
+				else if(R.module_state_3 == src)
+					R.uneq_module(R.module_state_3)
+					R.module_state_3 = null
+					R.inv3.icon_state = "inv3"
 			usr.before_take_item(src)
 		spawn returnToPool(src)
 
@@ -186,12 +204,15 @@
 	for (var/obj/item/stack/item in usr.loc)
 		if (src == item)
 			continue
-		if(src.type != item.type)
+		if(!can_stack_with(item))
 			continue
 		if (item.amount>=item.max_amount)
 			continue
 		src.preattack(item, usr,1)
 		break
+
+/obj/item/stack/proc/can_stack_with(obj/item/other_stack)
+	return src.type == other_stack.type
 
 /obj/item/stack/attack_hand(mob/user as mob)
 	if (user.get_inactive_hand() == src)
@@ -211,7 +232,7 @@
 	if (!proximity_flag)
 		return 0
 
-	if (istype(target, src.type) && src.type==target.type)
+	if (can_stack_with(target))
 		var/obj/item/stack/S = target
 		if (amount >= max_amount)
 			user << "\The [src] cannot hold anymore [singular_name]."
@@ -276,7 +297,7 @@
 
 /obj/item/stack/verb_pickup(mob/living/user)
 	var/obj/item/I = user.get_active_hand()
-	if(I && I.type == src.type)
-		src.attackby(I, user)
+	if(I && can_stack_with(I))
+		I.preattack(src, user, 1)
 		return
 	return ..()

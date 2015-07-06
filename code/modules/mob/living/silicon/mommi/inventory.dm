@@ -22,16 +22,24 @@
 	else
 		return locate(W) in src.module.modules
 
+#define MOMMI_LOW_POWER 100
+
 /mob/living/silicon/robot/mommi/put_in_hands(var/obj/item/W)
 	// Fixing NPEs caused by PDAs giving me NULLs to hold :V - N3X
 	// And before you ask, this is how /mob handles NULLs, too.
 	if(!W)
+		return 0
+	if(cell && cell.charge <= MOMMI_LOW_POWER)
+		drop_item(W)
 		return 0
 	// Make sure we're not picking up something that's in our factory-supplied toolbox.
 	//if(is_type_in_list(W,src.module.modules))
 	//if(is_in_modules(W))
 		//src << "<span class='warning'>Picking up something that's built-in to you seems a bit silly.</span>"
 		//return 0
+	if(W.type == /obj/item/device/material_synth)
+		drop_item(W)
+		return 0
 	if(tool_state)
 		//var/obj/item/found = locate(tool_state) in src.module.modules
 		var/obj/item/TS = tool_state
@@ -44,7 +52,7 @@
 			client.screen -= tool_state
 	tool_state = W
 	W.layer = 20
-	contents += W
+	W.forceMove(src)
 
 	// Make crap we pick up active so there's less clicking and carpal. - N3X
 	module_active=tool_state
@@ -74,7 +82,6 @@
 		unequip_sight()
 	else if (W == head_state)
 		unequip_head()
-
 
 
 // Override the default /mob version since we only have one hand slot.
@@ -160,7 +167,7 @@
 		tool_state = null
 		inv_tool.icon_state = "inv1"
 	if(is_in_modules(TS))
-		TS.loc = src.module
+		TS.forceMove(src.module)
 	hud_used.update_robot_modules_display()
 
 /mob/living/silicon/robot/mommi/uneq_all()
@@ -218,7 +225,7 @@
 		tool_state = null
 		inv_tool.icon_state = "inv1"
 		if(is_in_modules(TS))
-			TS.loc = src.module
+			TS.forceMove(src.module)
 		hud_used.update_robot_modules_display()
 
 

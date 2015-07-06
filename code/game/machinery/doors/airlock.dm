@@ -641,7 +641,7 @@ About the new airlock wires panel:
 	if (src.isElectrified())
 		if (istype(mover, /obj/item))
 			var/obj/item/i = mover
-			if (i.m_amt)
+			if (i.materials && (i.materials.getAmount(MAT_IRON) > 0))
 				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 				s.set_up(5, 1, src)
 				s.start()
@@ -997,22 +997,22 @@ About the new airlock wires panel:
 			breaktime += 30 //Welding buys you a little time
 		src.visible_message("<span class='warning'>[user] is battering down [src]!</span>", "<span class='warning'>You begin to batter [src].</span>")
 		playsound(get_turf(src), 'sound/effects/shieldbash.ogg', 50, 1)
-		if(do_after(user, breaktime))
+		if(do_after(user,src, breaktime))
 			//Calculate bolts separtely, in case they dropped in the last 6-9 seconds.
 			if(src.locked == 1)
 				playsound(get_turf(src), 'sound/effects/shieldbash.ogg', 50, 1)
 				src.visible_message("<span class='warning'>[user] is battering the bolts!</span>", "<span class='warning'>You begin to smash the bolts...</span>")
-				if(!do_after(user,190)) //Same amount as drilling an R-wall, longer if it was welded
+				if(!do_after(user, src,190)) //Same amount as drilling an R-wall, longer if it was welded
 					return //If they moved, cancel us out
 				playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
-		src.visible_message("<span class='warning'>[user] broke down the door!</span>", "<span class='warning'>You broke the door!</span>")
-		playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
-		operating = -1
-		var/obj/structure/door_assembly/DA = revert(user,user.dir)
-		DA.anchored = 0
-		DA.state = 0 //Completely smash the door here; reduce it to its lowest state, eject electronics smoked
-		DA.update_state()
-		qdel(src)
+			src.visible_message("<span class='warning'>[user] broke down the door!</span>", "<span class='warning'>You broke the door!</span>")
+			playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
+			operating = -1
+			var/obj/structure/door_assembly/DA = revert(user,user.dir)
+			DA.anchored = 0
+			DA.state = 0 //Completely smash the door here; reduce it to its lowest state, eject electronics smoked
+			DA.update_state()
+			qdel(src)
 		return
 
 	if (istype(I, /obj/item/weapon/weldingtool))
@@ -1053,7 +1053,7 @@ About the new airlock wires panel:
 			playsound(src.loc, 'sound/items/Crowbar.ogg', 100, 1)
 			user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to remove electronics from the airlock assembly.")
 			// TODO: refactor the called proc
-			if (do_after(user, 40))
+			if (do_after(user, src, 40))
 				user << "<span class='notice'>You removed the airlock electronics!</span>"
 				revert(user,null)
 				qdel(src)
@@ -1082,7 +1082,7 @@ About the new airlock wires panel:
 				else
 					spawn(0)	close(1)
 		src.busy = 0
-	else if (istype(I, /obj/item/weapon/card/emag) || istype(I, /obj/item/weapon/melee/energy/blade))
+	else if (istype(I, /obj/item/weapon/card/emag))
 		if (!operating)
 			operating = -1
 			if(density)

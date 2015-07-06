@@ -93,11 +93,10 @@
 
 /obj/machinery/alarm/proc/apply_preset(var/no_cycle_after=0)
 	// Propogate settings.
-	for (var/area/A in areaMaster.related)
-		for (var/obj/machinery/alarm/AA in A)
-			if ( !(AA.stat & (NOPOWER|BROKEN)) && !AA.shorted && AA.preset != src.preset)
-				AA.preset=preset
-				apply_preset(1) // Only this air alarm should send a cycle.
+	for (var/obj/machinery/alarm/AA in areaMaster)
+		if ( !(AA.stat & (NOPOWER|BROKEN)) && !AA.shorted && AA.preset != src.preset)
+			AA.preset=preset
+			apply_preset(1) // Only this air alarm should send a cycle.
 
 	TLV["oxygen"] =			list(16, 19, 135, 140) // Partial pressure, kpa
 	TLV["nitrogen"] =		list(-1, -1,  -1,  -1) // Partial pressure, kpa
@@ -295,11 +294,10 @@
 
 
 /obj/machinery/alarm/proc/elect_master()
-	for (var/area/A in areaMaster.related)
-		for (var/obj/machinery/alarm/AA in A)
-			if (!(AA.stat & (NOPOWER|BROKEN)))
-				areaMaster.master_air_alarm = AA
-				return 1
+	for (var/obj/machinery/alarm/AA in areaMaster)
+		if (!(AA.stat & (NOPOWER|BROKEN)))
+			areaMaster.master_air_alarm = AA
+			return 1
 	return 0
 
 /obj/machinery/alarm/proc/get_danger_level(const/current_value, const/list/danger_levels)
@@ -826,7 +824,7 @@
 			else if(iscrowbar(W))
 				user << "You start prying out the circuit..."
 				playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
-				if(do_after(user,20) && buildstage == 1)
+				if(do_after(user, src, 20) && buildstage == 1)
 					user << "You pry out the circuit!"
 					new /obj/item/weapon/circuitboard/air_alarm(get_turf(user))
 					buildstage = 0
@@ -862,6 +860,10 @@
 		user << "<span class='info'>It is not wired.</span>"
 	if (buildstage < 1)
 		user << "<span class='info'>The circuit is missing.</span>"
+
+/obj/machinery/alarm/change_area(oldarea, newarea)
+	..()
+	name = replacetext(name,oldarea,newarea)
 
 /*
 FIRE ALARM
@@ -947,7 +949,7 @@ FIRE ALARM
 				if(iswirecutter(W))
 					user << "You begin to cut the wiring..."
 					playsound(get_turf(src), 'sound/items/Wirecutter.ogg', 50, 1)
-					if (do_after(user, 50) && buildstage == 2 && wiresexposed)
+					if (do_after(user, src,  50) && buildstage == 2 && wiresexposed)
 						buildstage=1
 						user.visible_message("<span class='attack'>[user] has cut the wiring from \the [src]!</span>", "You have cut the last of the wiring from \the [src].")
 						update_icon()
@@ -967,7 +969,7 @@ FIRE ALARM
 				else if(istype(W, /obj/item/weapon/crowbar))
 					user << "You start prying out the circuit..."
 					playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
-					if (do_after(user, 20) && buildstage == 1)
+					if (do_after(user, src,  20) && buildstage == 1)
 						user << "You pry out the circuit!"
 						new /obj/item/weapon/circuitboard/fire_alarm(get_turf(user))
 						buildstage = 0
@@ -1128,6 +1130,10 @@ FIRE ALARM
 
 	machines.Remove(src)
 	update_icon()
+
+/obj/machinery/firealarm/change_area(oldarea, newarea)
+	..()
+	name = replacetext(name,oldarea,newarea)
 
 /obj/machinery/partyalarm
 	name = "\improper PARTY BUTTON"

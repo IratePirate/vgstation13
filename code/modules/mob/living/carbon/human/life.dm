@@ -369,7 +369,7 @@ var/global/list/organ_damage_overlays = list(
 			emote("cough")
 	if (disabilities & TOURETTES)
 		if ((prob(10) && paralysis <= 1))
-			Stun(10)
+			//Stun(10)
 			switch(rand(1, 3))
 				if(1)
 					emote("twitch")
@@ -1017,7 +1017,8 @@ var/global/list/organ_damage_overlays = list(
 				if(/datum/species/diona)	alien = IS_DIONA
 				if(/datum/species/vox)	alien = IS_VOX
 				if(/datum/species/plasmaman)	alien = IS_PLASMA
-		reagents.metabolize(src,alien)
+		spawn()
+			reagents.metabolize(src,alien)
 
 	var/total_plasmaloss = 0
 	for(var/obj/item/I in src)
@@ -1032,10 +1033,8 @@ var/global/list/organ_damage_overlays = list(
 		var/light_amount = 0 //how much light there is in the place, affects receiving nutrition and healing
 		if(isturf(loc)) //else, there's considered to be no light
 			var/turf/T = loc
-			var/area/A = T.loc
-			if(A)
-				if(A.lighting_use_dynamic)	light_amount = min(10,T.lighting_lumcount) - 5 //hardcapped so it's not abused by having a ton of flashlights
-				else						light_amount =  5
+			light_amount = T.get_lumcount(0.5) * 10
+
 		nutrition += light_amount
 		traumatic_shock -= light_amount
 
@@ -1052,10 +1051,11 @@ var/global/list/organ_damage_overlays = list(
 		var/light_amount = 0
 		if(isturf(loc))
 			var/turf/T = loc
-			var/area/A = T.loc
-			if(A)
-				if(A.lighting_use_dynamic)	light_amount = T.lighting_lumcount
-				else						light_amount =  10
+			if(T.dynamic_lighting)
+				light_amount = T.get_lumcount() * 10
+			else
+				light_amount = 10
+
 		if(light_amount > 2) //if there's enough light, start dying
 			take_overall_damage(1,1)
 		else if (light_amount < 2) //heal in the dark
@@ -1445,27 +1445,6 @@ var/global/list/organ_damage_overlays = list(
 				see_invisible = SEE_INVISIBLE_LIVING
 				seer = 0
 
-		if(istype(wear_mask, /obj/item/clothing/mask/gas/voice/space_ninja))
-			var/obj/item/clothing/mask/gas/voice/space_ninja/O = wear_mask
-			switch(O.mode)
-				if(0)
-					var/target_list[] = list()
-					for(var/mob/living/target in oview(src))
-						if( target.mind&&(target.mind.special_role||issilicon(target)) )//They need to have a mind.
-							target_list += target
-					if(target_list.len)//Everything else is handled by the ninja mask proc.
-						O.assess_targets(target_list, src)
-					if(!druggy)		see_invisible = SEE_INVISIBLE_LIVING
-				if(1)
-					see_in_dark = 5
-					if(!druggy)		see_invisible = SEE_INVISIBLE_LIVING
-				if(2)
-					sight |= SEE_MOBS
-					if(!druggy)		see_invisible = SEE_INVISIBLE_LEVEL_TWO
-				if(3)
-					sight |= SEE_TURFS
-					if(!druggy)		see_invisible = SEE_INVISIBLE_LIVING
-
 		if(glasses)
 			var/obj/item/clothing/glasses/G = glasses
 			if(istype(G))
@@ -1618,6 +1597,12 @@ var/global/list/organ_damage_overlays = list(
 
 		if(machine)
 			if(!machine.check_eye(src))		reset_view(null)
+			if(iscamera(client.eye))
+				var/obj/machinery/camera/C = client.eye
+				sight = 0
+				if(C.isXRay())
+					sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
+
 		else
 			var/isRemoteObserve = 0
 			if((M_REMOTE_VIEW in mutations) && remoteview_target)
@@ -1657,8 +1642,8 @@ var/global/list/organ_damage_overlays = list(
 
 	//0.1% chance of playing a scary sound to someone who's in complete darkness
 	if(isturf(loc) && rand(1,1000) == 1)
-		var/turf/currentTurf = loc
-		if(!currentTurf.lighting_lumcount)
+		var/turf/T = get_turf(src)
+		if(!T.get_lumcount())
 			playsound_local(src,pick(scarySounds),50, 1, -1)
 
 // Separate proc so we can jump out of it when we've succeeded in spreading disease.
@@ -1666,14 +1651,14 @@ var/global/list/organ_damage_overlays = list(
 	if(blood_virus_spreading_disabled)
 		return 0
 	for(var/obj/effect/decal/cleanable/blood/B in get_turf(src))
-		if(B.virus2.len)
+		if(istype(B.virus2,/list) && B.virus2.len)
 			for (var/ID in B.virus2)
 				var/datum/disease2/disease/V = B.virus2[ID]
 				if (infect_virus2(src,V, notes="(Airborne from blood)"))
 					return 1
 
 	for(var/obj/effect/decal/cleanable/mucus/M in get_turf(src))
-		if(M.virus2.len)
+		if(istype(M.virus2,/list) && M.virus2.len)
 			for (var/ID in M.virus2)
 				var/datum/disease2/disease/V = M.virus2[ID]
 				if (infect_virus2(src,V, notes="(Airborne from mucus)"))
@@ -1964,8 +1949,6 @@ var/global/list/organ_damage_overlays = list(
 					holder.icon_state = "hudwizard"
 				if("Death Commando")
 					holder.icon_state = "huddeathsquad"
-				if("Ninja")
-					holder.icon_state = "hudninja"
 				if("Vampire") // TODO: Check this
 					holder.icon_state = "hudvampire"
 

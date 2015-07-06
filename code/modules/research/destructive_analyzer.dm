@@ -34,10 +34,6 @@ Note: Must be placed within 3 tiles of the R&D Console
 	T = Clamp(T, 0, 1)
 	decon_mod = T
 
-/obj/machinery/r_n_d/destructive_analyzer/meteorhit()
-	del(src)
-	return
-
 /obj/machinery/r_n_d/destructive_analyzer/proc/ConvertReqString2List(var/list/source_list)
 	var/list/temp_list = params2list(source_list)
 	for(var/O in temp_list)
@@ -88,6 +84,15 @@ Note: Must be placed within 3 tiles of the R&D Console
 			icon_state = "d_analyzer_l"
 			busy = 0
 	return
+
+/obj/machinery/r_n_d/destructive_analyzer/attack_hand(mob/user as mob)
+	if (..(user))
+		return
+	if (loaded_item && !panel_open && !busy)
+		user << "<span class='notice'>You remove the [loaded_item.name] from the [src].</span>"
+		loaded_item.loc = src.loc
+		loaded_item = null
+		icon_state = "d_analyzer"
 
 //For testing purposes only.
 /*/obj/item/weapon/deconstruction_test

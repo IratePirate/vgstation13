@@ -50,22 +50,19 @@
 			new /obj/effect/decal/remains/human(src)
 
 	else
-		if(!devastated)
-			new /obj/structure/girder(src)
-			if(mineral == "metal")
-				getFromPool(/obj/item/stack/sheet/metal, get_turf(src), 2)
-			else
-				var/M = text2path("/obj/item/stack/sheet/mineral/[mineral]")
-				new M(src)
-				new M(src)
+		if(mineral == "metal")
+			getFromPool(/obj/item/stack/sheet/metal, get_turf(src), 2)
+		else if(mineral == "wood")
+			getFromPool(/obj/item/stack/sheet/wood, get_turf(src), 2)
 		else
-			if(mineral == "metal")
-				getFromPool(/obj/item/stack/sheet/metal, get_turf(src), 3)
-			else
-				var/M = text2path("/obj/item/stack/sheet/mineral/[mineral]")
-				new M(src)
-				new M(src)
-				getFromPool(/obj/item/stack/sheet/metal, get_turf(src))
+			var/M = text2path("/obj/item/stack/sheet/mineral/[mineral]")
+			if(M)
+				getFromPool(M, get_turf(src), 2)
+
+		if(devastated)
+			getFromPool(/obj/item/stack/sheet/metal, get_turf(src))
+		else
+			new /obj/structure/girder(src)
 
 	for(var/obj/O in src.contents) //Eject contents!
 		if(istype(O,/obj/structure/sign/poster))
@@ -80,7 +77,7 @@
 		severity = 1.0
 	switch(severity)
 		if(1.0)
-			src.ChangeTurf(under_turf) //You get NOTHING, you LOSE
+			src.ChangeTurf(get_base_turf(src.z)) //You get NOTHING, you LOSE
 			return
 		if(2.0)
 			if(prob(50))
@@ -93,6 +90,9 @@
 				dismantle_wall(0,1)
 			return
 	return
+
+/turf/simulated/wall/mech_drill_act(severity)
+	return dismantle_wall()
 
 /turf/simulated/wall/blob_act()
 	if(prob(50) || rotting)
@@ -194,7 +194,7 @@
 		if(W.is_hot()) //HEY CAN THIS SET THE THERMITE ON FIRE ?
 			user.visible_message("<span class='warning'>[user] applies \the [W] to the thermite coating \the [src] and waits</span>", \
 			"<span class='warning'>You apply \the [W] to the thermite coating \the [src] and wait</span>")
-			if(do_after(user, 100) && W.is_hot()) //Thermite is hard to light up
+			if(do_after(user, src, 100) && W.is_hot()) //Thermite is hard to light up
 				thermitemelt(user) //There, I just saved you fifty lines of redundant typechecks and awful snowflake coding
 				user.visible_message("<span class='warning'>[user] sets \the [src] ablaze with \the [W]</span>", \
 				"<span class='warning'>You set \the [src] ablaze with \the [W]</span>")
@@ -209,7 +209,7 @@
 			"<span class='warning'>You hear welding noises.</span>")
 			playsound(src, 'sound/items/Welder.ogg', 100, 1)
 
-			if(do_after(user, 100))
+			if(do_after(user, src, 100))
 				if(!istype(src)) return
 				playsound(src, 'sound/items/Welder.ogg', 100, 1)
 				user.visible_message("<span class='warning'>[user] slices through \the [src]'s outer plating.</span>", \
@@ -234,7 +234,7 @@
 		user.visible_message("<span class='warning'>[user] begins [PK.drill_verb] straight into \the [src].</span>", \
 		"<span class='notice'>You begin [PK.drill_verb] straight into \the [src].</span>")
 		playsound(src, PK.drill_sound, 100, 1)
-		if(do_after(user, PK.digspeed * 10))
+		if(do_after(user, src, PK.digspeed * 10))
 			user.visible_message("<span class='notice'>[user]'s [PK] tears though the last of \the [src], leaving nothing but a girder.</span>", \
 			"<span class='notice'>Your [PK] tears though the last of \the [src], leaving nothing but a girder.</span>")
 			dismantle_wall()
@@ -243,31 +243,6 @@
 			if(pdiff)
 				message_admins("[user.real_name] ([formatPlayerPanel(user,user.ckey)]) dismantled with a pdiff of [pdiff] at [formatJumpTo(loc)]!")
 				log_admin("[user.real_name] ([user.ckey]) dismantled with a pdiff of [pdiff] at [loc]!")
-		return
-
-	else if(istype(W, /obj/item/weapon/melee/energy/blade)) //Oh sweet, some snowflakes !
-
-		if(mineral == "diamond") //Nah fuck off I'm made of diamonds
-			return
-
-		var/obj/item/weapon/melee/energy/blade/EB = W
-		EB.spark_system.start()
-		user.visible_message("<span class='notice'>[user] stabs \his [EB] into \the [src] and begin to slice it apart.</span>", \
-		"<span class='notice'>You stab your [EB] into \the [src] and begin to slice it apart.</span>")
-		playsound(src, "sparks", 50, 1)
-
-		if(do_after(user, 70))
-			EB.spark_system.start()
-			playsound(src, "sparks", 50, 1)
-			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
-			user.visible_message("<span class='warning'>[user] slices through \the [src] using \his [EB].</span>", \
-			"<span class='notice'>You slice through \the [src] using your [EB].</span>")
-			dismantle_wall(1)
-
-			var/pdiff = performWallPressureCheck(src.loc)
-			if(pdiff)
-				message_admins("[user.real_name] ([formatPlayerPanel(user,user.ckey)]) sliced up a wall with a pdiff of [pdiff] at [formatJumpTo(loc)]!")
-				log_admin("[user.real_name] ([user.ckey]) sliced up a wall with a pdiff of [pdiff] at [loc]!")
 		return
 
 	else if(istype(W, /obj/item/mounted)) //If we place it, we don't want to have a silly message
@@ -350,15 +325,6 @@
 	F.icon_state = "wall_thermite"
 	visible_message("<span class='danger'>\The [src] spontaenously combusts!.</span>") //!!OH SHIT!!
 	return
-
-/turf/simulated/wall/meteorhit(obj/M as obj)
-	if(prob(15) && !rotting)
-		dismantle_wall()
-	else if(prob(70) && !rotting)
-		ChangeTurf(/turf/simulated/floor/plating)
-	else
-		ReplaceWithLattice()
-	return 0
 
 /turf/simulated/wall/Destroy()
 	for(var/obj/effect/E in src)

@@ -258,7 +258,8 @@ var/list/all_supply_groups = list("Supplies","Clothing","Security","Hospitality"
 	contains = list(/obj/item/seeds/bloodtomatoseed,
 					/obj/item/weapon/storage/pill_bottle/zoom,
 					/obj/item/weapon/storage/pill_bottle/happy,
-					/obj/item/weapon/reagent_containers/food/drinks/bottle/absinthe)
+					/obj/item/weapon/reagent_containers/food/drinks/bottle/absinthe,
+					/obj/item/weapon/storage/bag/wiz_cards/frog)
 
 	name = "Contraband crate"
 	cost = 30
@@ -835,37 +836,46 @@ var/list/all_supply_groups = list("Supplies","Clothing","Security","Hospitality"
 
 /datum/supply_packs/rust_injector
 	contains = list(/obj/machinery/power/rust_fuel_injector)
-	name = "RUST fuel injector"
+	name = "R-UST Mk. 7 fuel injector"
 	cost = 25
 	containertype = /obj/structure/closet/crate/secure/large
-	containername = "RUST injector crate"
+	containername = "R-UST Mk. 7 injector crate"
+	group = "Engineering"
+	access = access_engine
+
+/datum/supply_packs/rust_gyrotron
+	contains = list(/obj/machinery/rust/gyrotron)
+	name = "R-UST Mk. 7 gyrotron"
+	cost = 25
+	containertype = /obj/structure/closet/crate/secure/large
+	containername = "R-UST Mk. 7 gyrotron crate"
 	group = "Engineering"
 	access = access_engine
 
 /datum/supply_packs/rust_compressor
 	contains = list(/obj/item/weapon/module/rust_fuel_compressor)
-	name = "RUST fuel compressor circuitry"
+	name = "R-UST Mk. 7 fuel compressor circuitry"
 	cost = 30
 	containertype = /obj/structure/closet/crate/secure/engisec
-	containername = "RUST fuel compressor circuitry"
+	containername = "R-UST Mk. 7 fuel compressor circuitry"
 	group = "Engineering"
 	access = access_engine
 
 /datum/supply_packs/rust_assembly_port
 	contains = list(/obj/item/weapon/module/rust_fuel_port)
-	name = "RUST fuel assembly port circuitry"
+	name = "R-UST Mk. 7 fuel assembly port circuitry"
 	cost = 20
 	containertype = /obj/structure/closet/crate/secure/engisec
-	containername = "RUST fuel assembly port circuitry"
+	containername = "R-UST Mk. 7 fuel assembly port circuitry"
 	group = "Engineering"
 	access = access_engine
 
 /datum/supply_packs/rust_core
 	contains = list(/obj/machinery/power/rust_core)
-	name = "RUST Tokamak Core"
+	name = "R-UST Mk. 7 Tokamak Core"
 	cost = 50
 	containertype = /obj/structure/closet/crate/secure/large
-	containername = "RUST tokamak crate"
+	containername = "R-UST Mk. 7 tokamak crate"
 	group = "Engineering"
 	access = access_engine
 
@@ -1000,6 +1010,14 @@ var/list/all_supply_groups = list("Supplies","Clothing","Security","Hospitality"
 	containertype = /obj/structure/closet/crate/secure
 	containername = "Bloodbag Crate"
 	access = access_medical
+	group = "Medical"
+
+/datum/supply_packs/wheelchair
+	name = "Wheelchair Crate"
+	contains = list(/obj/structure/stool/bed/chair/vehicle/wheelchair)
+	cost = 40
+	containertype = /obj/structure/closet/crate/medical
+	containername = "Wheelchair Crate"
 	group = "Medical"
 
 //////SCIENCE//////

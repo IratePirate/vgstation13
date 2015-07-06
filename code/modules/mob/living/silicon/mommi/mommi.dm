@@ -17,7 +17,7 @@ They can only use one tool at a time, they can't choose modules, and they have 1
 	var/subtype="keeper"
 	var/obj/screen/inv_tool = null
 
-	static_overlays = list()
+	static_overlays
 	var/static_choice = "static"
 	var/list/static_choices = list("static", "letter", "blank")
 
@@ -41,6 +41,8 @@ They can only use one tool at a time, they can't choose modules, and they have 1
 	return 1
 
 /mob/living/silicon/robot/mommi/generate_static_overlay()
+	if(!istype(static_overlays,/list))
+		static_overlays = list()
 	return
 
 /mob/living/silicon/robot/mommi/examination(atom/A as mob|obj|turf in view()) //It used to be oview(12), but I can't really say why
@@ -163,6 +165,10 @@ They can only use one tool at a time, they can't choose modules, and they have 1
 		nmmi.icon = 'icons/obj/assemblies.dmi'
 		nmmi.invisibility = 0
 	..()
+
+/mob/living/silicon/robot/mommi/remove_screen_obj_references()
+	..()
+	inv_tool = null
 
 /mob/living/silicon/robot/mommi/updatename(var/prefix as text)
 

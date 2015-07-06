@@ -97,8 +97,6 @@ var/list/admin_verbs_fun = list(
 	/client/proc/one_click_antag,
 	/client/proc/antag_madness,
 	/datum/admins/proc/toggle_aliens,
-	/datum/admins/proc/toggle_space_ninja,
-	/client/proc/send_space_ninja,
 	// FUUUUCKED /client/proc/zombie_event, // ZOMBB-B-BIES
 	/client/proc/cmd_admin_add_freeform_ai_law,
 	/client/proc/cmd_admin_add_random_ai_law,
@@ -137,7 +135,6 @@ var/list/admin_verbs_server = list(
 	/datum/admins/proc/adspawn,
 	/datum/admins/proc/adjump,
 	/datum/admins/proc/toggle_aliens,
-	/datum/admins/proc/toggle_space_ninja,
 	/client/proc/toggle_random_events,
 	/client/proc/check_customitem_activity,
 	/client/proc/dump_chemreactions,
@@ -180,7 +177,8 @@ var/list/admin_verbs_debug = list(
 #ifdef PROFILE_MACHINES
 	/client/proc/cmd_admin_dump_macprofile,
 #endif
-	/client/proc/debugNatureMapGenerator
+	/client/proc/debugNatureMapGenerator,
+	/client/proc/callatomproc
 	)
 var/list/admin_verbs_possess = list(
 	/proc/possess,
@@ -225,8 +223,6 @@ var/list/admin_verbs_hideable = list(
 	/client/proc/drop_bomb,
 	/client/proc/cinematic,
 	/datum/admins/proc/toggle_aliens,
-	/datum/admins/proc/toggle_space_ninja,
-	/client/proc/send_space_ninja,
 	/client/proc/cmd_admin_add_freeform_ai_law,
 	/client/proc/cmd_admin_add_random_ai_law,
 	/client/proc/cmd_admin_create_centcom_report,
@@ -389,7 +385,9 @@ var/list/admin_verbs_mod = list(
 	else
 		//ghostize
 		var/mob/body = mob
+		if(body.mind) body.mind.isScrying = 1
 		body.ghostize(1)
+
 		if(body && !body.key)
 			body.key = "@[key]"	//Haaaaaaaack. But the people have spoken. If it breaks; blame adminbus
 		feedback_add_details("admin_verb","O") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -937,8 +935,8 @@ var/list/admin_verbs_mod = list(
 		var/obj/item/weapon/reagent_containers/food/drinks/golden_cup/C = new(get_turf(winner))
 		C.name = name
 		C.desc = desc
-		winner.put_in_hands(C)
-		winner.update_icons()
+		if(iscarbon(winner) && (winner.stat == CONSCIOUS))
+			winner.put_in_hands(C)
 	else
 		winner << "<span class='danger'>You win [name]! [desc]</span>"
 
@@ -946,6 +944,8 @@ var/list/admin_verbs_mod = list(
 
 	if(glob == "No!")
 		winner.client << sound('sound/misc/achievement.ogg')
+		for(var/mob/dead/observer/O in player_list)
+			O << "<span class='danger'>\icon[cup] <b>[winner.name]</b> wins \"<b>[name]</b>\"!</span>"
 	else
 		world  << sound('sound/misc/achievement.ogg')
 		world << "<span class='danger'>\icon[cup] <b>[winner.name]</b> wins \"<b>[name]</b>\"!</span>"
@@ -953,6 +953,8 @@ var/list/admin_verbs_mod = list(
 	winner << "<span class='danger'>Congratulations!</span>"
 
 	achievements += "<b>[winner.key]</b> as <b>[winner.name]</b> won \"<b>[name]</b>\"! \"[desc]\""
+
+	message_admins("[key_name_admin(usr)] has awarded <b>[winner.key]</b>([winner.name]) with the achievement \"<b>[name]</b>\"! \"[desc]\".", 1)
 
 /client/proc/mommi_static()
 	set name = "Toggle MoMMI Static"

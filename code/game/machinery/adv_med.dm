@@ -22,7 +22,9 @@
 	var/mob/living/carbon/occupant
 	var/locked
 
-	l_color = "#00FF00"
+	light_color = LIGHT_COLOR_GREEN
+	light_range_on = 3
+	light_power_on = 2
 
 /obj/machinery/bodyscanner/New()
 	..()
@@ -80,9 +82,9 @@
 /obj/machinery/bodyscanner/power_change()
 	..()
 	if(!(stat & (BROKEN|NOPOWER)) && src.occupant)
-		SetLuminosity(2)
+		set_light(light_range_on, light_power_on)
 	else
-		SetLuminosity(0)
+		set_light(0)
 
 /obj/machinery/bodyscanner/MouseDrop_T(atom/movable/O as mob|obj, mob/user as mob)
 	if(!ismob(O)) //humans only
@@ -130,13 +132,15 @@
 		OO.loc = src.loc
 		//Foreach goto(154)
 	src.add_fingerprint(user)
+	if(!(stat & (BROKEN|NOPOWER)))
+		set_light(light_range_on, light_power_on)
 	return
 
 /obj/machinery/bodyscanner/MouseDrop(over_object, src_location, var/turf/over_location, src_control, over_control, params)
 	if(!ishuman(usr) && !isrobot(usr))
 		return
 	if(!occupant)
-		usr << "<span class='warning'>The sleeper is unoccupied!</span>"
+		usr << "<span class='warning'>The scanner is unoccupied!</span>"
 		return
 	if(isrobot(usr))
 		var/mob/living/silicon/robot/robit = usr
@@ -163,7 +167,7 @@
 /obj/machinery/bodyscanner/relaymove(mob/user as mob)
 	if(user.stat)
 		return
-	src.go_out()
+	go_out()
 	return
 
 /obj/machinery/bodyscanner/verb/eject()
@@ -173,7 +177,7 @@
 
 	if(usr.stat != 0 || (usr.status_flags & FAKEDEATH))
 		return
-	src.go_out()
+	go_out()
 	add_fingerprint(usr)
 	return
 
@@ -200,27 +204,30 @@
 	for(var/obj/O in src)
 		qdel(O)
 	src.add_fingerprint(usr)
+	if(!(stat & (BROKEN|NOPOWER)))
+		set_light(light_range_on, light_power_on)
 	return
 
 /obj/machinery/bodyscanner/proc/go_out(var/exit = loc)
-	if((!(occupant) || locked))
+	if((!(src.occupant) || locked))
 		return
 	for(var/obj/O in src)
 		O.loc = src.loc
 
-	occupant.forceMove(exit)
-	occupant.reset_view()
-	occupant = null
+	src.occupant.forceMove(exit)
+	src.occupant.reset_view()
+	src.occupant = null
 	update_icon()
+	set_light(0)
 	return
 
-/obj/machinery/sleeper/crowbarDestroy(mob/user)
+/obj/machinery/bodyscanner/crowbarDestroy(mob/user)
 	if (occupant)
 		user << "<span class='warning'>You cannot disassemble this [src], it's occupado.</span>"
 		return
 	return..()
 
-/obj/machinery/sleeper/attackby(obj/item/weapon/W as obj, user as mob)
+/obj/machinery/bodyscanner/attackby(obj/item/weapon/W as obj, user as mob)
 	if(iswrench(W) && !occupant)
 		playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
 		if(orient == "RIGHT")
@@ -262,6 +269,8 @@
 		O.loc = src.loc
 	src.add_fingerprint(user)
 	qdel(G)
+	if(!(stat & (BROKEN|NOPOWER)))
+		set_light(light_range_on, light_power_on)
 	return
 
 /obj/machinery/bodyscanner/ex_act(severity)
@@ -319,8 +328,7 @@
 	return
 
 /obj/machinery/body_scanconsole/update_icon()
-	icon_state = "body_scannerconsole[stat & NOPOWER? null : "-p"][orient == "LEFT" ? null : "-r"]"
-
+	icon_state = "body_scannerconsole[stat & NOPOWER ? "-p" : null][orient == "LEFT" ? null : "-r"]"
 
 /obj/machinery/body_scanconsole/ex_act(severity)
 	switch(severity)

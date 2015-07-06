@@ -27,7 +27,7 @@
 	use_power = 0
 	var/release_log = ""
 	var/busy = 0
-	m_amt=10*CC_PER_SHEET_METAL
+	starting_materials = list(MAT_IRON = 10*CC_PER_SHEET_METAL)
 	w_type = RECYK_METAL
 	melt_temperature = MELTPOINT_STEEL
 
@@ -82,6 +82,7 @@
 /obj/machinery/portable_atmospherics/canister/update_icon()
 	if(destroyed)
 		icon_state = "[canister_color]-1"
+		overlays.len = 0
 		return
 
 	if(!status_overlays)
@@ -244,11 +245,6 @@
 		src.health -= round(Proj.damage / 2)
 		healthcheck()
 	..()
-
-/obj/machinery/portable_atmospherics/canister/meteorhit(var/obj/O as obj)
-	src.health = 0
-	healthcheck()
-	return
 
 /obj/machinery/portable_atmospherics/canister/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
 	if(iswelder(W) && src.destroyed)
@@ -470,7 +466,7 @@
 	playsound(get_turf(src), 'sound/items/Welder.ogg', 50, 1)
 	WT.eyecheck(user)
 	busy = 1
-	if(do_after(user, 50))
+	if(do_after(user, src, 50))
 		busy = 0
 		if(!WT.isOn())
 			return 0

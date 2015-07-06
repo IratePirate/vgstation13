@@ -73,13 +73,16 @@ obj/structure/windoor_assembly/Destroy()
 					user.visible_message("[user] dissassembles the windoor assembly.", "You start to dissassemble the windoor assembly.")
 					playsound(get_turf(src), 'sound/items/Welder2.ogg', 50, 1)
 
-					if(do_after(user, 40))
+					if(do_after(user, src, 40))
 						if(!src || !WT.isOn()) return
 						user << "<span class='notice'>You dissasembled the windoor assembly!</span>"
-						new /obj/item/stack/sheet/glass/rglass(get_turf(src), 5)
+						if(plasma)
+							getFromPool(/obj/item/stack/sheet/glass/plasmarglass, get_turf(src), 5)
+						else
+							getFromPool(/obj/item/stack/sheet/glass/rglass, get_turf(src), 5)
 						if(secure)
-							new /obj/item/stack/rods(get_turf(src), 4)
-						del(src)
+							getFromPool(/obj/item/stack/sheet/plasteel, get_turf(src), 2)
+						qdel(src)
 				else
 					user << "<span class='rose'>You need more welding fuel to dissassemble the windoor assembly.</span>"
 					return
@@ -89,7 +92,7 @@ obj/structure/windoor_assembly/Destroy()
 				playsound(get_turf(src), 'sound/items/Ratchet.ogg', 100, 1)
 				user.visible_message("[user] secures the windoor assembly to the floor.", "You start to secure the windoor assembly to the floor.")
 
-				if(do_after(user, 40))
+				if(do_after(user, src, 40))
 					if(!src) return
 					user << "<span class='notice'>You've secured the windoor assembly!</span>"
 					src.anchored = 1
@@ -103,7 +106,7 @@ obj/structure/windoor_assembly/Destroy()
 				playsound(get_turf(src), 'sound/items/Ratchet.ogg', 100, 1)
 				user.visible_message("[user] unsecures the windoor assembly to the floor.", "You start to unsecure the windoor assembly to the floor.")
 
-				if(do_after(user, 40))
+				if(do_after(user, src, 40))
 					if(!src) return
 					user << "<span class='notice'>You've unsecured the windoor assembly!</span>"
 					src.anchored = 0
@@ -120,7 +123,7 @@ obj/structure/windoor_assembly/Destroy()
 					return
 				user << "<span class='notice'>You start to reinforce the windoor with plasteel.</span>"
 
-				if(do_after(user,40))
+				if(do_after(user, src,40))
 					if(!src) return
 
 					P.use(2)
@@ -135,7 +138,7 @@ obj/structure/windoor_assembly/Destroy()
 			else if(istype(W, /obj/item/stack/cable_coil) && anchored)
 				user.visible_message("[user] wires the windoor assembly.", "You start to wire the windoor assembly.")
 
-				if(do_after(user, 40))
+				if(do_after(user, src, 40))
 					if(!src) return
 					var/obj/item/stack/cable_coil/CC = W
 					CC.use(1)
@@ -155,7 +158,7 @@ obj/structure/windoor_assembly/Destroy()
 				playsound(get_turf(src), 'sound/items/Wirecutter.ogg', 100, 1)
 				user.visible_message("[user] cuts the wires from the airlock assembly.", "You start to cut the wires from airlock assembly.")
 
-				if(do_after(user, 40))
+				if(do_after(user, src, 40))
 					if(!src || state != "02") return
 					user << "<span class='notice'>You cut the windoor wires!</span>"
 					new/obj/item/stack/cable_coil(get_turf(user), 1)
@@ -170,7 +173,7 @@ obj/structure/windoor_assembly/Destroy()
 				playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 100, 1)
 				user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
-				if(do_after(user, 40))
+				if(do_after(user, src, 40))
 					if(!src) return
 
 					user.drop_item(W, src)
@@ -185,7 +188,7 @@ obj/structure/windoor_assembly/Destroy()
 				playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 100, 1)
 				user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to uninstall electronics from the airlock assembly.")
 
-				if(do_after(user, 40))
+				if(do_after(user, src, 40))
 					if(!src) return
 					user << "<span class='notice'>You've removed the airlock electronics!</span>"
 					src.name = "Wired Windoor Assembly"
@@ -204,7 +207,7 @@ obj/structure/windoor_assembly/Destroy()
 				playsound(get_turf(src), 'sound/items/Crowbar.ogg', 100, 1)
 				user.visible_message("[user] pries the windoor into the frame.", "You start prying the windoor into the frame.")
 
-				if(do_after(user, 40))
+				if(do_after(user, src, 40))
 
 					if(!src) return
 					var/obj/machinery/door/window/windoor = Create()

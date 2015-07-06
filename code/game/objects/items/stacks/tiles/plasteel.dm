@@ -5,7 +5,7 @@
 	icon_state = "tile"
 	w_class = 3.0
 	force = 6.0
-	m_amt = 937.5
+	starting_materials = list(MAT_IRON = 937.5)
 	w_type = RECYK_METAL
 	melt_temperature = MELTPOINT_STEEL
 	throwforce = 15.0
@@ -15,18 +15,7 @@
 	siemens_coefficient = 1
 	max_amount = 60
 
-/obj/item/stack/tile/use(var/amount)
-	ASSERT(isnum(src.amount))
-	if(src.amount>=amount)
-		src.amount-=amount
-	else
-		return 0
-	. = 1
-	if (src.amount<=0)
-		if(usr)
-			usr.before_take_item(src)
-		spawn
-			returnToPool(src)
+	material = "metal"
 
 /obj/item/stack/tile/plasteel/New(var/loc, var/amount=null)
 	. = ..()
@@ -55,16 +44,11 @@
 */
 
 /obj/item/stack/tile/plasteel/proc/build(turf/S as turf)
-	var/oldturf = S.type
-	var/turf/T
-	if (istype(S,/turf/space) || istype(S,/turf/unsimulated))
-		T = S.ChangeTurf(/turf/simulated/floor/plating/airless)
+
+	if(istype(S,/turf/space) || istype(S,/turf/unsimulated))
+		S.ChangeTurf(/turf/simulated/floor/plating/airless)
 	else
-		T = S.ChangeTurf(/turf/simulated/floor/plating)
-	if(T)
-		T.under_turf = oldturf
-//	var/turf/simulated/floor/W = S.ReplaceWithFloor()
-//	W.make_plating()
+		S.ChangeTurf(/turf/simulated/floor/plating)
 	return
 
 /obj/item/stack/tile/plasteel/attackby(obj/item/W as obj, mob/user as mob)

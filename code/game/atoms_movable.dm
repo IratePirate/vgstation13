@@ -1,7 +1,6 @@
 /atom/movable
 	// Recycling shit
-	var/m_amt = 0	         // metal (CC)
-	var/g_amt = 0	         // glass (CC)
+
 	var/w_type = NOT_RECYCLABLE  // Waste category for sorters. See setup.dm
 
 	layer = 3
@@ -31,10 +30,6 @@
 	areaMaster = get_area_master(src)
 
 /atom/movable/Destroy()
-	if(opacity)
-		if(isturf(loc))
-			if(loc:lighting_lumcount > 1)
-				UpdateAffectingLights()
 	gcDestroyed = "Bye, world!"
 	tag = null
 	loc = null
@@ -86,6 +81,16 @@
 /atom/movable/Move(newLoc,Dir=0,step_x=0,step_y=0)
 	if(!loc || !newLoc)
 		return 0
+	//set up glide sizes before the move
+	//ensure this is a step, not a jump
+
+	//. = ..(NewLoc,Dir,step_x,step_y)
+	var/move_delay = 5 * world.tick_lag
+	if(ismob(src))
+		var/mob/M = src
+		if(M.client)
+			move_delay = (3+(M.client.move_delayer.next_allowed - world.time))*world.tick_lag
+	glide_size = Ceiling(32 / move_delay * world.tick_lag) - 1 //We always split up movements into cardinals for issues with diagonal movements.
 	var/atom/oldloc = loc
 	if((bound_height != 32 || bound_width != 32) && (loc == newLoc))
 		return ..()
@@ -128,6 +133,12 @@
 	return .
 
 /atom/movable/proc/recycle(var/datum/materials/rec)
+	if(materials)
+		for(var/matid in materials.storage)
+			var/datum/material/material = materials.getMaterial(matid)
+			rec.addAmount(matid, materials.storage[matid] / material.cc_per_sheet) //the recycler's material is read as 1 = 1 sheet
+			materials.storage[matid] = 0
+		return 1
 	return 0
 
 // Previously known as HasEntered()
@@ -291,6 +302,9 @@
 	src.throwing = 0
 	if(isobj(src)) src.throw_impact(get_turf(src), throw_speed, user)
 
+/atom/movable/change_area(oldarea, newarea)
+	areaMaster = newarea
+	..()
 
 //Overlays
 /atom/movable/overlay
@@ -320,7 +334,7 @@
 // SINGULOTH PULL REFACTOR
 /////////////////////////////
 /atom/movable/proc/canSingulothPull(var/obj/machinery/singularity/singulo)
-	return 1
+	return singuloCanEat()
 
 /atom/movable/proc/say_understands(var/mob/other)
 	return 1

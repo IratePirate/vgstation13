@@ -204,7 +204,7 @@
 	if(stat & (NOPOWER|BROKEN))
 		return
 	//log_admin("DEBUG \[[world.timeofday]\]: /obj/machinery/atmospherics/unary/vent_pump/receive_signal([signal.debug_print()])")
-	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
+	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command") || (signal.data["type"] && signal.data["type"] != "vent"))
 		return 0
 
 	var/handled=0
@@ -216,59 +216,43 @@
 	if("stabilize" in signal.data)
 		pressure_checks |= 1
 		pump_direction = 1
-		handled=1
+		handled = 1
 
 	if("power" in signal.data)
 		on = text2num(signal.data["power"])
-		handled=1
+		handled = 1
 
 	if("power_toggle" in signal.data)
 		on = !on
-		handled=1
+		handled = 1
 
 	if("checks" in signal.data)
 		pressure_checks = text2num(signal.data["checks"])
-		handled=1
+		handled = 1
 
 	if("checks_toggle" in signal.data)
 		pressure_checks = (pressure_checks?0:3)
-		handled=1
+		handled = 1
 
 	if("direction" in signal.data)
 		pump_direction = text2num(signal.data["direction"])
-		handled=1
+		handled = 1
 
 	if("set_internal_pressure" in signal.data)
-		internal_pressure_bound = Clamp(
-			text2num(signal.data["set_internal_pressure"]),
-			0,
-			ONE_ATMOSPHERE*50
-		)
-		handled=1
+		internal_pressure_bound = Clamp(text2num(signal.data["set_internal_pressure"]), 0, ONE_ATMOSPHERE * 50)
+		handled =1
 
 	if("set_external_pressure" in signal.data)
-		external_pressure_bound = Clamp(
-			text2num(signal.data["set_external_pressure"]),
-			0,
-			ONE_ATMOSPHERE*50
-		)
-		handled=1
+		external_pressure_bound = Clamp(text2num(signal.data["set_external_pressure"]), 0, ONE_ATMOSPHERE * 50)
+		handled = 1
 
 	if("adjust_internal_pressure" in signal.data)
-		internal_pressure_bound = Clamp(
-			internal_pressure_bound + text2num(signal.data["adjust_internal_pressure"]),
-			0,
-			ONE_ATMOSPHERE*50
-		)
-		handled=1
+		internal_pressure_bound = Clamp(internal_pressure_bound + text2num(signal.data["adjust_internal_pressure"]), 0, ONE_ATMOSPHERE * 50)
+		handled = 1
 
 	if("adjust_external_pressure" in signal.data)
-		external_pressure_bound = Clamp(
-			external_pressure_bound + text2num(signal.data["adjust_external_pressure"]),
-			0,
-			ONE_ATMOSPHERE*50
-		)
-		handled=1
+		external_pressure_bound = Clamp(external_pressure_bound + text2num(signal.data["adjust_external_pressure"]), 0, ONE_ATMOSPHERE * 50)
+		handled = 1
 
 	if("init" in signal.data)
 		name = signal.data["init"]
@@ -331,7 +315,7 @@
 		var/obj/item/weapon/weldingtool/WT = W
 		if (WT.remove_fuel(0,user))
 			user << "<span class='notice'>Now welding the vent.</span>"
-			if(do_after(user, 20))
+			if(do_after(user, src, 20))
 				if(!src || !WT.isOn()) return
 				playsound(get_turf(src), 'sound/items/Welder2.ogg', 50, 1)
 				if(!welded)
@@ -374,3 +358,11 @@
 		return MT_UPDATE
 
 	return ..()
+
+/obj/machinery/atmospherics/unary/vent_pump/change_area(oldarea, newarea)
+	areaMaster.air_vent_info.Remove(id_tag)
+	areaMaster.air_vent_names.Remove(id_tag)
+	..()
+	name = replacetext(name,newarea,oldarea)
+	area_uid = areaMaster.uid
+	broadcast_status()

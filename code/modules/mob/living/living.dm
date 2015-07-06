@@ -1,7 +1,7 @@
 /mob/living/New()
 	. = ..()
 	generate_static_overlay()
-	if(static_overlays.len)
+	if(istype(static_overlays,/list) && static_overlays.len)
 		for(var/mob/living/silicon/robot/mommi/MoMMI in player_list)
 			if(MoMMI.can_see_static())
 				if(MoMMI.static_choice in static_overlays)
@@ -17,7 +17,8 @@
 			MoMMI.static_overlays.Remove(I) //no checks, since it's either there or its not
 			MoMMI.client.images.Remove(I)
 			del(I)
-	static_overlays.len = 0
+	if(static_overlays)
+		static_overlays = null
 	. = ..()
 
 /mob/living/Life()
@@ -684,7 +685,7 @@
 				C.visible_message("<span class='warning'>[C] attempts to unbuckle themself!</span>",
 								  "<span class='warning'>You attempt to unbuckle yourself. (This will take around two minutes and you need to stand still).</span>")
 				spawn(0)
-					if(do_after(usr, 1200))
+					if(do_after(usr, usr, 1200))
 						if(!C.buckled)
 							return
 						C.visible_message("<span class='danger'>[C] manages to unbuckle themself!</span>",
@@ -717,7 +718,7 @@
 		L.visible_message("<span class='danger'>The [C] begins to shake violenty!</span>",
 						  "<span class='warning'>You lean on the back of [C] and start pushing the door open (this will take about [breakout_time] minutes).</span>")
 		spawn(0)
-			if(do_after(usr,breakout_time * 60 * 10)) //minutes * 60seconds * 10deciseconds
+			if(do_after(usr,src,breakout_time * 60 * 10)) //minutes * 60seconds * 10deciseconds
 				if(!C || !L || L.stat != CONSCIOUS || L.loc != C || C.opened) //closet/user destroyed OR user dead/unconcious OR user no longer in closet OR closet opened
 					return
 
@@ -776,7 +777,7 @@
 				CM.visible_message("<span class='danger'>[CM] is trying to break the handcuffs!</span>",
 								   "<span class='warning'>You attempt to break your handcuffs. (This will take around five seconds and you will need to stand still).</span>")
 				spawn(0)
-					if(do_after(CM, 50))
+					if(do_after(CM, CM, 50))
 						if(!CM.handcuffed || CM.buckled)
 							return
 						CM.visible_message("<span class='danger'>[CM] manages to break the handcuffs!</span>",
@@ -797,7 +798,7 @@
 				CM.visible_message("<span class='danger'>[CM] attempts to remove [HC]!</span>",
 								   "<span class='warning'>You attempt to remove [HC]. (This will take around [(breakouttime)/600] minutes and you need to stand still).</span>")
 				spawn(0)
-					if(do_after(CM, breakouttime))
+					if(do_after(CM,CM, breakouttime))
 						if(!CM.handcuffed || CM.buckled)
 							return // time leniency for lag which also might make this whole thing pointless but the server
 						CM.visible_message("<span class='danger'>[CM] manages to remove [HC]!</span>",
@@ -814,7 +815,7 @@
 				CM.visible_message("<span class='danger'>[CM] is trying to break the legcuffs!</span>",
 								   "<span class='warning'>You attempt to break your legcuffs. (This will take around five seconds and you need to stand still).</span>")
 				spawn(0)
-					if(do_after(CM, 50))
+					if(do_after(CM, CM, 50))
 						if(!CM.legcuffed || CM.buckled)
 							return
 						CM.visible_message("<span class='danger'>[CM] manages to break the legcuffs!</span>",
@@ -833,7 +834,7 @@
 				CM.visible_message("<span class='danger'>[CM] attempts to remove [HC]!</span>",
 								   "<span class='warning'>You attempt to remove [HC]. (This will take around [(breakouttime)/600] minutes and you need to stand still).</span>")
 				spawn(0)
-					if(do_after(CM, breakouttime))
+					if(do_after(CM, CM, breakouttime))
 						if(!CM.legcuffed || CM.buckled)
 							return // time leniency for lag which also might make this whole thing pointless but the server
 						CM.visible_message("<span class='danger'>[CM] manages to remove [HC]!</span>",
@@ -857,13 +858,15 @@
 	return 1
 
 /mob/living/singularity_act()
-	var/gain = 20
-	investigation_log(I_SINGULO,"has been consumed by a singularity")
-	gib()
-	return(gain)
+	if(!(src.flags & INVULNERABLE))
+		var/gain = 20
+		investigation_log(I_SINGULO,"has been consumed by a singularity")
+		gib()
+		return(gain)
 
 /mob/living/singularity_pull(S)
-	step_towards(src, S)
+	if(!(src.flags & INVULNERABLE))
+		step_towards(src, S)
 
 /mob/living/proc/InCritical()
 	return (src.health < 0 && src.health > -95.0 && stat == UNCONSCIOUS)
@@ -890,6 +893,8 @@
 
 
 /mob/living/proc/generate_static_overlay()
+	if(!istype(static_overlays,/list))
+		static_overlays = list()
 	static_overlays.Add(list("static", "blank", "letter"))
 	var/image/static_overlay = image(getStaticIcon(new/icon(src.icon, src.icon_state)), loc = src)
 	static_overlay.override = 1

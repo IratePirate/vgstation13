@@ -18,7 +18,7 @@
 			if(istype(W, /obj/item/weapon/crowbar))
 				var/obj/machinery/constructable_frame/machine_frame/MF = new /obj/machinery/constructable_frame/machine_frame(T)
 				MF.state = 1
-				MF.build_state = 2
+				MF.set_build_state(2)
 				new /obj/item/stack/sheet/glass/glass(T)
 				del(src)
 				playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
@@ -135,13 +135,6 @@
 		getFromPool(/obj/item/weapon/shard, loc)
 		if(occupant) dump()
 		del(src)
-
-
-/obj/structure/displaycase/meteorhit(obj/O as obj)
-		getFromPool(/obj/item/weapon/shard, loc)
-		if(occupant) dump()
-		del(src)
-
 
 /obj/structure/displaycase/proc/healthcheck()
 	if (src.health <= 0)

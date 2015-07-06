@@ -22,11 +22,12 @@
 	density = 1
 	nick = "honkin' ride" //For fucks sake, well then
 	flags = OPENCONTAINER
+
+	max_health = 100 //Bananium sheets increases maximum health by 20
 	var/activated = 0 //Honk to activate, it stays active while you sit in it, and will deactivate when you unbuckle
 	var/mode = MODE_NORMAL
 					//Modes 1 and 2 consume extra fuel
 					//Use bananium coins to cycle between modes
-	var/max_health = 100 //Bananium sheets increases maximum health by 20
 	var/max_health_top = 1000 //That's 45 sheets of Bananium, as much as four tens and five, and that's terrible
 	var/printing_text = "nothing"	//What is printed on the ground in mode 1
 	var/printing_pos				//'Rune' draws runes and 'graffiti' draws graffiti, other draws text
@@ -194,7 +195,7 @@
 	else if(istype(W, /obj/item/toy/waterflower)) //Water flower
 		user << "<span class='notice'>You plug [W] into [src]!</span>"//Using it on the clown cart will transfer anything in the fuel tank (other than banana juice) into the flower
 		if(max_health >= HEALTH_FOR_FLOWER_RECHARGE)
-			if(do_after(user, 5))
+			if(do_after(user, src, 5))
 				W.reagents.remove_any(10)
 				var/tmp/bananas = reagents.get_reagent_amount("banana")
 				reagents.remove_reagent("banana", bananas) //removing banan so it doesn't get transferred into the water flower

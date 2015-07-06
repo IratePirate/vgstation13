@@ -91,7 +91,7 @@
 				"<span class='notice'>[user] starts to fix part of the microwave.</span>", \
 				"<span class='notice'>You start to fix part of the microwave.</span>" \
 			)
-			if (do_after(user,20))
+			if (do_after(user, src,20))
 				user.visible_message( \
 					"<span class='notice'>[user] fixes part of the microwave.</span>", \
 					"<span class='notice'>You have fixed part of the microwave.</span>" \
@@ -102,7 +102,7 @@
 				"<span class='notice'>[user] starts to fix part of the microwave.</span>", \
 				"<span class='notice'>You start to fix part of the microwave.</span>" \
 			)
-			if (do_after(user,20))
+			if (do_after(user, src,20))
 				user.visible_message( \
 					"<span class='notice'>[user] fixes the microwave.</span>", \
 					"<span class='notice'>You have fixed the microwave.</span>" \
@@ -122,7 +122,7 @@
 					"<span class='notice'>[user] starts to clean the microwave.</span>", \
 					"<span class='notice'>You start to clean the microwave.</span>" \
 				)
-				if (do_after(user,20))
+				if (do_after(user, src,20))
 					R.reagents.remove_reagent("cleaner",5)
 					user.visible_message( \
 						"<span class='notice'>[user]  has cleaned  the microwave.</span>", \
@@ -225,22 +225,22 @@
 		var/list/items_measures_p = new
 		for (var/obj/O in contents)
 			var/display_name = O.name
-			if (istype(O,/obj/item/weapon/reagent_containers/food/snacks/egg))
+			if (istype(O,/obj/item/weapon/reagent_containers/food/snacks/meat)) //any meat
+				items_measures[display_name] = "slab of meat"
+				items_measures_p[display_name] = "slabs of meat"
+			if (istype(O,/obj/item/weapon/reagent_containers/food/snacks/meat/carpmeat))
+				items_measures[display_name] = "fillet of meat"
+				items_measures_p[display_name] = "fillets of meat"
+			if (istype(O,/obj/item/weapon/reagent_containers/food/snacks/meat/egg))
 				items_measures[display_name] = "egg"
 				items_measures_p[display_name] = "eggs"
 			if (istype(O,/obj/item/weapon/reagent_containers/food/snacks/tofu))
 				items_measures[display_name] = "tofu chunk"
 				items_measures_p[display_name] = "tofu chunks"
-			if (istype(O,/obj/item/weapon/reagent_containers/food/snacks/meat)) //any meat
-				items_measures[display_name] = "slab of meat"
-				items_measures_p[display_name] = "slabs of meat"
 			if (istype(O,/obj/item/weapon/reagent_containers/food/snacks/donkpocket))
 				display_name = "Turnovers"
 				items_measures[display_name] = "turnover"
 				items_measures_p[display_name] = "turnovers"
-			if (istype(O,/obj/item/weapon/reagent_containers/food/snacks/carpmeat))
-				items_measures[display_name] = "fillet of meat"
-				items_measures_p[display_name] = "fillets of meat"
 			items_counts[display_name]++
 		for (var/O in items_counts)
 			var/N = items_counts[O]

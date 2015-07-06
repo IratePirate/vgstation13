@@ -54,6 +54,9 @@
 	..(new_loc, "Muton")
 
 /mob/living/carbon/human/generate_static_overlay()
+	if(!istype(static_overlays,/list))
+		static_overlays = list()
+	static_overlays.Add(list("static", "blank", "letter"))
 	var/image/static_overlay = image(icon('icons/effects/effects.dmi', "static"), loc = src)
 	static_overlay.override = 1
 	static_overlays["static"] = static_overlay
@@ -172,8 +175,6 @@
 			if(mind.changeling)
 				stat("Chemical Storage", mind.changeling.chem_charges)
 				stat("Genetic Damage Time", mind.changeling.geneticdamage)
-		if (istype(wear_suit, /obj/item/clothing/suit/space/space_ninja)&&wear_suit:s_initialized)
-			stat("Energy Charge", round(wear_suit:cell:charge/100))
 
 		if(istype(loc, /obj/spacepod)) // Spacdpods!
 			var/obj/spacepod/S = loc
@@ -278,25 +279,6 @@
 	var/datum/organ/external/affecting = get_organ(ran_zone(dam_zone))
 	apply_damage(rand(30,40), BRUTE, affecting, run_armor_check(affecting, "melee"))
 	return
-
-/mob/living/carbon/human/meteorhit(O as obj)
-	if(flags & INVULNERABLE)
-		return
-	for(var/mob/M in viewers(src, null))
-		if ((M.client && !( M.blinded )))
-			M.show_message("<span class='warning'>[src] has been hit by [O]</span>", 1)
-	if (health > 0)
-		var/datum/organ/external/affecting = get_organ(pick("chest", "chest", "chest", "head"))
-		if(!affecting)	return
-		if (istype(O, /obj/effect/immovablerod))
-			if(affecting.take_damage(101, 0))
-				UpdateDamageIcon()
-		else
-			if(affecting.take_damage((istype(O, /obj/effect/meteor/small) ? 10 : 25), 30))
-				UpdateDamageIcon()
-		updatehealth()
-	return
-
 
 /mob/living/carbon/human/attack_animal(mob/living/simple_animal/M as mob)
 	if(M.melee_damage_upper == 0)
@@ -622,15 +604,6 @@
 	else if(istype(id))	. = id.registered_name
 	if(!.) 				. = if_no_id	//to prevent null-names making the mob unclickable
 	return
-
-//gets ID card object from special clothes slot or null.
-/mob/living/carbon/human/proc/get_idcard()
-	var/obj/item/weapon/card/id/id = wear_id
-	var/obj/item/device/pda/pda = wear_id
-	if (istype(pda) && pda.id)
-		id = pda.id
-	if (istype(id))
-		return id
 
 //Removed the horrible safety parameter. It was only being used by ninja code anyways.
 //Now checks siemens_coefficient of the affected area by default
@@ -1394,7 +1367,7 @@
 
 	if(istype(U,/mob/living/carbon/human/)) U.bloody_hands(S)
 
-	if(!do_after(U, 80))
+	if(!do_after(U, src, 80))
 		return
 
 	if(!selection || !affected || !S || !U)
@@ -1650,7 +1623,7 @@
 		return threatcount
 
 	//Check for ID
-	var/obj/item/weapon/card/id/idcard = get_idcard()
+	var/obj/item/weapon/card/id/idcard = get_id_card()
 	if(judgebot.idcheck && !idcard)
 		threatcount += 4
 
@@ -1708,6 +1681,8 @@
 	return 0
 
 /mob/living/carbon/human/singularity_act()
+	if(src.flags & INVULNERABLE)
+		return 0
 	var/gain = 20
 	if(mind)
 		if((mind.assigned_role == "Station Engineer") || (mind.assigned_role == "Chief Engineer"))
@@ -1719,6 +1694,8 @@
 	return gain
 
 /mob/living/carbon/human/singularity_pull(S, current_size)
+	if(src.flags & INVULNERABLE)
+		return 0
 	if(current_size >= STAGE_THREE)
 		var/list/handlist = list(l_hand, r_hand)
 		for(var/obj/item/hand in handlist)

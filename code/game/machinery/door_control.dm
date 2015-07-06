@@ -126,6 +126,10 @@
 	else
 		icon_state = "doorctrl0"
 
+/obj/machinery/door_control/change_area(oldarea, newarea)
+	..()
+	name = replacetext(name,oldarea,newarea)
+
 /obj/machinery/driver_button/attack_ai(mob/user as mob)
 	src.add_hiddenprint(user)
 	return src.attack_hand(user)
@@ -143,7 +147,7 @@
 
 	if(istype(W, /obj/item/weapon/wrench))
 		playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
-		if(do_after(user, 30))
+		if(do_after(user, src, 30))
 			user << "<span class='notice'>You detach \the [src] from the wall.</span>"
 			new/obj/item/mounted/frame/driver_button(get_turf(src))
 			del(src)
@@ -198,3 +202,7 @@
 
 	icon_state = "launcherbtt"
 	active = 0
+
+/obj/machinery/driver_button/change_area(oldarea, newarea)
+	..()
+	name = replacetext(name,oldarea,newarea)

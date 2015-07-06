@@ -11,7 +11,7 @@
 	w_class = 2.0
 	throw_speed = 2
 	throw_range = 5
-	m_amt = 500
+	starting_materials = list(MAT_IRON = 500)
 	w_type = RECYK_METAL
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "materials=1"
@@ -168,7 +168,7 @@
 			playsound(loc, 'sound/weapons/handcuffs.ogg', 30, 1, -2)
 			C.visible_message("<span class='danger'>[user] is trying to put handcuffs on [C]!</span>", \
 								"<span class='userdanger'>[user] is trying to put handcuffs on [C]!</span>")
-			if(do_after(user, 30))
+			if(do_after(user, C, 30))
 				if(!C || C.handcuffed)
 					return
 				if(user_loc == user.loc && C_loc == C.loc)

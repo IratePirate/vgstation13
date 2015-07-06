@@ -217,7 +217,7 @@
 /obj/machinery/atmospherics/unary/vent_scrubber/receive_signal(datum/signal/signal)
 	if(stat & (NOPOWER|BROKEN))
 		return
-	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
+	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command") || (signal.data["type"] && signal.data["type"] != "scrubber"))
 		return 0
 
 	if(signal.data["power"] != null)
@@ -304,7 +304,7 @@
 		var/obj/item/weapon/weldingtool/WT = W
 		if (WT.remove_fuel(0,user))
 			user << "<span class='notice'>Now welding the scrubber.</span>"
-			if(do_after(user, 20))
+			if(do_after(user, src, 20))
 				if(!src || !WT.isOn()) return
 				playsound(get_turf(src), 'sound/items/Welder2.ogg', 50, 1)
 				if(!welded)
@@ -356,3 +356,11 @@
 		return MT_UPDATE
 
 	return ..()
+
+/obj/machinery/atmospherics/unary/vent_scrubber/change_area(oldarea, newarea)
+	areaMaster.air_scrub_info.Remove(id_tag)
+	areaMaster.air_scrub_names.Remove(id_tag)
+	..()
+	name = replacetext(name,newarea,oldarea)
+	area_uid = areaMaster.uid
+	broadcast_status()

@@ -286,6 +286,11 @@
 			return 1
 	return 0
 
+/obj/structure/table/Bumped(atom/AM)
+	if (istype(AM, /obj/structure/stool/bed/chair/vehicle/wizmobile))
+		destroy()
+	return ..()
+
 //checks if projectile 'P' from turf 'from' can hit whatever is behind the table. Returns 1 if it can, 0 if bullet stops.
 /obj/structure/table/proc/check_cover(obj/item/projectile/P, turf/from)
 	var/turf/cover = flipped ? get_turf(src) : get_step(loc, get_dir(from, loc))
@@ -361,19 +366,9 @@
 		//if(!params_list.len || text2num(params_list["icon-y"]) < 8) //8 above the bottom of the icon
 		user << "<span class='notice'>Now disassembling table</span>"
 		playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
-		if(do_after(user,50))
+		if(do_after(user, src,50))
 			destroy()
 		return
-
-	if(istype(W, /obj/item/weapon/melee/energy/blade))
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, src.loc)
-		spark_system.start()
-		playsound(get_turf(src), 'sound/weapons/blade1.ogg', 50, 1)
-		playsound(get_turf(src), "sparks", 50, 1)
-		for(var/mob/O in viewers(user, 4))
-			O.show_message("<span class='notice'>The [src] was sliced apart by [user]!</span>", 1, "<span class='warning'>You hear [src] coming apart.</span>", 2)
-		destroy()
 
 	if(user.drop_item(W, src.loc))
 		if(W.loc == src.loc && params_list.len)
@@ -555,14 +550,14 @@
 			if(src.status == 2)
 				user << "<span class='notice'>Now weakening the reinforced table</span>"
 				playsound(get_turf(src), 'sound/items/Welder.ogg', 50, 1)
-				if (do_after(user, 50))
+				if (do_after(user, src, 50))
 					if(!src || !WT.isOn()) return
 					user << "<span class='notice'>Table weakened</span>"
 					src.status = 1
 			else
 				user << "<span class='notice'>Now strengthening the reinforced table</span>"
 				playsound(get_turf(src), 'sound/items/Welder.ogg', 50, 1)
-				if (do_after(user, 50))
+				if (do_after(user, src, 50))
 					if(!src || !WT.isOn()) return
 					user << "<span class='notice'>Table strengthened</span>"
 					src.status = 2
@@ -615,6 +610,11 @@
 	else
 		return 0
 
+/obj/structure/rack/Bumped(atom/AM)
+	if (istype(AM, /obj/structure/stool/bed/chair/vehicle/wizmobile))
+		destroy()
+	return ..()
+
 /obj/structure/rack/MouseDrop_T(obj/O as obj, mob/user as mob)
 	if ((!( istype(O, /obj/item/weapon) ) || user.get_active_hand() != O))
 		return
@@ -631,10 +631,6 @@
 		return
 	user.drop_item(W, src.loc)
 	return 1
-
-/obj/structure/rack/meteorhit(obj/O as obj)
-	del(src)
-
 
 /obj/structure/table/attack_hand(mob/user)
 	if(M_HULK in user.mutations)

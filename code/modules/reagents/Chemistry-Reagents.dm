@@ -705,7 +705,7 @@
 	src = null
 	// Vamps react to this like acid
 	if(ishuman(M))
-		if(M.mind.vampire)
+		if(M.mind && M.mind.vampire)
 			var/mob/living/carbon/human/H=M
 			if(!(VAMP_UNDYING in M.mind.vampire.powers))
 				if(method == TOUCH)
@@ -3504,7 +3504,7 @@
 	color = "#100800" // rgb: 16, 8, 0
 	adj_sleepy = -2
 
-/datum/reagent/drink/cold/nuke_cola/on_mob_life(var/mob/living/M as mob)
+/datum/reagent/drink/cold/nuka_cola/on_mob_life(var/mob/living/M as mob)
 
 	if(!holder) return
 	M.Jitter(20)
@@ -4608,6 +4608,24 @@ var/global/list/chifir_doesnt_remove=list(
 	id = "gyro"
 	description = "Nyo ho ho~"
 
+/datum/reagent/drink/tea/gyro/on_mob_life(var/mob/living/M as mob)
+	if(!holder) return
+	if(!M) M = holder.my_atom
+	if(prob(30))
+		M.emote("spin")
+	var/prev_dir = M.dir
+	M.confused++
+	for(var/i in list(1,4,2,8,1,4,2,8,1,4,2,8,1,4,2,8))
+		M.dir = i
+		sleep(1)
+	M.dir = prev_dir
+	if(istype(M, /mob/living/carbon/human))
+		var/mob/living/carbon/human/H = M
+		for(var/zone in list("l_leg","r_leg","l_foot","r_foot"))
+			H.HealDamage(zone, rand(1, 3), rand(1, 3))//Thank you Gyro...
+	..()
+	return
+
 /datum/reagent/drink/tea/dantea
 	name = "Discount Dan's Green Flavor Tea"
 	id = "dantea"
@@ -4722,3 +4740,20 @@ var/global/list/tonio_doesnt_remove=list(
 	name = "Recharger"
 	id = "etank"
 	description = "Regardless of how energized this coffee makes you feel, jumping against doors will still never be a viable way to open them."
+
+
+/datum/reagent/drink/cold/quantum
+	name = "Nuka Cola Quantum"
+	id = "quantum"
+	description = "Take the leap... enjoy a Quantum!"
+	color = "#100800" // rgb: 16, 8, 0
+	adj_sleepy = -2
+
+
+/datum/reagent/drink/cold/quantum/on_mob_life(var/mob/living/M as mob)
+
+	if(!holder) return
+	if(!M) M = holder.my_atom
+	M.apply_effect(2,IRRADIATE,0)
+	..()
+	return

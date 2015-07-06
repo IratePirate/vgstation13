@@ -37,7 +37,7 @@
 	siemens_coefficient = 1
 	slot_flags = SLOT_BELT
 	item_state = "syringe_kit"
-	m_amt = 50000
+	starting_materials = list(MAT_IRON = 50000)
 	w_type = RECYK_METAL
 	throwforce = 2
 	w_class = 1.0
@@ -127,7 +127,7 @@
 		trying_to_load = min(AS.max_ammo - AS.stored_ammo.len, bullets_from.stored_ammo.len) //either we fill to max, or we fill as much as possible
 	if(usr && trying_to_load)
 		usr << "You begin loading \the [target]..."
-	if(trying_to_load && do_after(usr, trying_to_load * 5)) //bit of a wait, but that's why it's SLOW
+	if(trying_to_load && do_after(usr,target,trying_to_load * 5)) //bit of a wait, but that's why it's SLOW
 		return 1
 	else if(trying_to_load)
 		var/dropped_bullets = 0

@@ -185,7 +185,7 @@
 	if (!src.density && src.operating != 1 && istype(I, /obj/item/weapon/crowbar))
 		user.visible_message("[user] removes the electronics from the windoor assembly.", "You start to remove the electronics from the windoor assembly.")
 		playsound(get_turf(src), 'sound/items/Crowbar.ogg', 100, 1)
-		if (do_after(user, 40) && src && !src.density && src.operating != 1)
+		if (do_after(user, src, 40) && src && !src.density && src.operating != 1)
 			user << "<span class='notice'>You removed the windoor electronics!</span>"
 			make_assembly(user)
 			src.dismantled = 1 // Don't play the glass shatter sound
@@ -195,11 +195,6 @@
 	//If it's in the process of opening/closing or emagged, ignore the click
 	if (src.operating)
 		return
-
-	//ninja swords? You may pass.
-	if (src.density && istype(I, /obj/item/weapon/melee/energy/blade))
-		hackOpen(I, user)
-		return 1
 
 	//If it's a weapon, smash windoor. Unless it's an id card, agent card, ect.. then ignore it (Cards really shouldnt damage a door anyway)
 	if(src.density && istype(I, /obj/item/weapon) && !istype(I, /obj/item/weapon/card))
@@ -241,13 +236,6 @@
 	if (src.electronics)
 		src.electronics.icon_state = "door_electronics_smoked"
 
-	if(istype(I, /obj/item/weapon/melee/energy/blade))
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, src.loc)
-		spark_system.start()
-		playsound(get_turf(src), "sparks", 50, 1)
-		playsound(get_turf(src), 'sound/weapons/blade1.ogg', 50, 1)
-		visible_message("<span class='warning'>The glass door was sliced open by [user]!</span>")
 	flick("[src.base_state]spark", src)
 	sleep(6)
 	open()

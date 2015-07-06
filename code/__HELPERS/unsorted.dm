@@ -613,23 +613,6 @@ proc/GaussRand(var/sigma)
 proc/GaussRandRound(var/sigma,var/roundto)
 	return round(GaussRand(sigma),roundto)
 
-proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,flick_anim as text,sleeptime = 0,direction as num)
-//This proc throws up either an icon or an animation for a specified amount of time.
-//The variables should be apparent enough.
-	var/atom/movable/overlay/animation = new(location)
-	if(direction)
-		animation.dir = direction
-	animation.icon = a_icon
-	animation.layer = target:layer+1
-	if(a_icon_state)
-		animation.icon_state = a_icon_state
-	else
-		animation.icon_state = "blank"
-		animation.master = target
-		flick(flick_anim, animation)
-	sleep(max(sleeptime, 15))
-	animation.loc = null
-
 //Step-towards method of determining whether one atom can see another. Similar to viewers()
 /proc/can_see(var/atom/source, var/atom/target, var/length=5) // I couldnt be arsed to do actual raycasting :I This is horribly inaccurate.
 	var/turf/current = get_turf(source)
@@ -682,19 +665,46 @@ proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,fl
 
 	else return get_step(ref, base_dir)
 
-/proc/do_mob(var/mob/user , var/mob/target, var/time = 30) //This is quite an ugly solution but i refuse to use the old request system.
+/proc/do_mob(var/mob/user , var/mob/target, var/delay = 30, var/numticks = 10) //This is quite an ugly solution but i refuse to use the old request system.
 	if(!user || !target) return 0
 	var/user_loc = user.loc
 	var/target_loc = target.loc
 	var/holding = user.get_active_hand()
-	sleep(time)
-	if(!user || !target) return 0
-	if ( user.loc == user_loc && target.loc == target_loc && user.get_active_hand() == holding && !( user.stat ) && ( !user.stunned && !user.weakened && !user.paralysis && !user.lying ) )
-		return 1
-	else
-		return 0
+	var/delayfraction = round(delay/numticks)
+	var/image/progbar
+	if(user && user.client && user.client.prefs.progress_bars)
+		if(!progbar)
+			progbar = image("icon" = 'icons/effects/doafter_icon.dmi', "loc" = target, "icon_state" = "prog_bar_0")
+			progbar.pixel_y = 32
+		//if(!barbar)
+			//barbar = image("icon" = 'icons/effects/doafter_icon.dmi', "loc" = user, "icon_state" = "none")
+			//barbar.pixel_y = 36
+	//var/oldstate
+	for (var/i = 1 to numticks)
+		if(user && user.client && user.client.prefs.progress_bars && progbar)
+			//oldstate = progbar.icon_state
+			progbar.icon_state = "prog_bar_[round(((i / numticks) * 100), 10)]"
+			user.client.images |= progbar
+		sleep(delayfraction)
+		if(!user || !target)
+			if(progbar)
+				progbar.icon_state = "prog_bar_stopped"
+				spawn(2)
+					if(user && user.client) user.client.images -= progbar
+					if(progbar) progbar.loc = null
+			return 0
+		if ( user.loc != user_loc || target.loc != target_loc || user.get_active_hand() != holding || ( user.stat ) || ( user.stunned || user.weakened || user.paralysis || user.lying ) )
+			if(progbar)
+				progbar.icon_state = "prog_bar_stopped"
+				spawn(2)
+					if(user && user.client) user.client.images -= progbar
+					if(progbar) progbar.loc = null
+			return 0
+	if(user && user.client) user.client.images -= progbar
+	if(progbar) progbar.loc = null
+	return 1
 
-/proc/do_after(var/mob/user as mob, delay as num, var/numticks = 5, var/needhand = TRUE)
+/proc/do_after(var/mob/user as mob, var/atom/target, var/delay as num, var/numticks = 10, var/needhand = TRUE)
 	if(!user || isnull(user))
 		return 0
 	if(numticks == 0)
@@ -703,15 +713,42 @@ proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,fl
 	var/delayfraction = round(delay/numticks)
 	var/Location = user.loc
 	var/holding = user.get_active_hand()
-
+	var/image/progbar
+	//var/image/barbar
+	if(user && user.client && user.client.prefs.progress_bars && target)
+		if(!progbar)
+			progbar = image("icon" = 'icons/effects/doafter_icon.dmi', "loc" = target, "icon_state" = "prog_bar_0")
+			progbar.pixel_y = 32
+		//if(!barbar)
+			//barbar = image("icon" = 'icons/effects/doafter_icon.dmi', "loc" = target, "icon_state" = "none")
+			//barbar.pixel_y = 36
+	//var/oldstate
 	for (var/i = 1 to numticks)
+		if(user && user.client && user.client.prefs.progress_bars && target)
+			if(!progbar)
+				progbar = image("icon" = 'icons/effects/doafter_icon.dmi', "loc" = target, "icon_state" = "prog_bar_0")
+			//oldstate = progbar.icon_state
+			progbar.icon_state = "prog_bar_[round(((i / numticks) * 100), 10)]"
+			user.client.images |= progbar
 		sleep(delayfraction)
-
+		//if(user.client && progbar.icon_state != oldstate)
+			//user.client.images.Remove(progbar)
 		if(!user || user.stat || user.weakened || user.stunned || !(user.loc == Location))
+			if(progbar)
+				progbar.icon_state = "prog_bar_stopped"
+				spawn(2)
+					if(user && user.client) user.client.images -= progbar
+					if(progbar) progbar.loc = null
 			return 0
 		if(needhand && !(user.get_active_hand() == holding))	//Sometimes you don't want the user to have to keep their active hand
+			if(progbar)
+				progbar.icon_state = "prog_bar_stopped"
+				spawn(2)
+					if(user && user.client) user.client.images -= progbar
+					if(progbar) progbar.loc = null
 			return 0
-
+	if(user && user.client) user.client.images -= progbar
+	if(progbar) progbar.loc = null
 	return 1
 
 //Takes: Anything that could possibly have variables and a varname to check.
@@ -724,8 +761,6 @@ proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,fl
 //else populates the list first before returning it
 /proc/SortAreas()
 	for(var/area/A in areas)
-		if(A.lighting_subarea)
-			continue
 		sortedAreas.Add(A)
 
 	sortTim(sortedAreas, /proc/cmp_name_asc)
@@ -938,12 +973,13 @@ var/list/ignored_keys = list("loc", "locs", "parent_type", "vars", "verbs", "typ
 							T.icon = 'icons/turf/snow.dmi'
 							T.icon_state = "snow"
 						else
-							T.ChangeTurf(/turf/space)
-							switch(universe.name)	//for some reason using OnTurfChange doesn't actually do anything in this case.
-								if("Hell Rising")
-									T.overlays += "hell01"
-								if("Supermatter Cascade")
-									T.overlays += "end01"
+							T.ChangeTurf(get_base_turf(T.z))
+							if(istype(T, /turf/space))
+								switch(universe.name)	//for some reason using OnTurfChange doesn't actually do anything in this case.
+									if("Hell Rising")
+										T.overlays += "hell01"
+									if("Supermatter Cascade")
+										T.overlays += "end01"
 
 
 					refined_src -= T
@@ -989,7 +1025,7 @@ proc/DuplicateObject(obj/original, var/perfectcopy = 0 , var/sameloc = 0)
 	if(perfectcopy)
 		if((O) && (original))
 			for(var/V in original.vars)
-				if(!(V in list("type","loc","locs","vars", "parent", "parent_type","verbs","ckey","key")))
+				if(!(V in list("type","loc","locs","vars", "parent", "parent_type","verbs","ckey","key","group")))
 					O.vars[V] = original.vars[V]
 	return O
 
@@ -1191,19 +1227,11 @@ proc/get_mob_with_client_list()
 			return zone
 
 /proc/get_turf(const/atom/O)
-	if (isnull(O) || isarea(O))
+	if (isnull(O) || isarea(O) || !istype(O))
 		return
-
-	var/atom/A = O
-
-	for (var/i = 0, ++i <= 16)
-		if (isturf(A))
-			return A
-
-		if (istype(A))
-			A = A.loc
-		else
-			return
+	var/atom/A
+	for(A=O, A && !isturf(A), A=A.loc);  // semicolon is for the empty statement
+	return A
 
 /proc/get(atom/loc, type)
 	while(loc)
@@ -1361,3 +1389,35 @@ proc/find_holder_of_type(var/atom/reference,var/typepath) //Returns the first ob
 		dest_x = max(0, dest_x-distance)
 
 	return locate(dest_x,dest_y,dest_z)
+
+//Version of view() which ignores darkness, because BYOND doesn't have it (I actually suggested it but it was tagged redundant, BUT HEARERS IS A T- /rant).
+/proc/dview(var/range = world.view, var/center, var/invis_flags = 0)
+	if(!center)
+		return
+
+	var/global/mob/dview/DV
+	if(!DV)
+		DV = new
+
+	DV.loc = center
+
+	DV.see_in_dark = range
+	DV.see_invisible = invis_flags
+
+	. = view(range, DV)
+	DV.loc = null
+
+/mob/dview
+	invisibility = 101
+	density = 0
+
+//Gets the Z level datum for this atom's Z level
+/proc/get_z_level(var/atom/A)
+	var/z
+	if(istype(A, /atom/movable))
+		var/turf/T = get_turf(A)
+		z = T.z
+	else
+		z = A.z
+
+	. = map.zLevels[z]

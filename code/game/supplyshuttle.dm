@@ -1,8 +1,8 @@
 //Config stuff
 #define SUPPLY_DOCKZ 2          //Z-level of the Dock.
 #define SUPPLY_STATIONZ 1       //Z-level of the Station.
-#define SUPPLY_STATION_AREATYPE "/area/supply/station" //Type of the supply shuttle area for station
-#define SUPPLY_DOCK_AREATYPE "/area/supply/dock"	//Type of the supply shuttle area for dock
+#define SUPPLY_STATION_AREATYPE /area/supply/station //Type of the supply shuttle area for station
+#define SUPPLY_DOCK_AREATYPE /area/supply/dock	//Type of the supply shuttle area for dock
 #define SUPPLY_TAX 10 // Credits to charge per order.
 var/datum/controller/supply_shuttle/supply_shuttle = new
 
@@ -19,20 +19,18 @@ var/list/mechtoys = list(
 	/obj/item/toy/prize/odysseus,
 	/obj/item/toy/prize/phazon
 )
-
-/area/supply/station //DO NOT TURN THE lighting_use_dynamic STUFF ON FOR SHUTTLES. IT BREAKS THINGS.
+//Lighting STILL disabled, even with the new bay engine, because lighting doesn't play nice with our shuttles, might just be our shuttle code, or the small changes in the lighting engine we have from bay.
+/area/supply/station
 	name = "supply shuttle"
 	icon_state = "shuttle3"
-	luminosity = 1
-	lighting_use_dynamic = 0
 	requires_power = 0
+	lighting_use_dynamic = 0
 
-/area/supply/dock //DO NOT TURN THE lighting_use_dynamic STUFF ON FOR SHUTTLES. IT BREAKS THINGS.
+/area/supply/dock
 	name = "supply shuttle"
 	icon_state = "shuttle3"
-	luminosity = 1
-	lighting_use_dynamic = 0
 	requires_power = 0
+	lighting_use_dynamic = 0
 
 //SUPPLY PACKS MOVED TO /code/defines/obj/supplypacks.dm
 
@@ -45,21 +43,27 @@ var/list/mechtoys = list(
 	anchored = 1
 	layer = 4
 	explosion_resistance = 5
+	var/airtight = 0
 
 /obj/structure/plasticflaps/attackby(obj/item/I as obj, mob/user as mob)
-	if (istype(I, /obj/item/weapon/crowbar))
-		if(anchored == 1)
-			user.visible_message("[user] pops loose the flaps.", "You pop loose the flaps.")
-			anchored = 0
-			var/turf/T = get_turf(loc)
-			if(T)
-				T.blocks_air = 0
+	if(istype(I, /obj/item/weapon/crowbar) && anchored == 1)
+		if(airtight == 0)
+			playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
 		else
-			user.visible_message("[user] pops in the flaps.", "You pop in the flaps.")
-			anchored = 1
-			var/turf/T = get_turf(loc)
-			if(T)
-				T.blocks_air = 1
+			playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
+		user.visible_message("[user] [airtight? "loosen the [src] from" : "tighten the [src] into"] an airtight position.", "You [airtight? "loosen the [src] from" : "tighten the [src] into"] an airtight position.")
+		airtight = !airtight
+		name = "\improper [airtight? "Airtight p" : "P"]lastic flaps"
+		desc = "[airtight? "Heavy duty, airtight, plastic flaps." : "I definitely can't get past those. No way."]"
+		return 1
+	if(istype(I, /obj/item/weapon/wrench) && airtight != 1)
+		if(anchored == 0)
+			playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
+		else
+			playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
+		user.visible_message("[user] [anchored? "loosens" : "tightens"] the flap from its anchoring.", "You [anchored? "loosen" : "tighten"] the flap from its anchoring.")
+		anchored = !anchored
+		return 1
 	else if (iswelder(I) && anchored == 0)
 		var/obj/item/weapon/weldingtool/WT = I
 		if(WT.remove_fuel(0, user))
@@ -67,6 +71,10 @@ var/list/mechtoys = list(
 			qdel(src)
 			return
 	return ..()
+
+/obj/structure/plasticflaps/examine(mob/user as mob)
+	..()
+	user << "It appears to be [anchored? "anchored to" : "unachored from"] the floor, [airtight? "and it seems to be airtight as well." : "but it does not seem to be airtight."]"
 
 /obj/structure/plasticflaps/CanPass(atom/movable/mover, turf/target, height=1.5, air_group = 0)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -80,7 +88,7 @@ var/list/mechtoys = list(
 		var/mob/living/M = mover
 		if(!M.lying && !istype(M, /mob/living/carbon/monkey) && !istype(M, /mob/living/carbon/slime) && !istype(M, /mob/living/simple_animal/mouse))  //If your not laying down, or a small creature, no pass.
 			return 0
-	return ..()
+	return !(airtight && air_group)
 
 /obj/structure/plasticflaps/ex_act(severity)
 	switch(severity)
@@ -93,22 +101,12 @@ var/list/mechtoys = list(
 			if (prob(5))
 				qdel(src)
 
-/obj/structure/plasticflaps/mining //A specific type for mining that doesn't allow airflow because of them damn crates
+/obj/structure/plasticflaps/mining
 	name = "\improper Airtight plastic flaps"
 	desc = "Heavy duty, airtight, plastic flaps."
+	airtight = 1
 
-	New() //set the turf below the flaps to block air
-		var/turf/T = get_turf(loc)
-		if(T)
-			T.blocks_air = 1
-		..()
 
-	Destroy() //lazy hack to set the turf to allow air to pass if it's a simulated floor
-		var/turf/T = get_turf(loc)
-		if(T)
-			if(istype(T, /turf/simulated/floor))
-				T.blocks_air = 0
-		..()
 
 /obj/machinery/computer/supplycomp
 	name = "Supply shuttle console"
@@ -123,7 +121,7 @@ var/list/mechtoys = list(
 	var/last_viewed_group = "categories"
 	var/datum/money_account/current_acct
 
-	l_color = "#87421F"
+	light_color = LIGHT_COLOR_BROWN
 
 /obj/machinery/computer/ordercomp
 	name = "Supply ordering console"
@@ -135,7 +133,7 @@ var/list/mechtoys = list(
 	var/last_viewed_group = "categories"
 	var/datum/money_account/current_acct
 
-	l_color = "#87421F"
+	light_color = LIGHT_COLOR_BROWN
 
 /*
 /obj/effect/marker/supplymarker
@@ -326,7 +324,14 @@ var/list/mechtoys = list(
 		var/list/clear_turfs = list()
 
 		for(var/turf/T in shuttle)
-			if(T.density || T.contents.len)	continue
+			if(T.density)	continue
+			var/contcount
+			for(var/atom/A in T.contents)
+				if(islightingoverlay(A))
+					continue
+				contcount++
+			if(contcount)
+				continue
 			clear_turfs += T
 
 		for(var/S in shoppinglist)
@@ -493,11 +498,10 @@ var/list/mechtoys = list(
 		var/idrank = "*None Provided*"
 		var/datum/money_account/account
 		if(ishuman(usr))
-			var/mob/living/carbon/human/H = usr
-			idname = H.get_authentification_name()
-			idrank = H.get_assignment()
-			var/obj/item/weapon/card/id/I=H.get_idcard()
+			var/obj/item/weapon/card/id/I = usr.get_id_card()
 			if(I)
+				idname = I.registered_name
+				idrank = I.GetJobName()
 				account = get_card_account(I)
 			else
 				usr << "<span class='warning'>Please wear an ID with an associated bank account.</span>"
@@ -603,7 +607,7 @@ var/list/mechtoys = list(
 		return
 	if(istype(I, /obj/item/weapon/screwdriver))
 		playsound(loc, 'sound/items/Screwdriver.ogg', 50, 1)
-		if(do_after(user, 20))
+		if(do_after(user, src, 20))
 			if (stat & BROKEN)
 				user << "<span class='notice'>The broken glass falls out.</span>"
 				var/obj/structure/computerframe/A = new /obj/structure/computerframe( loc )
@@ -715,11 +719,10 @@ var/list/mechtoys = list(
 		var/idrank = "*None Provided*"
 		var/datum/money_account/account
 		if(ishuman(usr))
-			var/mob/living/carbon/human/H = usr
-			idname = H.get_authentification_name()
-			idrank = H.get_assignment()
-			var/obj/item/weapon/card/id/I=H.get_idcard()
+			var/obj/item/weapon/card/id/I = usr.get_id_card()
 			if(I)
+				idname = I.registered_name
+				idrank = I.GetJobName()
 				account = get_card_account(I)
 			else
 				usr << "<span class='warning'>Please wear an ID with an associated bank account.</span>"

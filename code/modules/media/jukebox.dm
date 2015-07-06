@@ -179,7 +179,6 @@ var/global/loopModeNames=list(
 	var/credits_needed = 0 // Credits needed to complete purchase.
 	var/change_cost    = 10 // Current cost to change songs.
 	var/list/change_access  = list() // Access required to change songs
-	var/datum/money_account/linked_account
 	var/department // Department that gets the money
 
 	var/state_base = "jukebox2"
@@ -678,7 +677,7 @@ var/global/loopModeNames=list(
 	desc = "It really doesn't get any better."
 	icon = 'icons/obj/bus.dmi'
 	icon_state = ""
-	l_color = "#000066"
+	light_color = LIGHT_COLOR_BLUE
 	luminosity = 0
 	layer = FLY_LAYER+1
 	pixel_x = -32
@@ -706,7 +705,7 @@ var/global/loopModeNames=list(
 /obj/machinery/media/jukebox/superjuke/adminbus/proc/deploy()
 	update_media_source()
 	icon_state = "jukebox"
-	SetLuminosity(4)
+	set_light(4)
 	flick("deploying",src)
 
 /obj/machinery/media/jukebox/superjuke/adminbus/proc/repack()
@@ -716,7 +715,7 @@ var/global/loopModeNames=list(
 	if(popup)
 		popup.close()
 	playing = 0
-	SetLuminosity(0)
+	set_light(0)
 	icon_state = ""
 	flick("repacking",src)
 	update_music()

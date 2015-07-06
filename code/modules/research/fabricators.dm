@@ -138,16 +138,16 @@
 		return
 
 	var/counter = 0
-	for(var/datum/design/D in files.possible_designs) //the reason we do possible is that some designs don't have base requirement
-		for(var/name_set in part_sets)
-			var/list/part_set = part_sets[name_set]
-			if(!istype(part_set) || !part_set.len)
-				continue
-			for(var/i = 1; i <= part_set.len; i++)
-				if(D.build_path == part_set[i])
-					part_set[i] = D
-					counter++
-					break
+
+	for(var/name_set in part_sets)
+		var/list/part_set = part_sets[name_set]
+		if(!istype(part_set) || !part_set.len)
+			continue
+		for(var/i = 1; i <= part_set.len; i++)
+			var/datum/design/D = FindDesign(part_set[i])
+			if(D)
+				part_set[i] = D
+				counter++
 
 	for(var/name_set in part_sets)
 		var/list/part_set = part_sets[name_set]
@@ -156,12 +156,12 @@
 				warning("[element] was left over in setting up parts.")
 				part_set.Remove(element)
 
-	counter += convert_designs() //fill the rest of the way
+	counter += convert_designs() //fill the rest of the way with the designs we get at base research - essentially a starting sync
 
 	return counter
 
 /obj/machinery/r_n_d/fabricator/process()
-	if(busy || stopped)
+	if(busy || stopped || being_built)
 		return
 	if(queue.len==0)
 		stopped=1
@@ -213,24 +213,48 @@
 	var/output = ""
 	for(var/M in part.materials)
 		if(copytext(M,1,2) == "$")
-			var/matID=copytext(M,2)
-			var/datum/material/material=materials.getMaterial(matID)
-			output += "[output ? " | " : null][get_resource_cost_w_coeff(part,"$[matID]")] [material.processed_name]"
+			var/datum/material/material=materials.getMaterial(M)
+			output += "[output ? " | " : null][get_resource_cost_w_coeff(part,M)] [material.processed_name]"
 	return output
 
 /obj/machinery/r_n_d/fabricator/proc/remove_materials(var/datum/design/part)
 	for(var/M in part.materials)
 		if(!check_mat(part, M))
 			return 0
+
+	for(var/M in part.materials)
 		if(copytext(M,1,2) == "$" && !(research_flags & IGNORE_MATS))
-			var/matID=copytext(M,2)
-			materials.removeAmount(matID, part.materials[M])
+			materials.removeAmount(M, get_resource_cost_w_coeff(part, M))
 		else if(!(research_flags & IGNORE_CHEMS))
 			reagents.remove_reagent(M, part.materials[M])
 	return 1
 
+/obj/machinery/r_n_d/fabricator/proc/check_mat(var/datum/design/being_built, var/M, var/num_requested=1)
+	if(copytext(M,1,2) == "$")
+		if(src.research_flags & IGNORE_MATS)
+			return num_requested
+		for(var/n=num_requested,n>=1,n--)
+			if ((materials.storage[M]-(get_resource_cost_w_coeff(being_built, M)*n)) >= 0)
+				return n
+	else
+		if(src.research_flags & IGNORE_CHEMS)
+			return num_requested
+		for(var/n=num_requested,n>=1,n--)
+			if (reagents.has_reagent(M, get_resource_cost_w_coeff(being_built, M)))
+				return n
+	return 0
+
+
 /obj/machinery/r_n_d/fabricator/proc/build_part(var/datum/design/part)
-	if(!part)
+	if(!part || being_built) //we're in the middle of something here!
+		return
+
+	if(!part.build_path)
+		WARNING("[part.name] has a null build path var!")
+		return
+	if(is_contraband(part) && !src.hacked)
+		stopped = 1
+		src.visible_message("<font color='blue'>The [src.name] buzzes, \"Safety procedures prevent current queued item from being built.\"</font>")
 		return
 
 	if(!remove_materials(part))
@@ -249,6 +273,13 @@
 	src.use_power = 1
 	src.overlays -= "[base_state]_ani"
 	if(being_built)
+		if(!being_built.materials)
+			being_built.materials = getFromDPool(/datum/materials, being_built)
+		for(var/matID in part.materials)
+			if(copytext(matID, 1, 2) != "$") //it's not a material, let's ignore it
+				continue
+			being_built.materials.storage = initial_materials.Copy()
+			being_built.materials.addAmount(matID, get_resource_cost_w_coeff(part,matID)) //slap in what we built with - matching the cost
 		if(part.locked && research_flags &LOCKBOXES)
 			var/obj/item/weapon/storage/lockbox/L
 			//if(research_flags &TRUELOCKS)
@@ -280,24 +311,17 @@
 	src.visible_message("\icon[src] <b>[src]</b> beeps: \"[set_name] parts were added to the queue\".")
 	return
 
-
-/obj/machinery/r_n_d/fabricator/FindDesignByID()
-	for(var/datum/design/D in files.known_designs)
-		if(D.id == id)
-			return D
-		if(!istype(D))
-			warning("[D] was found in known_designs in FindDesignByID, the ID passed into it it was: [id]")
-
 /obj/machinery/r_n_d/fabricator/proc/add_to_queue(var/datum/design/part)
 	if(!istype(queue))
 		queue = list()
-	if(!istype(part))
-		part = FindDesignByID(part.id)
 	if(!part)
 		return
 	if(part)
 		//src.visible_message("\icon[src] <b>[src]</b> beeps: [part.name] was added to the queue\".")
 		//queue[++queue.len] = part
+		if(is_contraband(part) && !src.hacked)
+			src.visible_message("<font color='blue'>The [src.name] buzzes, \"Safety procedures prevent that item from being queued.\"</font>")
+			return
 		queue.Add(part)
 	return queue.len
 
@@ -306,6 +330,9 @@
 		return 0
 	queue.Cut(index,++index)
 	return 1
+
+/obj/machinery/r_n_d/fabricator/proc/is_contraband(var/datum/design/part)
+	return
 
 /* This is what process() is for you nerd - N3X
 /obj/machinery/r_n_d/fabricator/proc/process_queue()
@@ -452,8 +479,8 @@
 		//Get the material names
 	for(var/matID in materials.storage)
 		var/datum/material/material = materials.getMaterial(matID) // get the ID of the materials
-		if(material && material.stored > 0)
-			materials_list.Add(list(list("name" = material.processed_name, "storage" = material.stored, "commands" = list("eject" = matID)))) // get the amount of the materials
+		if(material && materials.storage[matID] > 0)
+			materials_list.Add(list(list("name" = material.processed_name, "storage" = materials.storage[matID], "commands" = list("eject" = matID)))) // get the amount of the materials
 	data["materials"] = materials_list
 
 	var/parts_list[0] // setup a list to get all the information for parts
@@ -570,7 +597,7 @@
 	if(exit.density)
 		src.visible_message("\icon[src] <b>[src]</b> beeps, \"Error! Part outlet is obstructed\".")
 		return
-	.
+
 	if(stat & BROKEN)
 		return
 
@@ -578,9 +605,7 @@
 		src.visible_message("<span class='warning'>Unauthorized Access</span>: attempted by <b>[user]</b>")
 		return
 
-	if(research_flags & NANOTOUCH)
-		ui_interact(user)
-
+	..()
 /*
 /obj/machinery/r_n_d/fabricator/mech/Topic(href, href_list)
 
@@ -637,7 +662,7 @@
 	var/datum/material/material = materials.getMaterial(matID)
 	if(material)
 		//var/obj/item/stack/sheet/res = new material.sheettype(src)
-		var/total_amount = min(round(material.stored/material.cc_per_sheet),amount)
+		var/total_amount = min(round(materials.storage[matID]/material.cc_per_sheet), amount)
 		var/to_spawn = total_amount
 
 		while(to_spawn > 0)
@@ -657,6 +682,3 @@
 		return total_amount
 	return 0
 
-
-/obj/machinery/r_n_d/fabricator/attackby(obj/W as obj, mob/user as mob)
-	..()

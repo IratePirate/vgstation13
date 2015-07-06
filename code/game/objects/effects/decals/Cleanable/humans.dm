@@ -32,18 +32,17 @@ var/global/list/blood_list = list()
 	if(ticker.mode && ticker.mode.name == "cult")
 		var/datum/game_mode/cult/mode_ticker = ticker.mode
 		var/turf/T = get_turf(src)
-		if(T)
-			if(locate(T) in mode_ticker.bloody_floors)
-				mode_ticker.bloody_floors -= T
-				mode_ticker.blood_check()
+		if(T && (T.z == map.zMainStation))
+			mode_ticker.bloody_floors -= T
+			mode_ticker.blood_check()
 	..()
 
 /obj/effect/decal/cleanable/blood/resetVariables()
 	Destroy()
+	..("viruses","virus2", "blood_DNA", "random_icon_states", args)
 	viruses = list()
 	virus2 = list()
 	blood_DNA = list()
-	..("viruses","virus2", "blood_DNA", "random_icon_states", args)
 
 /obj/effect/decal/cleanable/blood/New()
 	..()
@@ -52,14 +51,12 @@ var/global/list/blood_list = list()
 
 	if(ticker && ticker.mode && ticker.mode.name == "cult")
 		var/datum/game_mode/cult/mode_ticker = ticker.mode
-		if((mode_ticker.objectives[mode_ticker.current_objective] == "bloodspill") && !mode_ticker.narsie_condition_cleared)
-			var/turf/T = get_turf(src)
-			if(T && (T.z == map.zMainStation))//F I V E   T I L E S
-				if(locate("\ref[T]") in mode_ticker.bloody_floors)
-				else
-					mode_ticker.bloody_floors += T
-					mode_ticker.bloody_floors[T] = T
-					mode_ticker.blood_check()
+		var/turf/T = get_turf(src)
+		if(T && (T.z == map.zMainStation))//F I V E   T I L E S
+			if(!(locate("\ref[T]") in mode_ticker.bloody_floors))
+				mode_ticker.bloody_floors += T
+				mode_ticker.bloody_floors[T] = T
+				mode_ticker.blood_check()
 
 	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
 		return
@@ -105,7 +102,10 @@ var/global/list/blood_list = list()
 		perp.track_blood = max(amount,perp.track_blood)                                //Or feet
 		if(!perp.feet_blood_DNA)
 			perp.feet_blood_DNA = list()
-		perp.feet_blood_DNA |= blood_DNA.Copy()
+		if(!istype(blood_DNA, /list))
+			blood_DNA = list()
+		else
+			perp.feet_blood_DNA |= blood_DNA.Copy()
 		perp.feet_blood_color=basecolor
 
 	amount--

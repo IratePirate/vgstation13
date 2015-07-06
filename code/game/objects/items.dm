@@ -40,10 +40,12 @@
 	var/obj/item/device/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
 	var/icon_override = null  //Used to override hardcoded clothing dmis in human clothing proc.
 	var/list/species_fit = null //This object has a different appearance when worn by these species
-
+	var/surgery_speed = 1 //When this item is used as a surgery tool, multiply the delay of the surgery step by this much.
 	var/nonplant_seed_type
 
 	var/list/attack_verb // used in attack() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
+
+	var/vending_cat = null// subcategory for vending machines.
 
 /obj/item/Destroy()
 	if(istype(src.loc, /mob))
@@ -139,8 +141,8 @@
 			if(src == user:tool_state || src == user:sight_state)
 				return 0
 			attack_hand(user)
-	if(istype(src.loc, /obj/item/weapon/robot_module))
-		if(!isrobot(user)) 	return
+	else if(isrobot(user))
+		if(!istype(src.loc, /obj/item/weapon/robot_module)) return
 		var/mob/living/silicon/robot/R = user
 		R.activate_module(src)
 		R.hud_used.update_robot_modules_display()

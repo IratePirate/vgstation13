@@ -22,18 +22,17 @@
 	var/list/accepted_types = list(	/obj/item/weapon/reagent_containers/food/snacks/grown,
 									/obj/item/weapon/grown,
 									/obj/item/seeds/,
-									/obj/item/weapon/reagent_containers/food/snacks/meat,
-									/obj/item/weapon/reagent_containers/food/snacks/egg)
+									/obj/item/weapon/reagent_containers/food/snacks/meat)
 
 	machine_flags = SCREWTOGGLE | CROWDESTROY | EJECTNOTDEL
 
-	l_color = "#7BF9FF"
+	light_color = LIGHT_COLOR_CYAN
 	power_change()
 		..()
 		if(!(stat & (BROKEN|NOPOWER)))
-			SetLuminosity(2)
+			set_light(2)
 		else
-			SetLuminosity(0)
+			set_light(0)
 
 
 /********************************************************************
@@ -72,7 +71,7 @@
 
 	accepted_types = list(/obj/item/seeds)
 
-	l_color = "#000000"
+	light_color = null
 
 /obj/machinery/smartfridge/seeds/New()
 	. = ..()
@@ -226,8 +225,9 @@
 			user << "<span class='notice'>\The [src] is full.</span>"
 			return 1
 		else
-			user.before_take_item(O)
-			O.loc = src
+			if(!user.drop_item(O, src))
+				return 1
+
 			var/sanitized_name = sanitize(O.name, list("\"" = "", "'" = "", "+" = "plus", ";" = "", "^" = "", "&" = "", "<" = "", ">" = ""))
 			O.name = sanitized_name
 			if(item_quants[sanitized_name])

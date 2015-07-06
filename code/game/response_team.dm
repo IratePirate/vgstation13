@@ -71,6 +71,9 @@ client/verb/JoinResponseTeam()
 				new_commando << "<b>As member of the Emergency Response Team, you answer only to your leader and CentComm officials.</b>"
 			else
 				new_commando << "<b>As leader of the Emergency Response Team, you answer only to CentComm, and have authority to override the Captain where it is necessary to achieve your mission goals. It is recommended that you attempt to cooperate with the captain where possible, however."
+
+			ticker.mode.ert += new_commando.mind
+
 			return
 
 	else
@@ -311,7 +314,7 @@ proc/trigger_armed_response_team(var/force = 0)
 	W.name = "[real_name]'s ID Card ([W.assignment])"
 	if(!leader_selected)
 		W.access = get_centcom_access("Emergency Responder")
-		W.icon_state = "ERT_security"	//placeholder until revamp
+		W.icon_state = "ERT_empty"	//placeholder until revamp
 	else
 		W.access = get_centcom_access("Emergency Responders Leader")
 		W.icon_state = "ERT_leader"

@@ -29,6 +29,20 @@
 		if((M_FAT in mutations) && m_intent == "run" && bodytemperature <= 360)
 			bodytemperature += 2
 
+		update_minimap()
+
+/mob/living/carbon/proc/update_minimap()
+	var/obj/item/device/pda/pda_device = machine
+	if(machine && istype(pda_device))
+		var/turf/user_loc = get_turf(src)
+		var/turf/pda_loc = get_turf(pda_device)
+		if(get_dist(user_loc,pda_loc) <= 1)
+			if(pda_device.mode == PDA_APP_STATIONMAP)
+				pda_device.attack_self(src)
+		else
+			unset_machine()
+			src << browse(null, "window=pda")
+
 /mob/living/carbon/relaymove(var/mob/user, direction)
 	if(user in src.stomach_contents)
 		if(prob(40))
@@ -303,7 +317,7 @@
 
 	if (istype(item, /obj/item/weapon/grab))
 		var/obj/item/weapon/grab/G = item
-		item = G.throw() //throw the person instead of the grab
+		item = G.toss() //throw the person instead of the grab
 		if(ismob(item))
 			var/turf/start_T = get_turf(loc) //Get the start and target tile for the descriptors
 			var/turf/end_T = get_turf(target)

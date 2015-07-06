@@ -11,6 +11,7 @@
  * 		Crowbar
  * 		Revolver Conversion Kit(made sense)
  *		Soldering Tool
+ *		Fuel Can
  */
 
 /* Used for fancy tool subtypes that are faster or slower than the standard tool.
@@ -23,7 +24,8 @@
  * Might work for borg stack modules, though. Worth looking into.
  */
 /atom
-	var/list/construction_delay_mult = list(Co_CON_SPEED = 1, Co_DECON_SPEED = 1)
+	var/list/construction_delay_mult = null
+	//Formatted as list(Co_CON_SPEED = value, Co_DECON_SPEED = value)
 
 /*
  * Wrench
@@ -40,7 +42,7 @@
 	force = 5.0
 	throwforce = 7.0
 	w_class = 2.0
-	m_amt = 150
+	starting_materials = list(MAT_IRON = 150)
 	w_type = RECYK_METAL
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "materials=1;engineering=1"
@@ -71,8 +73,7 @@
 	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 5
-	g_amt = 0
-	m_amt = 75
+	starting_materials = list(MAT_IRON = 75)
 	w_type = RECYK_METAL
 	melt_temperature = MELTPOINT_STEEL
 	attack_verb = list("stabbed")
@@ -157,7 +158,7 @@
 	throw_speed = 2
 	throw_range = 9
 	w_class = 2.0
-	m_amt = 80
+	starting_materials = list(MAT_IRON = 80)
 	w_type = RECYK_METAL
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "materials=1;engineering=1"
@@ -203,8 +204,7 @@
 	heat_production = 3800
 
 	//Cost to make in the autolathe
-	m_amt = 70
-	g_amt = 30
+	starting_materials = list(MAT_IRON = 70, MAT_GLASS = 30)
 	w_type = RECYK_MISC
 	melt_temperature = MELTPOINT_PLASTIC
 
@@ -453,7 +453,10 @@
 					if(E.damage > 10)
 						E.damage += rand(4,10)
 				if(-1)
-					usr << "<span class='warning'>Your thermals intensify the welder's glow. Your eyes itch and burn severely.</span>"
+					var/obj/item/clothing/to_blame = H.head //blame the hat
+					if(!to_blame || (istype(to_blame) && H.glasses && H.glasses.eyeprot < to_blame.eyeprot)) //if we don't have a hat, the issue is the glasses. Otherwise, if the glasses are worse, blame the glasses
+						to_blame = H.glasses
+					usr << "<span class='warning'>Your [to_blame] intensifies the welder's glow. Your eyes itch and burn severely.</span>"
 					user.eye_blurry += rand(12,20)
 					E.damage += rand(12, 16)
 			if(E.damage > 10 && safety < 2)
@@ -474,24 +477,21 @@
 /obj/item/weapon/weldingtool/largetank
 	name = "Industrial Welding Tool"
 	max_fuel = 40
-	m_amt = 70
-	g_amt = 60
+	starting_materials = list(MAT_IRON = 70, MAT_GLASS = 60)
 	origin_tech = "engineering=2"
 
 /obj/item/weapon/weldingtool/hugetank
 	name = "Upgraded Welding Tool"
 	max_fuel = 80
 	w_class = 3.0
-	m_amt = 70
-	g_amt = 120
+	starting_materials = list(MAT_IRON = 70, MAT_GLASS = 120)
 	origin_tech = "engineering=3"
 
 /obj/item/weapon/weldingtool/experimental
 	name = "Experimental Welding Tool"
 	max_fuel = 40
 	w_class = 3.0
-	m_amt = 70
-	g_amt = 120
+	starting_materials = list(MAT_IRON = 70, MAT_GLASS = 120)
 	origin_tech = "engineering=4;plasmatech=3"
 	icon_state = "ewelder"
 	var/last_gen = 0
@@ -521,7 +521,7 @@
 	throwforce = 7.0
 	item_state = "crowbar"
 	w_class = 2.0
-	m_amt = 50
+	starting_materials = list(MAT_IRON = 50)
 	w_type = RECYK_METAL
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "engineering=1"
@@ -607,8 +607,7 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = 2.0
-	m_amt = 70
-	g_amt = 30
+	starting_materials = list(MAT_IRON = 70, MAT_GLASS = 30)
 	w_type = RECYK_MISC
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "engineering=1"
@@ -666,3 +665,50 @@
 	else
 		user << "<span class='warn'>The tool does not have enough acid!</span>"
 		return 0
+
+/*
+* Fuel Can
+* A special, large container that fits on the belt
+*/
+/obj/item/weapon/reagent_containers/glass/fuelcan
+	name = "fuel can"
+	desc = "A special container named Furst in its class by engineers. It has partitioned containment to allow engineers to separate different chemicals, such as welding fuel, sulphuric acid, or water. It also bears a clip to fit on a standard toolbelt."
+	icon = 'icons/obj/items.dmi'
+	icon_state = "fueljar0"
+	starting_materials = list(MAT_IRON = 500)
+	volume = 50
+	possible_transfer_amounts = list(5,10,20)
+	var/slot = 0 //This dictates which side is open
+	var/datum/reagents/slotzero = null
+	var/datum/reagents/slotone = null
+
+/obj/item/weapon/reagent_containers/glass/fuelcan/New()
+	..()
+	slotzero = reagents
+	slotone = new/datum/reagents(volume)
+	slotone.my_atom = src
+	reagents.add_reagent("fuel", 50)
+
+/obj/item/weapon/reagent_containers/glass/fuelcan/attack_self(mob/user as mob)
+	if(!slot)
+		slotzero = reagents
+		reagents = slotone
+	else
+		slotone = reagents
+		reagents = slotzero
+	slot = !slot
+	update_icon()
+	user << "<span class='notice'>You switch the stopper to the other side.</span>"
+
+/obj/item/weapon/reagent_containers/glass/fuelcan/examine(mob/user)
+	..()
+	user << "The alternate partition contains:"
+	var/datum/reagents/alternate = (slot ? slotzero : slotone)
+	if(alternate.reagent_list.len) //Copied from atom/examine
+		for(var/datum/reagent/R in alternate.reagent_list)
+			user << "<span class='info'>[R.volume] units of [R.name]</span>"
+	else
+		user << "<span class='info'>Nothing.</span>"
+
+/obj/item/weapon/reagent_containers/glass/fuelcan/update_icon()
+	icon_state = "fueljar[slot]"

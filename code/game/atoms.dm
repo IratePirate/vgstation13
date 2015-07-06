@@ -24,6 +24,10 @@ var/global/list/ghdel_profiling = list()
 	///Chemistry.
 	var/datum/reagents/reagents = null
 
+	//Material datums - the fun way of doing things in a laggy manner
+	var/datum/materials/materials = null
+	var/list/starting_materials //starting set of mats - used in New(), you can set this to an empty list to have the datum be generated but not filled
+
 	//var/chem_is_open_container = 0
 	// replaced by OPENCONTAINER flags and atom/proc/is_open_container()
 	///Chemistry.
@@ -106,11 +110,12 @@ var/global/list/ghdel_profiling = list()
 	..()
 
 /atom/Destroy()
-	SetOpacity(0)
-
 	if(reagents)
 		reagents.Destroy()
 		reagents = null
+
+	if(materials)
+		returnToDPool(materials)
 
 	// Idea by ChuckTheSheep to make the object even more unreferencable.
 	invisibility = 101
@@ -131,6 +136,10 @@ var/global/list/ghdel_profiling = list()
 	on_destroyed = new("owner"=src)
 	on_moved = new("owner"=src)
 	. = ..()
+	if(starting_materials)
+		materials = getFromDPool(/datum/materials, src)
+		for(var/matID in starting_materials)
+			materials.addAmount(matID, starting_materials[matID])
 	AddToProfiler()
 
 /atom/proc/assume_air(datum/gas_mixture/giver)
@@ -171,17 +180,13 @@ var/global/list/ghdel_profiling = list()
 		return flags & INSERT_CONTAINER
 */
 
-
-/atom/proc/meteorhit(obj/meteor as obj)
-	return
-
 /atom/proc/allow_drop()
 	return 1
 
 /atom/proc/CheckExit()
 	return 1
 
-/atom/proc/HasProximity(atom/movable/AM as mob|obj)
+/atom/proc/HasProximity(atom/movable/AM as mob|obj) //IF you want to use this, the atom must have the PROXMOVE flag, and the moving atom must also have the PROXMOVE flag currently to help with lag
 	return
 
 /atom/proc/emp_act(var/severity)
@@ -364,6 +369,9 @@ its easier to just keep the beam vertical.
 // child is set to the child object that exploded, if available.
 /atom/proc/ex_act(var/severity, var/child=null)
 	return
+
+/atom/proc/mech_drill_act(var/severity, var/child=null)
+	return ex_act(severity, child)
 
 /atom/proc/blob_act()
 	return
@@ -608,7 +616,8 @@ its easier to just keep the beam vertical.
 /atom/proc/clean_blood()
 	src.germ_level = 0
 	if(istype(blood_DNA, /list))
-		del(blood_DNA)
+		//del(blood_DNA)
+		blood_DNA.len = 0
 		return 1
 
 
@@ -650,3 +659,9 @@ its easier to just keep the beam vertical.
 
 /atom/proc/mop_act(obj/item/weapon/mop/M, mob/user)
 	return 0
+
+/atom/proc/change_area(var/area/oldarea, var/area/newarea)
+	if(istype(oldarea))
+		oldarea = "[oldarea.name]"
+	if(istype(newarea))
+		newarea = "[newarea.name]"

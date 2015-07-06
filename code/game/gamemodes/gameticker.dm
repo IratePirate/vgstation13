@@ -43,19 +43,23 @@ var/global/datum/controller/gameticker/ticker
 #define LOBBY_TICKING 1
 #define LOBBY_TICKING_RESTARTED 2
 /datum/controller/gameticker/proc/pregame()
-	login_music = pick(\
-	'sound/music/space.ogg',\
-	'sound/music/traitor.ogg',\
-	'sound/music/space_oddity.ogg',\
-	'sound/music/title1.ogg',\
-	'sound/music/title2.ogg',\
-	'sound/music/clown.ogg',\
-	'sound/music/robocop.ogg',\
-	'sound/music/gaytony.ogg',\
-	'sound/music/rocketman.ogg',\
-	'sound/music/2525.ogg',\
-	'sound/music/moonbaseoddity.ogg',\
-	'sound/music/whatisthissong.ogg')
+	var/oursong = file(pick(
+		"sound/music/space.ogg",
+		"sound/music/traitor.ogg",
+		"sound/music/space_oddity.ogg",
+		"sound/music/title1.ogg",
+		"sound/music/title2.ogg",
+		"sound/music/clown.ogg",
+		"sound/music/robocop.ogg",
+		"sound/music/gaytony.ogg",
+		"sound/music/rocketman.ogg",
+		"sound/music/2525.ogg",
+		"sound/music/moonbaseoddity.ogg",
+		"sound/music/whatisthissong.ogg",
+		"sound/music/space_asshole.ogg",
+		))
+	login_music = fcopy_rsc(oursong)
+
 	do
 		var/delay_timetotal = 3000 //actually 5 minutes or incase this is changed from 3000, (time_in_seconds * 10)
 		pregame_timeleft = world.timeofday + delay_timetotal
@@ -132,9 +136,11 @@ var/global/datum/controller/gameticker/ticker
 	job_master.DivideOccupations() //Distribute jobs
 	var/can_continue = src.mode.pre_setup()//Setup special modes
 	if(!can_continue)
-		del(mode)
 		current_state = GAME_STATE_PREGAME
 		world << "<B>Error setting up [master_mode].</B> Reverting to pre-game lobby."
+		log_admin("The gamemode setup for [mode.name] errored out.")
+		world.log << "The gamemode setup for [mode.name] errored out."
+		del(mode)
 		job_master.ResetOccupations()
 		return 0
 
@@ -500,6 +506,70 @@ var/global/datum/controller/gameticker/ticker
 	scoreboard(ai_completions)
 
 	return 1
+
+/datum/controller/gameticker/proc/ert_declare_completion()
+	var/text = ""
+	if( ticker.mode.ert.len )
+		var/icon/logo = icon('icons/mob/mob.dmi', "ert-logo")
+		end_icons += logo
+		var/tempstate = end_icons.len
+		text += {"<br><img src="logo_[tempstate].png"> <FONT size = 2><B>The emergency responders were:</B></FONT> <img src="logo_[tempstate].png">"}
+		for(var/datum/mind/ert in ticker.mode.ert)
+			if(ert.current)
+				var/icon/flat = getFlatIcon(ert.current, SOUTH, 1, 1)
+				end_icons += flat
+				tempstate = end_icons.len
+				text += {"<br><img src="logo_[tempstate].png"> <b>[ert.key]</b> was <b>[ert.name]</b> ("}
+				if(ert.current.stat == DEAD)
+					text += "died"
+					flat.Turn(90)
+					end_icons[tempstate] = flat
+				else
+					text += "survived"
+				if(ert.current.real_name != ert.name)
+					text += " as [ert.current.real_name]"
+			else
+				var/icon/sprotch = icon('icons/effects/blood.dmi', "floor1-old")
+				end_icons += sprotch
+				tempstate = end_icons.len
+				text += {"<br><img src="logo_[tempstate].png"> [ert.key] was [ert.name] ("}
+				text += "body destroyed"
+			text += ")"
+		text += "<BR><HR>"
+
+	return text
+
+/datum/controller/gameticker/proc/deathsquad_declare_completion()
+	var/text = ""
+	if( ticker.mode.deathsquad.len )
+		var/icon/logo = icon('icons/mob/mob.dmi', "death-logo")
+		end_icons += logo
+		var/tempstate = end_icons.len
+		text += {"<br><img src="logo_[tempstate].png"> <FONT size = 2><B>The death commando were:</B></FONT> <img src="logo_[tempstate].png">"}
+		for(var/datum/mind/deathsquad in ticker.mode.deathsquad)
+			if(deathsquad.current)
+				var/icon/flat = getFlatIcon(deathsquad.current, SOUTH, 1, 1)
+				end_icons += flat
+				tempstate = end_icons.len
+				text += {"<br><img src="logo_[tempstate].png"> <b>[deathsquad.key]</b> was <b>[deathsquad.name]</b> ("}
+				if(deathsquad.current.stat == DEAD)
+					text += "died"
+					flat.Turn(90)
+					end_icons[tempstate] = flat
+				else
+					text += "survived"
+				if(deathsquad.current.real_name != deathsquad.name)
+					text += " as [deathsquad.current.real_name]"
+			else
+				var/icon/sprotch = icon('icons/effects/blood.dmi', "floor1-old")
+				end_icons += sprotch
+				tempstate = end_icons.len
+				text += {"<br><img src="logo_[tempstate].png"> [deathsquad.key] was [deathsquad.name] ("}
+				text += "body destroyed"
+			text += ")"
+		text += "<BR><HR>"
+
+	return text
 
 /datum/controller/gameticker/proc/bomberman_declare_completion()
 	var/icon/bomberhead = icon('icons/obj/clothing/hats.dmi', "bomberman")

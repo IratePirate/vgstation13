@@ -608,8 +608,8 @@ proc/populate_seed_list()
 
 			if(biolum)
 				if(biolum_colour)
-					product.l_color = biolum_colour
-				product.SetLuminosity(biolum)
+					product.light_color = biolum_colour
+				product.set_light(biolum)
 
 			//Handle spawning in living, mobile products (like dionaea).
 			if(istype(product,/mob/living))
@@ -897,7 +897,7 @@ proc/populate_seed_list()
 	name = "realeggplant"
 	seed_name = "egg-plant"
 	display_name = "egg-plants"
-	products = list(/obj/item/weapon/reagent_containers/food/snacks/egg)
+	products = list(/obj/item/weapon/reagent_containers/food/snacks/meat/egg)
 	mutants = null
 	packet_icon = "seed-eggy"
 	plant_icon = "eggy"

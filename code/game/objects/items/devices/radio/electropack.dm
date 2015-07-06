@@ -8,8 +8,7 @@
 	siemens_coefficient = 1
 	slot_flags = SLOT_BACK
 	w_class = 5.0
-	g_amt = 2500
-	m_amt = 10000
+	starting_materials = list(MAT_IRON = 10000, MAT_GLASS = 2500)
 	w_type = RECYK_ELECTRONIC
 	var/code = 2
 	var/datum/radio_frequency/radio_connection
@@ -115,7 +114,11 @@
 	if(!signal || signal.encryption != code)
 		return
 
-	if(ismob(loc) && on)
+	if(istype(src.loc, /obj/mecha) && on)
+		var/obj/mecha/R = src.loc //R is for GIANT ROBOT
+		R.shock_n_boot()
+
+	else if(ismob(loc) && on)
 		var/mob/M = loc
 		var/turf/T = M.loc
 		if(istype(T, /turf))

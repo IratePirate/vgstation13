@@ -10,6 +10,10 @@
 	var/processing = 0
 	machine_flags = EMAGGABLE | SCREWTOGGLE | WRENCHMOVE | FIXED2WORK | MULTITOOL_MENU
 
+	use_auto_lights = 1
+	light_power_on = 2
+	light_range_on = 3
+
 /obj/machinery/computer/cultify()
 	new /obj/structure/cult/tome(loc)
 	..()
@@ -20,21 +24,13 @@
 		initialize()
 
 /obj/machinery/computer/initialize()
+	..()
 	power_change()
 
 /obj/machinery/computer/process()
 	if(stat & (NOPOWER|BROKEN))
 		return 0
 	return 1
-
-/obj/machinery/computer/meteorhit(var/obj/O as obj)
-	for(var/x in verbs)
-		verbs -= x
-	set_broken()
-	var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
-	smoke.set_up(5, 0, src)
-	smoke.start()
-	return
 
 /obj/machinery/computer/emp_act(severity)
 	if(prob(20/severity)) set_broken()
@@ -67,7 +63,6 @@
 		set_broken()
 	..()
 
-
 /obj/machinery/computer/blob_act()
 	if (prob(75))
 		for(var/x in verbs)
@@ -86,16 +81,9 @@
 	else if(stat & NOPOWER)
 		icon_state = "[initial(icon_state)]0"
 
-
-
 /obj/machinery/computer/power_change()
-	..()
+	. = ..()
 	update_icon()
-	if(!(stat & (BROKEN|NOPOWER)))
-		SetLuminosity(2)
-	else
-		SetLuminosity(0)
-
 
 /obj/machinery/computer/proc/set_broken()
 	stat |= BROKEN
@@ -107,7 +95,7 @@
 	playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 50, 1)
 	user.visible_message(	"[user] begins to unscrew \the [src]'s monitor.",
 							"You begin to unscrew the monitor...")
-	if (do_after(user, 20) && circuit)
+	if (do_after(user, src, 20) && circuit)
 		var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
 		var/obj/item/weapon/circuitboard/M = new circuit( A )
 		A.circuit = M

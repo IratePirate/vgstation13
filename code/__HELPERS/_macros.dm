@@ -93,6 +93,8 @@
 
 #define iscamera(A) istype(A, /obj/machinery/camera)
 
+#define islightingoverlay(A) (istype(A, /atom/movable/lighting_overlay))
+
 //Macros for antags
 
 #define isvampire(H) ((H.mind in ticker.mode.vampires) || H.mind.vampire)
@@ -118,3 +120,12 @@
 #define isbadmonkey(H) ((/datum/disease/jungle_fever in H.viruses) || H.mind in ticker.mode.infected_monkeys)
 
 #define isdeathsquad(H) (H.mind in ticker.mode.deathsquads)
+
+//1 line helper procs compressed into defines.
+#define Clamp(x, y, z) 	(x <= y ? y : (x >= z ? z : x))
+
+#define CLAMP01(x) 		(Clamp(x, 0, 1))
+
+//CPU lag shit
+#define calculateticks(x)	x / world.tick_lag // Converts your ticks to proper tenths.
+#define tcheck(CPU,TOSLEEP)	if(world.cpu > CPU) sleep(calculateticks(TOSLEEP)) //Shorthand of checking and then sleeping a process based on world CPU

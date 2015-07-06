@@ -8,7 +8,7 @@
 	var/mob/living/silicon/ai/current = null
 	var/opened = 0
 
-	l_color = "#FFFFFF"
+	light_color = "#555555"
 
 
 	verb/AccessInternals()
@@ -93,7 +93,7 @@
 				var/obj/item/weapon/planning_frame/frame=O
 				if(frame.modules.len>0)
 					user << "<span class='notice'>You load \the [frame] into \the [src]...</span>"
-					if(do_after(user,50))
+					if(do_after(user, src,50))
 						var/failed=0
 						for(var/i=1;i<=frame.modules.len;i++)
 							var/obj/item/weapon/aiModule/M = frame.modules[i]
@@ -137,7 +137,7 @@
 	circuit = "/obj/item/weapon/circuitboard/borgupload"
 	var/mob/living/silicon/robot/current = null
 
-	l_color = "#FFFFFF"
+	light_color = "#555555"
 
 	proc/announce_law_changes()
 		current << "These are your laws now:"
@@ -209,7 +209,7 @@
 				var/obj/item/weapon/planning_frame/frame=W
 				if(frame.modules.len>0)
 					user << "<span class='notice'>You load \the [frame] into \the [src]...</span>"
-					if(do_after(user,50))
+					if(do_after(user, src,50))
 						var/failed=0
 						for(var/i=1;i<=frame.modules.len;i++)
 							var/obj/item/weapon/aiModule/M = frame.modules[i]

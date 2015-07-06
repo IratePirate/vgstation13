@@ -156,7 +156,7 @@ obj/machinery/gibber/New()
 
 	user.visible_message("<span class='warning'>[user] starts to put [G.affecting] into the gibber!</span>")
 	src.add_fingerprint(user)
-	if(do_after(user, 30) && G && G.affecting && !occupant)
+	if(do_after(user, src, 30) && G && G.affecting && !occupant)
 		user.visible_message("<span class='warning'>[user] stuffs [G.affecting] into the gibber!</span>")
 		var/mob/M = G.affecting
 		if(M.client)
@@ -183,7 +183,7 @@ obj/machinery/gibber/New()
 	src.add_fingerprint(user)
 	user.visible_message("<span class='warning'>[user.name] starts climbing into the [src].</span>", "<span class='warning'>You start climbing into the [src].</span>")
 
-	if(do_after(user, 30) && user && !occupant && !isnull(src.loc))
+	if(do_after(user, src, 30) && user && !occupant && !isnull(src.loc))
 		user.visible_message("<span class='warning'>[user] climbs into the [src]</span>", "<span class='warning'>You climb into the [src].</span>")
 		if(user.client)
 			user.client.perspective = EYE_PERSPECTIVE
@@ -293,7 +293,7 @@ obj/machinery/gibber/New()
 			newmeat:subjectname = sourcename
 			newmeat:subjectjob = sourcejob
 		if(istype(victim, /mob/living/carbon/alien))
-			newmeat = new/obj/item/weapon/reagent_containers/food/snacks/xenomeat
+			newmeat = new/obj/item/weapon/reagent_containers/food/snacks/meat/xenomeat
 		if(istype(victim, /mob/living/carbon/monkey))
 			newmeat = new/obj/item/weapon/reagent_containers/food/snacks/meat/monkey
 		if(istype(victim, /mob/living/simple_animal))

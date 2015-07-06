@@ -186,6 +186,13 @@
 
 	if (bodytemperature < 283.222)
 		tally += (283.222 - bodytemperature) / 10 * 1.75
+
+	if(istype(loc,/turf/simulated/floor))
+		var/turf/simulated/floor/T = loc
+
+		if(T.material=="phazon")
+			return -1 // Phazon floors make us go fast
+
 	return tally+config.monkey_delay
 
 
@@ -320,19 +327,6 @@
 					wearglasses(usr.get_active_hand())
 		show_inv(usr)
 	..()
-	return
-
-/mob/living/carbon/monkey/meteorhit(obj/O as obj)
-	if(flags & INVULNERABLE)
-		return
-	for(var/mob/M in viewers(src, null))
-		M.show_message(text("<span class='warning'>[] has been hit by []</span>", src, O), 1)
-	if (health > 0)
-		var/shielded = 0
-		adjustBruteLoss(30)
-		if ((O.icon_state == "flaming" && !( shielded )))
-			adjustFireLoss(40)
-		health = 100 - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss()
 	return
 
 //mob/living/carbon/monkey/bullet_act(var/obj/item/projectile/Proj)taken care of in living

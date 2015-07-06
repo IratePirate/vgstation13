@@ -9,7 +9,7 @@ var/global/list/atmos_controllers = list()
 	id = "atmoscontrol"
 	req_tech = list("programming" = 4)
 	build_type = IMPRINTER
-	materials = list("$glass" = 2000, "sacid" = 20)
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
 	category = "Console Boards"
 	build_path = /obj/item/weapon/circuitboard/atmoscontrol
 
@@ -25,7 +25,7 @@ var/global/list/atmos_controllers = list()
 	var/overridden = 0 //not set yet, can't think of a good way to do it
 	req_one_access = list(access_ce)
 
-	l_color = "#7BF9FF"
+	light_color = LIGHT_COLOR_CYAN
 
 /obj/machinery/computer/atmoscontrol/New()
 	..()

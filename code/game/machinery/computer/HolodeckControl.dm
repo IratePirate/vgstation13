@@ -9,7 +9,7 @@
 	var/damaged = 0
 	var/last_change = 0
 
-	l_color = "#7BF9FF"
+	light_color = LIGHT_COLOR_CYAN
 
 /obj/machinery/computer/HolodeckControl/attack_ai(var/mob/user as mob)
 	add_hiddenprint(user)
@@ -187,10 +187,6 @@
 
 //This could all be done better, but it works for now.
 /obj/machinery/computer/HolodeckControl/Destroy()
-	emergencyShutdown()
-	..()
-
-/obj/machinery/computer/HolodeckControl/meteorhit(var/obj/O as obj)
 	emergencyShutdown()
 	..()
 

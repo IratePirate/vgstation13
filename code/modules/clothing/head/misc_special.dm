@@ -17,8 +17,7 @@
 	icon_state = "welding"
 	flags = FPRINT
 	item_state = "welding"
-	m_amt = 3000
-	g_amt = 1000
+	starting_materials = list(MAT_IRON = 3000, MAT_GLASS = 1000)
 	w_type = RECYK_MISC
 	var/up = 0
 	eyeprot = 3
@@ -37,7 +36,7 @@
 	set category = "Object"
 	set name = "Adjust welding mask"
 	set src in usr
-
+	if(!usr) return //PANIC
 	if(usr.canmove && !usr.stat && !usr.restrained())
 		if(src.up)
 			src.up = !src.up
@@ -55,6 +54,8 @@
 			usr << "You push the [src] up out of your face."
 		usr.update_inv_head()	//so our mob-overlays update
 		usr.update_inv_wear_mask()
+		usr.update_inv_glasses()
+		usr.update_inv_ears()
 
 
 /*
@@ -66,6 +67,7 @@
 	icon_state = "cake0"
 	flags = FPRINT
 	body_parts_covered = HEAD|EYES
+	light_power = 0.5
 	var/onfire = 0.0
 	var/status = 0
 	var/fire_resist = T0C+1300	//this is the max temp it can stand before you start to cook. although it might not burn away, you take damage
@@ -96,10 +98,12 @@
 		src.damtype = "fire"
 		src.icon_state = "cake1"
 		processing_objects.Add(src)
+		set_light(2)
 	else
 		src.force = null
 		src.damtype = "brute"
 		src.icon_state = "cake0"
+		set_light(0)
 	return
 
 
@@ -146,20 +150,8 @@
 		icon_state = "hardhat[on]_[_color]"
 		item_state = "hardhat[on]_[_color]"
 
-		if(on)	user.SetLuminosity(user.luminosity + brightness_on)
-		else	user.SetLuminosity(user.luminosity - brightness_on)
-
-	pickup(mob/user)
-		if(on)
-			user.SetLuminosity(user.luminosity + brightness_on)
-//			user.UpdateLuminosity()
-			SetLuminosity(0)
-
-	dropped(mob/user)
-		if(on && !luminosity)
-			user.SetLuminosity(user.luminosity - brightness_on)
-//			user.UpdateLuminosity()
-			SetLuminosity(brightness_on)
+		if(on)	set_light(brightness_on)
+		else	set_light(0)
 
 /*
  * Kitty ears
@@ -184,10 +176,6 @@
 		var/icon/earbit2 = new/icon("icon" = 'icons/mob/head.dmi', "icon_state" = "kittyinner2")
 		mob.Blend(earbit, ICON_OVERLAY)
 		mob2.Blend(earbit2, ICON_OVERLAY)
-
-
-
-
 
 /obj/item/clothing/head/butt
 	name = "butt"

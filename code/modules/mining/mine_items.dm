@@ -5,7 +5,7 @@
 	name = "Light-emtter"
 	anchored = 1
 	unacidable = 1
-	luminosity = 8
+	light_range = 8
 
 /**********************Miner Lockers**************************/
 
@@ -26,7 +26,7 @@
 		new /obj/item/weapon/storage/backpack/industrial(src)
 	else
 		new /obj/item/weapon/storage/backpack/satchel_eng(src)
-	new /obj/item/device/radio/headset/headset_cargo(src)
+	new /obj/item/device/radio/headset/headset_mining(src)
 	new /obj/item/clothing/under/rank/miner(src)
 	new /obj/item/clothing/gloves/black(src)
 	new /obj/item/clothing/shoes/black(src)
@@ -120,7 +120,7 @@ proc/move_mining_shuttle()
 	circuit = "/obj/item/weapon/circuitboard/mining_shuttle"
 	var/location = 0 //0 = station, 1 = mining base
 	machine_flags = EMAGGABLE | SCREWTOGGLE
-	l_color = "#7BF9FF"
+	light_color = LIGHT_COLOR_CYAN
 
 /obj/machinery/computer/mining_shuttle/attack_hand(user as mob)
 	if(..(user))
@@ -163,6 +163,8 @@ proc/move_mining_shuttle()
 	icon_state = "lantern"
 	desc = "A mining lantern."
 	brightness_on = 6			// luminosity when on
+	light_power = 2
+	light_color = LIGHT_COLOR_TUNGSTEN
 
 /*****************************Pickaxe********************************/
 
@@ -179,7 +181,7 @@ proc/move_mining_shuttle()
 	throwforce = 4.0
 	item_state = "pickaxe"
 	w_class = 4.0
-	m_amt = 3750 //one sheet, but where can you make them?
+	starting_materials = list(MAT_IRON = 3750) //one sheet, but where can you make them?
 	w_type = RECYK_METAL
 	var/digspeed = 40 //moving the delay to an item var so R&D can make improved picks. --NEO
 	origin_tech = "materials=1;engineering=1"

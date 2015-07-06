@@ -6,6 +6,7 @@
 	item_state = "eng_helm"
 	armor = list(melee = 40, bullet = 5, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 80)
 	allowed = list(/obj/item/device/flashlight)
+	light_power = 1.7
 	var/brightness_on = 4 //Luminosity when on. If modified, do NOT run update_brightness() directly
 	var/on = 0 //Remember to run update_brightness() when modified, otherwise disasters happen
 	var/no_light = 0 //Disables the helmet light when set to 1. Make sure to run check_light() if this is updated
@@ -15,6 +16,7 @@
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	pressure_resistance = 200 * ONE_ATMOSPHERE
 	eyeprot = 3
+	species_restricted = list("exclude","Vox")
 
 /obj/item/clothing/head/helmet/space/rig/New()
 	..()
@@ -43,24 +45,12 @@
 	else //We have a light
 		action_button_name = initial(action_button_name) //Make sure we restore the action button
 
-//This thing is a hack to circumvent lighting not working in containers (a mob's hands or pockets being a container)
-//Why that is the case is a mystery for the ages, but it should work
-//Now uses ismob(loc) to cut down on the bullshit, the proc checks if it needs to deduct lighting from a mob or from the world (more properly, the tile on which it is sitting)
-//Note to coders : DO NOT EVER FIRE THIS UNLESS YOU TOGGLE A LIGHT ON OR OFF BEFOREHAND. AND NO, CERTAINLY NOT IF YOU UPDATE BRIGHTNESS_ON
 /obj/item/clothing/head/helmet/space/rig/proc/update_brightness()
 
 	if(on)
-		if(ismob(loc))
-			var/mob/carrier = loc
-			carrier.SetLuminosity(carrier.luminosity + brightness_on)
-		else if(isturf(loc))
-			SetLuminosity(brightness_on)
+		set_light(brightness_on)
 	else
-		if(ismob(loc))
-			var/mob/carrier = loc
-			carrier.SetLuminosity(carrier.luminosity - brightness_on)
-		else if(isturf(loc))
-			SetLuminosity(0)
+		set_light(0)
 	update_icon()
 
 /obj/item/clothing/head/helmet/space/rig/update_icon()
@@ -70,24 +60,16 @@
 /obj/item/clothing/head/helmet/space/rig/attack_self(mob/user)
 	if(no_light)
 		return
-	if(!isturf(user.loc))
-		user << "<span class='warning'>You cannot turn the light on while in this [loc]</span>" //To prevent some lighting anomalities.
-		return
 
 	on = !on
-	update_brightness()
 	update_icon()
 	user.update_inv_head()
 
-/obj/item/clothing/head/helmet/space/rig/pickup(mob/user)
 	if(on)
-		user.SetLuminosity(user.luminosity + brightness_on)
-		SetLuminosity(0)
-
-/obj/item/clothing/head/helmet/space/rig/dropped(mob/user)
-	if(on && !luminosity)
-		user.SetLuminosity(user.luminosity - brightness_on)
-		SetLuminosity(brightness_on)
+		set_light(brightness_on)
+	else
+		set_light(0)
+	user.update_inv_head()
 
 /obj/item/clothing/suit/space/rig
 	name = "engineering hardsuit"
@@ -156,6 +138,8 @@
 	var/obj/machinery/camera/camera
 	pressure_resistance = 40 * ONE_ATMOSPHERE
 
+	species_restricted = null
+
 /obj/item/clothing/head/helmet/space/rig/syndi/attack_self(mob/user)
 	if(camera)
 		..(user)
@@ -184,6 +168,7 @@
 	siemens_coefficient = 0.6
 	pressure_resistance = 40 * ONE_ATMOSPHERE
 
+	species_restricted = null
 
 //Wizard Rig
 /obj/item/clothing/head/helmet/space/rig/wizard
@@ -199,6 +184,8 @@
 
 	wizard_garb = 1
 
+	species_restricted = null
+
 /obj/item/clothing/suit/space/rig/wizard
 	icon_state = "rig-wiz"
 	name = "gem-encrusted hardsuit"
@@ -212,6 +199,8 @@
 	siemens_coefficient = 0.7
 
 	wizard_garb = 1
+
+	species_restricted = null
 
 //Medical Rig
 /obj/item/clothing/head/helmet/space/rig/medical
@@ -428,3 +417,19 @@
 	icon_state = "rig-solaire"
 	item_state = "rig-solaire"
 	armor = list(melee = 60, bullet = 65, laser = 90,energy = 30, bomb = 60, bio = 100, rad = 100)
+
+
+/obj/item/clothing/suit/space/rig/t51b
+	name = "T-51b Power Armor"
+	desc = "Relic of a bygone era, the T-51b is powered by a TX-28 MicroFusion Pack, which holds enough fuel to power its internal hydraulics for a century!"
+	icon_state = "rig-t51b"
+	item_state = "rig-t51b"
+	armor = list(melee = 35, bullet = 35, laser = 40, energy = 40, bomb = 80, bio = 100, rad = 100)
+
+/obj/item/clothing/head/helmet/space/rig/t51b
+	name = "T-51b Power Armor Helmet"
+	desc = "Relic of a bygone era, the T-51b is powered by a TX-28 MicroFusion Pack, which holds enough fuel to power its internal hydraulics for a century!"
+	icon_state = "rig0-t51b"
+	item_state = "rig0-t51b"
+	armor = list(melee = 35, bullet = 35, laser = 40, energy = 40, bomb = 80, bio = 100, rad = 100)
+	_color="t51b"

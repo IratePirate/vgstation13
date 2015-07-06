@@ -3,11 +3,14 @@
 	anchored = 0
 	density = 1
 	icon = 'icons/obj/atmos.dmi'
-	icon_state = "aircond"
+	icon_state = "aircond0"
 	name = "air conditioner"
 	desc = "If you can't take the heat, use one of these."
 	set_temperature = 20		// in celcius, add T0C for kelvin
 	var/cooling_power = 40000
+	base_state = "aircond"
+
+	light_color = LIGHT_COLOR_CYAN
 
 	flags = FPRINT
 

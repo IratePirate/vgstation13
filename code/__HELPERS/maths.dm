@@ -5,11 +5,13 @@
 var/const/E		= 2.71828183
 var/const/Sqrt2	= 1.41421356
 
+/* //All point fingers and laugh at this joke of a list, I even heard using sqrt() is faster than this list lookup, honk.
 // List of square roots for the numbers 1-100.
 var/list/sqrtTable = list(1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5,
                           5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7,
                           7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
                           8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10)
+*/
 
 /proc/Atan2(x, y)
 	if (!x && !y)
@@ -18,13 +20,15 @@ var/list/sqrtTable = list(1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 
 	var/invcos = arccos(x / sqrt(x * x + y * y))
 	return y >= 0 ? invcos : -invcos
 
-proc/arctan(x)
+/proc/arctan(x)
 	var/y=arcsin(x/sqrt(1+x*x))
 	return y
 
-/proc/Ceiling(x)
-	return -round(-x)
+/proc/Ceiling(x, y = 1)
+	. = -round(-x / y) * y
 
+//Moved to macros.dm to reduce pure calling overhead, this was being called shitloads, like, most calls of all procs.
+/*
 /proc/Clamp(const/val, const/min, const/max)
 	if (val <= min)
 		return min
@@ -33,6 +37,7 @@ proc/arctan(x)
 		return max
 
 	return val
+*/
 
 // cotangent
 /proc/Cot(x)
@@ -45,8 +50,8 @@ proc/arctan(x)
 /proc/Default(a, b)
 	return a ? a : b
 
-/proc/Floor(x)
-	return round(x)
+/proc/Floor(x, y = 1)
+	. = round(x / y) * y
 
 // Greatest Common Divisor - Euclid's algorithm
 /proc/Gcd(a, b)

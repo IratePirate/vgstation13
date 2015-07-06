@@ -53,10 +53,6 @@
 	health -= rand(initial(health)*0.8, initial(health)*3) //Grille will always be blasted, but chances of leaving things over
 	healthcheck(hitsound = 1)
 
-/obj/structure/grille/meteorhit()
-	health -= rand(initial(health)*0.8, initial(health)*3)
-	healthcheck(hitsound = 1)
-
 /obj/structure/grille/Bumped(atom/user)
 	if(ismob(user))
 		shock(user, 60) //Give the user the benifit of the doubt
@@ -175,7 +171,7 @@
 				return
 		user.visible_message("<span class='notice'>[user] starts placing a window on \the [src].</span>", \
 		"<span class='notice'>You start placing a window on \the [src].</span>")
-		if(do_after(user, 20))
+		if(do_after(user, src, 20))
 			for(var/obj/structure/window/P in loc)
 				if(P.dir == dir_to_set)//checking this for a 2nd time to check if a window was made while we were waiting.
 					user << "<span class='warning'>There's already a window here.</span>"

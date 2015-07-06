@@ -121,7 +121,7 @@
 	var/list/sensor_information = list()
 	var/datum/radio_frequency/radio_connection
 
-	l_color = "#7BF9FF"
+	light_color = LIGHT_COLOR_CYAN
 
 /obj/machinery/computer/general_air_control/attack_hand(mob/user)
 	if(..(user))
@@ -504,8 +504,10 @@ font-weight:bold;
 
 	if(href_list["out_set_pressure"])
 		var/response=input(usr,"Set new pressure, in kPa. \[0-[50*ONE_ATMOSPHERE]\]") as num
+		var/oldpressure = pressure_setting
 		pressure_setting = text2num(response)
 		pressure_setting = Clamp(pressure_setting, 0, 50*ONE_ATMOSPHERE)
+		investigation_log(I_ATMOS,"'s output pressure set to [pressure_setting] from [oldpressure] by [key_name(usr)]")
 
 	if(!radio_connection)
 		return 0
@@ -666,6 +668,7 @@ font-weight:bold;
 
 	if(href_list["toggle_automation"])
 		automation = !automation
+		investigation_log(I_ATMOS,"was turned [automation ? "on" : "off"] by [key_name(usr)]")
 
 	if(href_list["toggle_injector"])
 		device_info = null

@@ -22,7 +22,7 @@
 
 	var/max_luminosity = 8 // Now varies based on power.
 
-	l_color = "#ffcc00"
+	light_color = LIGHT_COLOR_YELLOW
 
 	// What it's referred to in the alerts
 	var/short_name = "Crystal"
@@ -107,6 +107,13 @@
 		explosion(get_turf(src), explosion_power, explosion_power * 2, explosion_power * 3, explosion_power * 4, 1)
 		del src
 		return
+
+/obj/machinery/power/supermatter/ex_act(severity)
+	switch(severity)
+		if(3.0)
+			return //Should be improved
+		else
+			return explode()
 
 /obj/machinery/power/supermatter/shard/singularity_act()
 	var/prints = ""
@@ -277,8 +284,10 @@
 
 	power -= (power/500)**3
 
+	var/light_value = Clamp(round(Clamp(power / max_power, 0, 1) * max_luminosity), 0, max_luminosity)
+
 	// Lighting based on power output.
-	SetLuminosity(Clamp(round(Clamp(power/max_power,0,1)*max_luminosity),0,max_luminosity))
+	set_light(light_value, light_value / 2)
 
 	return 1
 
@@ -375,9 +384,11 @@
 /obj/machinery/power/supermatter/proc/Consume(var/mob/living/user)
 	if(istype(user))
 		user.dust()
+		if(istype(user,/mob/living/simple_animal/mouse)) //>implying mice are going to follow the rules
+			return
 		power += 200
 	else
-		del user
+		qdel(user)
 
 	power += 200
 

@@ -124,11 +124,6 @@
 	health -= rand(30, 50)
 	healthcheck()
 
-/obj/structure/window/meteorhit()
-
-	health -= rand(100, 150)
-	healthcheck()
-
 /obj/structure/window/CheckExit(var/atom/movable/O, var/turf/target)
 
 	if(istype(O) && O.checkpass(PASSGLASS))
@@ -324,7 +319,7 @@
 						playsound(src, 'sound/items/Welder.ogg', 100, 1)
 						user.visible_message("<span class='warning'>[user] starts disassembling \the [src].</span>", \
 						"<span class='notice'>You start disassembling \the [src].</span>")
-						if(do_after(user, 40) && d_state == WINDOWLOOSE) //Extra condition needed to avoid cheesing
+						if(do_after(user, src, 40) && d_state == WINDOWLOOSE) //Extra condition needed to avoid cheesing
 							playsound(src, 'sound/items/Welder.ogg', 100, 1)
 							user.visible_message("<span class='warning'>[user] disassembles \the [src].</span>", \
 							"<span class='notice'>You disassemble \the [src].</span>")
@@ -354,7 +349,7 @@
 				playsound(src, 'sound/items/Welder.ogg', 100, 1)
 				user.visible_message("<span class='warning'>[user] starts disassembling \the [src].</span>", \
 				"<span class='notice'>You start disassembling \the [src].</span>")
-				if(do_after(user, 40) && d_state == WINDOWLOOSE) //Ditto above
+				if(do_after(user, src, 40) && d_state == WINDOWLOOSE) //Ditto above
 					playsound(src, 'sound/items/Welder.ogg', 100, 1)
 					user.visible_message("<span class='warning'>[user] disassembles \the [src].</span>", \
 					"<span class='notice'>You disassemble \the [src].</span>")

@@ -17,8 +17,7 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "retractor"
 	item_state = "retractor"
-	m_amt = 10000
-	g_amt = 5000 // OH COME ON, WHERE THE FUCK IS THERE ANY GLASS IN A GODDAMN RETRACTOR
+	starting_materials = list(MAT_IRON = 10000, MAT_GLASS = 5000)
 	melt_temperature = MELTPOINT_STEEL
 	w_type = RECYK_METAL
 	flags = FPRINT
@@ -30,10 +29,22 @@
 		viewers(user) << "<span class='danger'>[user] is pulling \his eyes out with the [src.name]! It looks like \he's  trying to commit suicide!</span>"
 		return (BRUTELOSS)
 
+/obj/item/weapon/retractor/manager
+	name = "surgical incision manager"
+	desc = "A true extension of the surgeon's body, this marvel instantly cuts the organ, clamps any bleeding, and retract the skin, allowing for the immediate commencement of therapeutic steps."
+	icon_state = "incisionmanager"
+	item_state = "incisionmanager"
+	force = 7.5
+	surgery_speed = 0.75
+	origin_tech = "materials=5;biotech=5;engineering=4"
+
+/obj/item/weapon/retractor/manager/New()
+	..()
+	icon_state = "incisionmanager_off"
 
 /*HAHA, SUCK IT, 2000 LINES OF SPAGHETTI CODE!
 
-NOW YOUR JOB IOS DONE BY ONLY 500 LINES OF SPAGHETTI CODE!
+NOW YOUR JOB IS DONE BY ONLY 500 LINES OF SPAGHETTI CODE!
 
 LOOK FOR SURGERY.DM*/
 
@@ -140,8 +151,7 @@ LOOK FOR SURGERY.DM*/
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "hemostat"
 	item_state = "hemostat"
-	m_amt = 5000
-	g_amt = 2500
+	starting_materials = list(MAT_IRON = 5000, MAT_GLASS = 2500)
 	w_type = RECYK_METAL
 	flags = FPRINT
 	siemens_coefficient = 1
@@ -283,8 +293,7 @@ LOOK FOR SURGERY.DM*/
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "cautery"
 	item_state = "cautery"
-	m_amt = 5000
-	g_amt = 2500
+	starting_materials = list(MAT_IRON = 5000, MAT_GLASS = 2500)
 	w_type = RECYK_ELECTRONIC
 	flags = FPRINT
 	siemens_coefficient = 1
@@ -383,8 +392,7 @@ LOOK FOR SURGERY.DM*/
 	icon_state = "drill"
 	item_state = "surgicaldrill"
 	hitsound = 'sound/weapons/circsawhit.ogg'
-	m_amt = 15000
-	g_amt = 10000
+	starting_materials = list(MAT_IRON = 15000, MAT_GLASS = 10000)
 	w_type = RECYK_ELECTRONIC
 	flags = FPRINT
 	siemens_coefficient = 1
@@ -415,8 +423,7 @@ LOOK FOR SURGERY.DM*/
 	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 5
-	m_amt = 10000
-	g_amt = 5000
+	starting_materials = list(MAT_IRON = 10000, MAT_GLASS = 5000)
 	w_type = RECYK_METAL
 	origin_tech = "materials=1;biotech=1"
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
@@ -658,51 +665,44 @@ LOOK FOR SURGERY.DM*/
  * Researchable Scalpels
 
 */
-/obj/item/weapon/scalpel/laser1
-	name = "laser scalpel"
-	desc = "A scalpel augmented with a directed laser, allowing for bloodless incisions. This one looks basic and could be improved."
+/obj/item/weapon/scalpel/laser
+	heat_production = 0
+	damtype = "fire"
+	var/cauterymode = 0 //1 = cautery enabled
+
+/obj/item/weapon/scalpel/laser/attack_self(mob/user)
+	if(!cauterymode)
+		user << "You disable the blade and switch to the scalpel's cautery tool."
+		heat_production = 1600
+		sharpness = 0
+	else
+		user << "You return the scalpel to cutting mode."
+		heat_production = 0
+		sharpness = initial(sharpness)
+	cauterymode = !cauterymode
+
+/obj/item/weapon/scalpel/laser/tier1
+	name = "basic laser scalpel"
+	desc = "A scalpel augmented with a directed laser, allowing for bloodless incisions and built-in cautery. This one looks basic and could be improved."
 	icon_state = "scalpel_laser1"
 	item_state = "laserscalpel1"
-	damtype = "fire"
+	surgery_speed = 0.8
 
-/obj/item/weapon/scalpel/laser1/New()
+/obj/item/weapon/scalpel/laser/tier1/New()
 	..()
 	icon_state = "scalpel_laser1_off"
 
-/obj/item/weapon/scalpel/laser2
-	name = "laser scalpel"
-	desc = "A scalpel augmented with a directed laser, allowing for bloodless incisions. This one looks somewhat advanced."
+/obj/item/weapon/scalpel/laser/tier2
+	name = "high-precision laser scalpel"
+	desc = "A scalpel augmented with a directed laser, allowing for bloodless incisions and built-in cautery. This one looks to be the pinnacle of precision energy cutlery!"
 	icon_state = "scalpel_laser2"
 	item_state = "laserscalpel2"
-	damtype = "fire"
-	force = 12.0
+	force = 15.0
+	surgery_speed = 0.5
 
-/obj/item/weapon/scalpel/laser2/New()
+/obj/item/weapon/scalpel/laser/tier2/New()
 	..()
 	icon_state = "scalpel_laser2_off"
-
-/obj/item/weapon/scalpel/laser3
-	name = "laser scalpel"
-	desc = "A scalpel augmented with a directed laser, allowing for bloodless incisions. This one looks to be the pinnacle of precision energy cutlery!"
-	icon_state = "scalpel_laser3"
-	item_state = "laserscalpel3"
-	damtype = "fire"
-	force = 15.0
-
-/obj/item/weapon/scalpel/laser3/New()
-	..()
-	icon_state = "scalpel_laser3_off"
-
-/obj/item/weapon/scalpel/manager
-	name = "incision management system"
-	desc = "A true extension of the surgeon's body, this marvel instantly cuts the organ, clamp any bleeding, and retract the skin, allowing for the immediate commencement of therapeutic steps."
-	icon_state = "scalpel_manager"
-	item_state = "incisionmanager"
-	force = 7.5
-
-/obj/item/weapon/scalpel/manager/New()
-	..()
-	icon_state = "scalpel_manager_off"
 
 /*
  * Circular Saw
@@ -721,8 +721,7 @@ LOOK FOR SURGERY.DM*/
 	throwforce = 9.0
 	throw_speed = 3
 	throw_range = 5
-	m_amt = 20000
-	g_amt = 10000
+	starting_materials = list(MAT_IRON = 20000, MAT_GLASS = 10000)
 	w_type = RECYK_ELECTRONIC
 	origin_tech = "materials=1;biotech=1"
 	attack_verb = list("attacked", "slashed", "sawed", "cut")

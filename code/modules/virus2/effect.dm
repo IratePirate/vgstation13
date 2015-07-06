@@ -472,7 +472,7 @@
 	if (prob(15))
 		mob.emote("me",1,"vomits up a chicken egg!")
 		playsound(mob.loc, 'sound/effects/splat.ogg', 50, 1)
-		new /obj/item/weapon/reagent_containers/food/snacks/egg(get_turf(mob))
+		new /obj/item/weapon/reagent_containers/food/snacks/meat/egg(get_turf(mob))
 
 /datum/disease2/effect/confusion
 	name = "Topographical Cretinism"
@@ -814,7 +814,7 @@ var/list/compatible_mobs = list(/mob/living/carbon/human, /mob/living/carbon/mon
 	name = "Lantern Syndrome"
 	stage = 2
 /datum/disease2/effect/lantern/activate(var/mob/living/carbon/mob,var/multiplier)
-	mob.SetLuminosity(4)
+	mob.set_light(4)
 	mob << "<span class = 'notice'>You are glowing!</span>"
 
 

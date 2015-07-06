@@ -3,7 +3,7 @@
  	name = "Supermatter Cascade"
  	desc = "Unknown harmonance affecting universal substructure, converting nearby matter to supermatter."
 
- 	decay_rate = 5 // 5% chance of a turf decaying on lighting update/airflow (there's no actual tick for turfs)
+ 	decay_rate = 5 // 5% chance of a turf decaying on lighting update (there's no actual tick for turfs). Code that triggers this is lighting_overlays.dm, line #62.
 
 /datum/universal_state/supermatter_cascade/OnShuttleCall(var/mob/user)
 	if(user)
@@ -16,8 +16,6 @@
 		T.underlays -= "end01"
 	else
 		T.overlays -= "end01"
-		if(!T.color_lighting_lumcount)
-			T.update_lumcount(1, 160, 255, 0, 0)
 
 /datum/universal_state/supermatter_cascade/DecayTurf(var/turf/T)
 	if(istype(T,/turf/simulated/wall))
@@ -52,9 +50,13 @@
 	suspend_alert = 1
 
 	AreaSet()
+	tcheck(80,1)
 	MiscSet()
+	tcheck(80,1)
 	APCSet()
+	tcheck(80,1)
 	OverlayAndAmbientSet()
+	tcheck(80,1)
 
 	// Disable Nar-Sie.
 	ticker.mode.eldergod=0
@@ -62,8 +64,10 @@
 	ticker.StartThematic("endgame")
 
 	PlayerSet()
-
-	new /obj/machinery/singularity/narsie/large/exit(pick(endgame_exits))
+	tcheck(80,1)
+	if(!endgame_exits.len)
+		message_admins("<span class='warning'><font size=7>SOMEBODY DIDNT PUT ENDGAME EXITS FOR THIS FUCKING MAP: [map.nameLong]</span></font>")
+	else new /obj/machinery/singularity/narsie/large/exit(pick(endgame_exits))
 	spawn(rand(30,60) SECONDS)
 		var/txt = {"
 There's been a galaxy-wide electromagnetic pulse.  All of our systems are heavily damaged and many personnel are dead or dying. We are seeing increasing indications of the universe itself beginning to unravel.
@@ -135,6 +139,7 @@ The access requirements on the Asteroid Shuttles' consoles have now been revoked
 					A.party=1
 
 		A.updateicon()
+		tcheck(80,1)
 
 /datum/universal_state/supermatter_cascade/OverlayAndAmbientSet()
 	for(var/turf/T in turfs)
@@ -143,12 +148,18 @@ The access requirements on the Asteroid Shuttles' consoles have now been revoked
 		else
 			if(T.z != map.zCentcomm)
 				T.underlays += "end01"
-				T.update_lumcount(1, 160, 255, 0, 0)
+		tcheck(80,1)
+
+	for(var/atom/movable/lighting_overlay/L in all_lighting_overlays)
+		if(L.z != map.zCentcomm)
+			L.update_lumcount(0.15, 0.5, 0)
+		tcheck(80,1)
 
 /datum/universal_state/supermatter_cascade/proc/MiscSet()
 	for (var/obj/machinery/firealarm/alm in machines)
 		if (!(alm.stat & BROKEN))
 			alm.ex_act(2)
+		tcheck(80,1)
 
 /datum/universal_state/supermatter_cascade/proc/APCSet()
 	for (var/obj/machinery/power/apc/APC in power_machines)
@@ -158,6 +169,7 @@ The access requirements on the Asteroid Shuttles' consoles have now been revoked
 				APC.cell.charge = 0
 			APC.emagged = 1
 			APC.queue_icon_update()
+		tcheck(80,1)
 
 /datum/universal_state/supermatter_cascade/proc/PlayerSet()
 	for(var/datum/mind/M in player_list)
@@ -166,12 +178,14 @@ The access requirements on the Asteroid Shuttles' consoles have now been revoked
 		if(M.current.stat!=2)
 			M.current.Weaken(10)
 			flick("e_flash", M.current.flash)
+		tcheck(80,1)
 
 		var/failed_objectives=0
 		for(var/datum/objective/O in M.objectives)
 			O.blocked=O.type != /datum/objective/survive
 			if(O.blocked)
 				failed_objectives=1
+			tcheck(80,1)
 
 		if(!locate(/datum/objective/survive) in M.objectives)
 			var/datum/objective/survive/live = new("Escape collapsing universe through the rift on the research output.")
@@ -268,3 +282,4 @@ The access requirements on the Asteroid Shuttles' consoles have now been revoked
 			A.icon_state = "ai"
 
 			A << "<span class='danger'><FONT size = 3>The massive blast of energy has fried the systems that were malfunctioning.  You are no longer malfunctioning.</FONT></span>"
+		tcheck(80,1)

@@ -10,8 +10,8 @@
 	restricted_jobs = list("AI", "Cyborg", "Mobile MMI", "Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Chaplain") //Consistent screening has filtered all infiltration attempts on high value jobs
 	protected_jobs = list()
 	required_players = 1
-	required_players_secret = 15
-	required_enemies = 2
+	required_players_secret = 10
+	required_enemies = 1
 	recommended_enemies = 4
 
 	uplink_welcome = "Syndicate Uplink Console:"
@@ -317,12 +317,16 @@ You are weak to holy things and starlight. Don't go into space and avoid the Cha
 
 /datum/vampire/proc/OnLife()
 	if(!owner) return
+	if(!owner.druggy)
+		owner.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+
 	if(VAMP_MATURE in powers)
 		owner.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 		owner.see_in_dark = 8
+		owner.see_invisible = SEE_INVISIBLE_MINIMUM
+
 	else if(VAMP_VISION in powers)
 		owner.sight |= SEE_MOBS
-	if(!owner.druggy) owner.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
 /mob/proc/handle_bloodsucking(mob/living/carbon/human/H)
 	src.mind.vampire.draining = H
@@ -341,7 +345,7 @@ You are weak to holy things and starlight. Don't go into space and avoid the Cha
 		if(!mind.vampire || !(mind in ticker.mode.vampires))
 			src << "<span class='warning'>Your fangs have disappeared!</span>"
 			return 0
-		if(H.flags & NO_BLOOD)
+		if(H.species.flags & NO_BLOOD)
 			src << "<span class='warning'>Not a drop of blood here</span>"
 			return 0
 		bloodtotal = src.mind.vampire.bloodtotal
@@ -593,9 +597,10 @@ You are weak to holy things and starlight. Don't go into space and avoid the Cha
 		if(VAMP_MATURE in mind.vampire.powers)
 			smitetemp -= 1
 		if(VAMP_SHADOW in mind.vampire.powers)
-			var/turf/simulated/T = get_turf(src)
-			if(T.lighting_lumcount < 2)
+			var/turf/T = get_turf(src)
+			if((T.get_lumcount() * 10) < 2)
 				smitetemp -= 1
+
 		if(VAMP_UNDYING in mind.vampire.powers)
 			smitetemp -= 1
 

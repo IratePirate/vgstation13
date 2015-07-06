@@ -461,75 +461,6 @@
 			reagents.add_reagent("sprinkles", 2)
 
 // Eggs
-/obj/item/weapon/reagent_containers/food/snacks/egg
-	name = "egg"
-	desc = "An egg!"
-	icon_state = "egg"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/New()
-		..()
-		reagents.add_reagent("nutriment", 1)
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/throw_impact(atom/hit_atom)
-		..()
-		new/obj/effect/decal/cleanable/egg_smudge(src.loc)
-		src.reagents.reaction(hit_atom, TOUCH)
-		src.visible_message("<span class='warning'>[src.name] has been squashed.</span>","<span class='warning'>You hear a smack.</span>")
-		del(src)
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/blue
-	icon_state = "egg-blue"
-	_color = "blue"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/green
-	icon_state = "egg-green"
-	_color = "green"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/mime
-	icon_state = "egg-mime"
-	_color = "mime"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/orange
-	icon_state = "egg-orange"
-	_color = "orange"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/purple
-	icon_state = "egg-purple"
-	_color = "purple"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/rainbow
-	icon_state = "egg-rainbow"
-	_color = "rainbow"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/red
-	icon_state = "egg-red"
-	_color = "red"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/yellow
-	icon_state = "egg-yellow"
-	_color = "yellow"
-
-/obj/item/weapon/reagent_containers/food/snacks/egg/attackby(obj/item/weapon/W as obj, mob/user as mob)
-	if (istype(W, /obj/item/weapon/reagent_containers))
-		if(W.reagents.amount_cache.len == 1 && W.reagents.has_reagent("flour", 5))
-			W.reagents.remove_reagent("flour",5)
-			new /obj/item/weapon/reagent_containers/food/snacks/dough(src)
-			user << "You make some dough."
-			qdel(src)
-			return 1
-	else if (istype(W, /obj/item/toy/crayon))
-		var/obj/item/toy/crayon/C = W
-		var/clr = C.colourName
-
-		if(!(clr in list("blue", "green", "mime", "orange", "purple", "rainbow", "red", "yellow")))
-			user << "<span class='notice'>[src] refuses to take on this colour!</span>"
-			return
-
-		user << "<span class='notice'>You colour [src] [clr].</span>"
-		icon_state = "egg-[clr]"
-		_color = clr
-	else
-		..()
 
 /obj/item/weapon/reagent_containers/food/snacks/friedegg
 	name = "fried egg"
@@ -612,21 +543,6 @@
 		reagents.add_reagent("nutriment", 3)
 		bitesize = 1
 
-/obj/item/weapon/reagent_containers/food/snacks/carpmeat
-	name = "carp fillet"
-	desc = "A fillet of spess carp meat"
-	icon_state = "fishfillet"
-	New()
-		..()
-		eatverb = pick("bite","chew","choke down","gnaw","swallow","chomp")
-		reagents.add_reagent("nutriment", 3)
-		reagents.add_reagent("carpotoxin", 3)
-		bitesize = 6
-
-/obj/item/weapon/reagent_containers/food/snacks/carpmeat/imitation
-	name = "imitation carp fillet"
-	desc = "Almost just like the real thing, kinda."
-
 /obj/item/weapon/reagent_containers/food/snacks/fishfingers
 	name = "fish fingers"
 	desc = "A finger of fish."
@@ -655,35 +571,6 @@
 		..()
 		reagents.add_reagent("nutriment", 3)
 		src.bitesize = 6
-
-/obj/item/weapon/reagent_containers/food/snacks/bearmeat
-	name = "bear meat"
-	desc = "A very manly slab of meat."
-	icon_state = "bearmeat"
-	New()
-		..()
-		reagents.add_reagent("nutriment", 12)
-		reagents.add_reagent("hyperzine", 5)
-		src.bitesize = 3
-
-/obj/item/weapon/reagent_containers/food/snacks/xenomeat
-	name = "meat"
-	desc = "A slab of meat"
-	icon_state = "xenomeat"
-	New()
-		..()
-		reagents.add_reagent("nutriment", 3)
-		src.bitesize = 6
-
-/obj/item/weapon/reagent_containers/food/snacks/spidermeat
-	name = "spider meat"
-	desc = "A slab of spider meat."
-	icon_state = "spidermeat"
-	New()
-		..()
-		reagents.add_reagent("nutriment", 3)
-		reagents.add_reagent("toxin", 3)
-		bitesize = 3
 
 /obj/item/weapon/reagent_containers/food/snacks/spiderleg
 	name = "spider leg"
@@ -920,6 +807,12 @@
 	..()
 	new/obj/effect/decal/cleanable/pie_smudge(src.loc)
 	del(src)
+
+/obj/item/weapon/reagent_containers/food/snacks/pie/empty //so the H.O.N.K. cream pie mortar can't generate free nutriment
+	trash = null
+	New()
+		..()
+		reagents.clear_reagents()
 
 /obj/item/weapon/reagent_containers/food/snacks/berryclafoutis
 	name = "berry clafoutis"
@@ -3062,16 +2955,6 @@
 
 //////////////////CHICKEN//////////////////
 
-/obj/item/weapon/reagent_containers/food/snacks/rawchicken
-	name = "raw chicken"
-	desc = "This better be delicious."
-	icon_state = "raw_chicken"
-
-/obj/item/weapon/reagent_containers/food/snacks/rawchicken/New()
-	..()
-	reagents.add_reagent("nutriment", 3)
-	bitesize = 1
-
 /obj/item/weapon/reagent_containers/food/snacks/chicken_nuggets
 	name = "Chicken Nuggets"
 	desc = "You'd rather not know how they were prepared."
@@ -3483,3 +3366,112 @@
 		reagents.add_reagent("sugar", 5)
 		reagents.add_reagent("ice", 5)
 		bitesize = 3
+
+/obj/item/weapon/reagent_containers/food/snacks/potatosalad
+	name = "Potato Salad"
+	desc = "With 21st century technology, it could take as long as three days to make this."
+	icon_state = "potato_salad"
+	New()
+		..()
+		reagents.add_reagent("nutriment", 10)
+		bitesize = 2
+
+/obj/item/weapon/reagent_containers/food/snacks/sundaeramen
+	name = "Sundae Ramen"
+	desc = "This is... sundae (?) flavored (?) ramen (?). You just don't know."
+	icon_state = "sundaeramen"
+	New()
+		..()
+		reagents.add_reagent("nutriment", 10)
+		reagents.add_reagent("discount", 2)
+		bitesize = 2
+
+/obj/item/weapon/reagent_containers/food/snacks/sweetsundaeramen
+	name = "Sweet Sundae Ramen"
+	desc = "It's a delicious ramen recipe that can soothe the soul of a savage spaceman."
+	icon_state = "sweetsundaeramen"
+	New()
+		..()
+		bitesize = 4
+		while(reagents.total_volume<70)
+			generatecontents()
+
+/obj/item/weapon/reagent_containers/food/snacks/sweetsundaeramen/proc/generatecontents()
+	switch(pick(1,2,3,4,5,6,7,8,9,10))
+		if(1)
+			desc += " It has peppermint flavoring! But just a few drops."
+			reagents.add_reagent("zombiepowder", 10)
+		if(2)
+			desc += " This may not be everyone's cup of tea, but it's great, I promise."
+			reagents.add_reagent("oxycodone", 10)
+		if(3)
+			desc += " This has the cook's favorite ingredient -- and a lot of it!"
+			reagents.add_reagent("mindbreaker", 10)
+		if(4)
+			desc += " It has TONS of flavor!"
+			reagents.add_reagent("minttoxin", 10)
+		if(5)
+			desc += " The recipe for this thing got lost somewhere..."
+			reagents.add_reagent("nutriment", 10)
+		if(6)
+			desc += " It has extra sweetness and a little bit of crumble!"
+			reagents.add_reagent("tricordrazine", 10)
+		if(7)
+			desc += " It may be thick, but the noodles slip around easily."
+			reagents.add_reagent("nutriment", 10)
+		if(8)
+			desc += " It has a nice crunch!"
+			reagents.add_reagent("nutriment", 10)
+		if(9)
+			desc += " Yummy, but with all the sweets, your chest starts to hurt."
+			reagents.add_reagent("nutriment", 10)
+		if(10)
+			desc += " Just a dollop of garnishes."
+			reagents.add_reagent("nutriment", 10)
+
+/obj/item/weapon/reagent_containers/food/snacks/chocofrog
+	name = "chocolate frog"
+	desc = "An exotic snack originating from the Space Wizard Federation. Very slippery!"
+	icon = 'icons/obj/wiz_cards.dmi'
+	icon_state = "frog"
+
+	flags = PROXMOVE
+
+	var/jump_cd
+
+/obj/item/weapon/reagent_containers/food/snacks/chocofrog/New()
+	..()
+	reagents.add_reagent("nutriment",2)
+	reagents.add_reagent("hyperzine",1)
+
+/obj/item/weapon/reagent_containers/food/snacks/chocofrog/HasProximity(atom/movable/AM as mob|obj)
+	if(!jump_cd)
+		jump()
+	return ..()
+
+/obj/item/weapon/reagent_containers/food/snacks/chocofrog/proc/jump()
+	if(!istype(src.loc,/turf)) return
+	jump_cd=1
+	spawn(50)
+		jump_cd=0
+
+	var/list/escape_paths=list()
+
+	for(var/turf/T in view(7,src))
+		escape_paths |= T
+
+	var/turf/T = pick(escape_paths)
+	src.throw_at(T, 10, 2)
+	return 1
+
+/obj/item/weapon/reagent_containers/food/snacks/chocofrog/pickup(mob/living/user as mob)
+	var/mob/living/carbon/human/H = user
+	if(!H) return 1
+
+	spawn(0)
+		if(((M_CLUMSY in H.mutations)) || prob(25))
+			user.visible_message("<span class='warning'>[src] escapes from [H]'s hands!</span>","<span class='warning'>[src] escapes from your grasp!</span>")
+			H.drop_item()
+
+			jump()
+	return 1

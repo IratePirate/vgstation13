@@ -13,7 +13,7 @@
 	throw_speed = 2
 	throw_range = 10
 	force = 10.0
-	m_amt = 90 // TODO: Check against autolathe.
+	starting_materials = list(MAT_IRON = 90) // TODO: Check against autolathe.
 	w_type = RECYK_METAL
 	melt_temperature = MELTPOINT_STEEL
 	attack_verb = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")
@@ -37,7 +37,7 @@
 	throwforce = 2
 	w_class = 2.0
 	force = 3.0
-	m_amt = 0
+	starting_materials = null
 	max_water = 30
 	sprite_name = "miniFE"
 
@@ -72,19 +72,20 @@
 	if (istype(W, /obj/item/weapon/wrench))
 		if(!is_open_container())
 			user.visible_message("[user] begins to unwrench the fill cap on \the [src].","<span class='notice'>You begin to unwrench the fill cap on \the [src].</span>")
-			if(do_after(user, 25))
+			if(do_after(user, src, 25))
 				user.visible_message("[user] removes the fill cap on \the [src].","<span class='notice'>You remove the fill cap on \the [src].</span>")
 				playsound(get_turf(src),'sound/items/Ratchet.ogg', 100, 1)
 				flags |= OPENCONTAINER
 		else
 			user.visible_message("[user] begins to seal the fill cap on \the [src].","<span class='notice'>You begin to seal the fill cap on \the [src].</span>")
-			if(do_after(user, 25))
+			if(do_after(user, src, 25))
 				user.visible_message("[user] fastens the fill cap on \the [src].","<span class='notice'>You fasten the fill cap on \the [src].</span>")
 				playsound(get_turf(src),'sound/items/Ratchet.ogg', 100, 1)
 				flags &= ~OPENCONTAINER
 		return
 
 	if (istype(W, /obj/item) && !is_open_container() && !istype(src, /obj/item/weapon/extinguisher/foam))
+		if(W.is_open_container()) return //We're probably trying to fill it
 		if(W.w_class>1)
 			user << "\The [W] won't fit into the nozzle!"
 			return
@@ -233,7 +234,7 @@
 
 	if (!safety && !is_open_container())
 		if (src.reagents.total_volume < 1)
-			usr << "<span class='warning'>\The [src] is empty."
+			usr << "<span class='warning'>\The [src] is empty.</span>"
 			return
 
 		if (world.time < src.last_use + 20)

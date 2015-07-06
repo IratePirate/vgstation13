@@ -33,33 +33,25 @@
 
 /obj/item/weapon/storage/secure/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(locked)
-		if ( (istype(W, /obj/item/weapon/card/emag)||istype(W, /obj/item/weapon/melee/energy/blade)) && (!src.emagged))
+		if ( istype(W, /obj/item/weapon/card/emag) && (!src.emagged))
 			emagged = 1
 			src.overlays += image('icons/obj/storage.dmi', icon_sparking)
 			sleep(6)
 			src.overlays = null
 			overlays += image('icons/obj/storage.dmi', icon_locking)
 			locked = 0
-			if(istype(W, /obj/item/weapon/melee/energy/blade))
-				var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-				spark_system.set_up(5, 0, src.loc)
-				spark_system.start()
-				playsound(get_turf(src), 'sound/weapons/blade1.ogg', 50, 1)
-				playsound(get_turf(src), "sparks", 50, 1)
-				user << "You slice through the lock on [src]."
-			else
-				user << "You short out the lock on [src]."
+			user << "You short out the lock on [src]."
 			return
 
 		if (istype(W, /obj/item/weapon/screwdriver))
-			if (do_after(user, 20))
+			if (do_after(user, src, 20))
 				src.open =! src.open
 				user.show_message(text("<span class='notice'>You [] the service panel.</span>", (src.open ? "open" : "close")))
 			return
 		if ((istype(W, /obj/item/device/multitool)) && (src.open == 1)&& (!src.l_hacking))
 			user.show_message(text("<span class='warning'>Now attempting to reset internal memory, please hold.</span>"), 1)
 			src.l_hacking = 1
-			if (do_after(usr, 100))
+			if (do_after(usr, src, 100))
 				if (prob(40))
 					src.l_setshort = 1
 					src.l_set = 0

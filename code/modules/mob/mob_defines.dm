@@ -6,7 +6,7 @@
 	w_type = RECYK_BIOLOGICAL
 
 //	flags = NOREACT
-	flags = HEAR
+	flags = HEAR | PROXMOVE
 	var/datum/mind/mind
 
 	var/stat = 0 //Whether a mob is alive or dead. TODO: Move this to living - Nodrak
@@ -259,3 +259,4 @@
 	var/iscorpse = 0 //Keeps track of whether this was spawned from a landmark or not.
 
 	var/list/languages[0]
+	var/stat_fucked = 0

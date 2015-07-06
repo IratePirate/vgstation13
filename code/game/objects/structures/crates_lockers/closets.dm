@@ -20,7 +20,7 @@
 							  //then open it in a populated area to crash clients.
 	var/breakout_time = 2 //2 minutes by default
 
-	m_amt = 2*CC_PER_SHEET_METAL
+	starting_materials = list(MAT_IRON = 2*CC_PER_SHEET_METAL)
 	w_type = RECYK_METAL
 
 
@@ -260,13 +260,6 @@
 			A.loc = src.loc
 		del(src)
 
-/obj/structure/closet/meteorhit(obj/O as obj)
-	if(O.icon_state == "flaming")
-		for(var/mob/M in src)
-			M.meteorhit(O)
-		src.dump_contents()
-		del(src)
-
 /obj/structure/closet/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(src.opened)
 		if(istype(W, /obj/item/weapon/grab))
@@ -411,7 +404,7 @@
 	for(var/mob/O in viewers(src))
 		O << "<span class='warning'>[src] begins to shake violently!</span>"
 	var/turf/T = get_turf(src)	//Check for moved locker
-	if(do_after(user,(breakout_time*60*10))) //minutes * 60seconds * 10deciseconds
+	if(do_after(user, src, (breakout_time*60*10))) //minutes * 60seconds * 10deciseconds
 		if(!user || user.stat != CONSCIOUS || user.loc != src || opened || (!locked && !welded) || T != get_turf(src))
 			return
 		//we check after a while whether there is a point of resisting anymore and whether the user is capable of resisting

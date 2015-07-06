@@ -1,3 +1,7 @@
+#define MASS_FILL			0
+#define MASS_DELETE			1
+#define SELECTIVE_DELETE	2
+#define SELECTIVE_FILL		3
 /proc/togglebuildmode(mob/M as mob in player_list)
 	set name = "Toggle Build Mode"
 	set category = "Special Verbs"
@@ -63,6 +67,8 @@
 			if(SOUTHWEST)
 				dir = NORTH
 		return 1
+	DblClick(object,location,control,params)
+		return Click(object,location,control,params)
 
 /obj/effect/bmode/buildhelp
 	icon = 'icons/misc/buildmode.dmi'
@@ -101,6 +107,8 @@
 				usr << "<span class='notice'>Right Mouse Button on turf/obj/mob     = Throw</span>"
 				usr << "<span class='notice'>***********************************************************</span>"
 		return 1
+	DblClick(object,location,control,params)
+		return Click(object,location,control,params)
 
 /obj/effect/bmode/buildquit
 	icon_state = "buildquit"
@@ -109,6 +117,8 @@
 	Click()
 		togglebuildmode(master.cl.mob)
 		return 1
+	DblClick(object,location,control,params)
+		return Click(object,location,control,params)
 
 var/global/list/obj/effect/bmode/buildholder/buildmodeholders = list()
 /obj/effect/bmode/buildholder
@@ -120,6 +130,8 @@ var/global/list/obj/effect/bmode/buildholder/buildmodeholders = list()
 	var/obj/effect/bmode/buildmode/buildmode = null
 	var/obj/effect/bmode/buildquit/buildquit = null
 	var/atom/movable/throw_atom = null
+	var/turf/fill_left
+	var/turf/fill_right
 
 obj/effect/bmode/buildholder/New()
 	..()
@@ -190,6 +202,23 @@ obj/effect/bmode/buildholder/New()
 					if("turf-reference")
 						master.buildmode.valueholder = input(usr,"Enter variable value:" ,"Value") as turf in world
 	return 1
+/obj/effect/bmode/buildmode/DblClick(object,location,control,params)
+	return Click(object,location,control,params)
+
+/client/verb/fillmouse_down()
+	//set instant = 1
+	set hidden = 1
+	set name = ".fillmouse_down"
+	if(src.buildmode == 2 && !src.filling)
+		filling = !filling
+		src.mouse_pointer_icon = 'icons/mouse/buildfill.dmi'
+
+/client/verb/fillmouse_released()
+	//set instant = 1
+	set hidden = 1
+	set name = ".fillmouse_released"
+	if(src.filling)
+		src.mouse_pointer_icon = initial(src.mouse_pointer_icon)
 
 /proc/build_click(var/mob/user, buildmode, params, var/obj/object)
 	var/obj/effect/bmode/buildholder/holder = null
@@ -258,6 +287,105 @@ obj/effect/bmode/buildholder/New()
 					if(SOUTHWEST)
 						new/obj/structure/window/full/reinforced(get_turf(object))
 		if(2)
+			if(pa.Find("ctrl") && pa.Find("shift"))
+				if(!holder)
+					return
+				if(pa.Find("left"))
+					holder.fill_left = RT
+					usr << "<span class='notice'>Set bottom left fill corner to ([formatJumpTo(RT)])</span>"
+				else if(pa.Find("right"))
+					holder.fill_right = RT
+					usr << "<span class='notice'>Set top right fill corner to ([formatJumpTo(RT)])</span>"
+				if(holder.fill_left && holder.fill_right)
+					var/turf/start = holder.fill_left
+					var/turf/end = holder.fill_right
+					if(start.z != end.z)
+						usr << "<span class='warning'>You can't do a fill across zlevels you silly person.</span>"
+						holder.fill_left = null
+						holder.fill_right = null
+						return
+					var/list/fillturfs = block(start,end)
+					if(fillturfs.len)
+						if(alert("You're about to do a fill operation spanning [fillturfs.len] tiles, are you sure?","Panic","Yes","No") == "Yes")
+							if(fillturfs.len > 150)
+								if(alert("Are you completely sure about filling [fillturfs.len] tiles?","Panic!!!!","Yes","No") != "Yes")
+									holder.fill_left = null
+									holder.fill_right = null
+									usr << "<span class='notice'>Cleared filling corners.</span>"
+									return
+							var/areaAction = alert("FILL tiles or DELETE them? areaAction will destroy EVERYTHING IN THE SELECTED AREA", "Create or destroy, your chance to be a GOD","FILL","DELETE") == "DELETE"
+							if(areaAction) areaAction = (alert("Selective(TYPE) Delete or MASS Delete?", "Scorched Earth or selective destruction?", "Selective", "MASS") == "Selective" ? 2 : 1)
+							else
+								areaAction = (alert("Mass FILL or Selective(Type => Type) FILL?", "Do they really need [fillturfs.len] of closets?", "Selective", "Mass") == "Selective" ? 3 : 0)
+							var/msglog = "<span class='danger'>[key_name_admin(usr)] just buildmode"
+							var/strict = 1
+							var/chosen
+							switch(areaAction)
+								if(MASS_DELETE)
+									msglog += " <big>DELETED EVERYTHING</big> in [fillturfs.len] tile\s "
+								if(SELECTIVE_DELETE)
+									chosen = easyTypeSelector()
+									if(!chosen) return
+									strict = alert("Delete all children of [chosen]?", "Children being all types and subtypes of [chosen]", "Yes", "No") == "No"
+									msglog += " <big>DELETED [!strict ? "ALL TYPES OF " :""][chosen]</big> in [fillturfs.len] tile\s "
+								if(SELECTIVE_FILL)
+									chosen = easyTypeSelector()
+									if(!chosen) return
+									strict = alert("Change all children of [chosen]?", "Children being all types and subtypes of [chosen]", "Yes", "No") == "No"
+									msglog += " Changed all [chosen] in [fillturfs.len] tile\s to [holder.buildmode.objholder] "
+								else
+									msglog += " FILLED [fillturfs.len] tile\s with [holder.buildmode.objholder] "
+							msglog += "at ([formatJumpTo(start)] to [formatJumpTo(end)])</span>"
+							message_admins(msglog)
+							log_admin(msglog)
+							usr << "<span class='notice'>If the server is lagging the operation will periodically sleep so the fill may take longer than typical.</span>"
+							var/turf_op = ispath(holder.buildmode.objholder,/turf)
+							var/deletions = 0
+							for(var/turf/T in fillturfs)
+								if(areaAction == MASS_DELETE || areaAction == SELECTIVE_DELETE)
+									if(ispath(chosen, /turf))
+										T.ChangeTurf(chosen)
+										deletions++
+									else
+										for(var/atom/thing in T.contents)
+											if(thing==usr) continue 
+											if(strict && (thing.type == chosen))
+												qdel(thing)
+											else if(istype(thing, chosen))
+												qdel(thing)
+											else
+												qdel(thing)
+											deletions++
+											tcheck(80,1)
+										T.ChangeTurf(get_base_turf(T.z))
+								else
+									if(turf_op)
+										if(areaAction == SELECTIVE_FILL)
+											if(strict)
+												if(T.type != chosen) continue
+											else
+												if(!istype(T, chosen)) continue
+										T.ChangeTurf(holder.buildmode.objholder)
+									else
+										if(areaAction == SELECTIVE_FILL)
+											for(var/atom/thing in T.contents)
+												if(strict)
+													if(thing.type != chosen) continue
+												else
+													if(!istype(thing, chosen)) continue
+												var/atom/A = new holder.buildmode.objholder(T)
+												A.dir = thing.dir
+												qdel(thing)
+												tcheck(80,1)
+										else
+											var/obj/A = new holder.buildmode.objholder(T)
+											if(istype(A))
+												A.dir = holder.builddir.dir
+								tcheck(80,1)
+							holder.fill_left = null
+							holder.fill_right = null
+							if(deletions) usr << "<span class='info'>Successfully deleted [deletions] [chosen]'\s</span>"
+				return
 			if(pa.Find("left"))
 				if(holder.buildmode.copycat)
 					if(isturf(holder.buildmode.copycat))
@@ -290,7 +418,7 @@ obj/effect/bmode/buildholder/New()
 							A.maptext = holder.buildmode.copycat.maptext
 							A.maptext_height = holder.buildmode.copycat.maptext_height
 							A.maptext_width = holder.buildmode.copycat.maptext_width
-							A.l_color = holder.buildmode.copycat.l_color
+							A.light_color = holder.buildmode.copycat.light_color
 							A.luminosity = holder.buildmode.copycat.luminosity
 							A.molten = holder.buildmode.copycat.molten
 							A.pixel_x = holder.buildmode.copycat.pixel_x
@@ -353,3 +481,30 @@ obj/effect/bmode/buildholder/New()
 					holder.throw_atom.throw_at(object, 10, 1)
 					log_admin("[key_name(usr)] is throwing a [holder.throw_atom] at [object] - [formatJumpTo(RT)]")
 
+/proc/easyTypeSelector()
+	var/chosen = null
+
+	var/list/matches = new()
+	var/O = input("What type? Leave as /atom to choose from a global list of types.", "Gibs me dat", "/atom") as text
+	for(var/path in typesof(/atom))
+		if(findtext("[path]", O))
+			matches += path
+
+	if(matches.len==0)
+		usr << "<span class='warning'>No types of [O] found.</span>"
+		return
+
+	if(matches.len==1)
+		chosen = matches[1]
+	else
+		chosen = input("Select an atom type", "Selected Atom", matches[1]) as null|anything in matches
+		if(!chosen)
+			return
+	return chosen
+
+#undef BOTTOM_LEFT
+#undef TOP_RIGHT
+#undef MASS_FILL
+#undef MASS_DELETE
+#undef SELECTIVE_DELETE
+#undef SELECTIVE_FILL

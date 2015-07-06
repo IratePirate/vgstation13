@@ -194,27 +194,33 @@
 	desc = "HOLY SHEET! That is a lot of glass."
 	singular_name = "glass sheet"
 	icon_state = "sheet-glass"
-	g_amt = 3750
+	starting_materials = list(MAT_GLASS = 3750)
 	origin_tech = "materials=1"
 	rglass = /obj/item/stack/sheet/glass/rglass
 
 /obj/item/stack/sheet/glass/glass/cyborg
-	g_amt = 0
+	starting_materials = null
 
 /obj/item/stack/sheet/glass/glass/recycle(var/datum/materials/rec)
-	rec.addAmount("glass", 1*src.amount)
+	rec.addAmount(MAT_GLASS, amount)
 	return 1
 
 /obj/item/stack/sheet/glass/glass/attackby(obj/item/W, mob/user)
 	if(istype(W,/obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/CC = W
-		if(CC.amount < 5)
-			user << "<B>There is not enough wire in this coil. You need 5 lengths.</B>"
+		if(CC.amount < 2) //Cost changed from 5 to 2, so that you get 15 tiles from a cable coil instead of only 6 (!)
+			user << "<B>There is not enough wire in this coil. You need at least two lengths.</B>"
 			return
-		CC.use(5)
-		user << "<span class='notice'>You attach wire to the [name].</span></span>"
-		new /obj/item/stack/light_w(user.loc)
+		CC.use(2)
 		src.use(1)
+		user << "<span class='notice'>You attach some wires to the [name].</span></span>"
+		var/obj/item/stack/light_w/L=locate(/obj/item/stack/light_w) in get_turf(user)
+		if(L && L.amount<L.max_amount)
+			L.amount++
+			user << "You add [L] to the stack. It now contains [L.amount] tiles."
+			return
+		else
+			new /obj/item/stack/light_w(user.loc)
 	else
 		return ..()
 
@@ -229,8 +235,7 @@
 	singular_name = "reinforced glass sheet"
 	sname = "glass_ref"
 	icon_state = "sheet-rglass"
-	g_amt = 3750
-	m_amt = 1875
+	starting_materials = list(MAT_IRON = 1875, MAT_GLASS = 3750)
 	created_window = /obj/structure/window/reinforced
 	full_window = /obj/structure/window/full/reinforced
 	windoor = /obj/structure/windoor_assembly/
@@ -240,12 +245,11 @@
 	shealth = 10
 
 /obj/item/stack/sheet/glass/rglass/cyborg
-	g_amt = 0
-	m_amt = 0
+	starting_materials = null
 
 /obj/item/stack/sheet/glass/rglass/recycle(var/datum/materials/rec)
-	rec.addAmount("glass", 1*src.amount)
-	rec.addAmount("iron",  0.5*src.amount)
+	rec.addAmount(MAT_GLASS, amount)
+	rec.addAmount(MAT_IRON,  0.5 * amount)
 	return 1
 
 /*
@@ -258,7 +262,7 @@
 	singular_name = "glass sheet"
 	icon_state = "sheet-plasmaglass"
 	sname = "plasma"
-	g_amt=CC_PER_SHEET_GLASS
+	starting_materials = list(MAT_GLASS = CC_PER_SHEET_GLASS)
 	origin_tech = "materials=3;plasmatech=2"
 	created_window = /obj/structure/window/plasma
 	full_window = /obj/structure/window/full/plasma
@@ -270,8 +274,8 @@
 	shard_type = /obj/item/weapon/shard/plasma
 
 /obj/item/stack/sheet/glass/plasmaglass/recycle(var/datum/materials/rec)
-	rec.addAmount("plasma",1*src.amount)
-	rec.addAmount("glass", 1*src.amount)
+	rec.addAmount(MAT_PLASMA, amount)
+	rec.addAmount(MAT_GLASS, amount)
 	return RECYK_GLASS
 
 /*
@@ -283,8 +287,7 @@
 	singular_name = "reinforced plasma glass sheet"
 	icon_state = "sheet-plasmarglass"
 	sname = "plasma_ref"
-	g_amt=CC_PER_SHEET_GLASS
-	m_amt = 1875
+	starting_materials = list(MAT_IRON = 1875, MAT_GLASS = CC_PER_SHEET_GLASS)
 	melt_temperature = MELTPOINT_STEEL+500 // I guess...?
 	origin_tech = "materials=4;plasmatech=2"
 	created_window = /obj/structure/window/reinforced/plasma
@@ -297,7 +300,7 @@
 	shard_type = /obj/item/weapon/shard/plasma
 
 /obj/item/stack/sheet/glass/plasmarglass/recycle(var/datum/materials/rec)
-	rec.addAmount("plasma",1*src.amount)
-	rec.addAmount("glass", 1*src.amount)
-	rec.addAmount("iron",  0.5*src.amount)
+	rec.addAmount(MAT_PLASMA, amount)
+	rec.addAmount(MAT_GLASS, amount)
+	rec.addAmount(MAT_IRON,  0.5 * amount)
 	return 1

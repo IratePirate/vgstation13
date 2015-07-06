@@ -114,7 +114,7 @@
 	if(istype(C, /obj/item/weapon/wrench))
 		user << "<span class='notice'>Removing rods...</span>"
 		playsound(get_turf(src), 'sound/items/Ratchet.ogg', 80, 1)
-		if(do_after(user, 30) && istype(src, /turf/simulated/floor/engine)) // Somehow changing the turf does NOT kill the current running proc.
+		if(do_after(user, src, 30) && istype(src, /turf/simulated/floor/engine)) // Somehow changing the turf does NOT kill the current running proc.
 			new /obj/item/stack/rods(src, 2)
 			ChangeTurf(/turf/simulated/floor)
 			var/turf/simulated/floor/F = src
@@ -127,7 +127,7 @@
 			if(prob(80))
 				src.ReplaceWithLattice()
 			else if(prob(50))
-				src.ChangeTurf(under_turf)
+				src.ChangeTurf(get_base_turf(src.z))
 			else
 				var/turf/simulated/floor/F = src
 				F.make_plating()
@@ -207,6 +207,7 @@
 	thermal_conductivity = 0.05
 	heat_capacity = 0
 	layer = 2
+	dynamic_lighting = 0
 
 	soot_type = null
 	melt_temperature = 0 // Doesn't melt.

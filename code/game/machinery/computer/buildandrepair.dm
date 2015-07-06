@@ -19,7 +19,7 @@
 	icon_state = "id_mod"
 	item_state = "circuitboard"
 	origin_tech = "programming=2"
-	g_amt=2000 // Recycle glass only
+	starting_materials = list(MAT_GLASS = 2000) // Recycle glass only
 	w_type = RECYK_ELECTRONIC
 
 	var/id_tag = null
@@ -117,7 +117,7 @@
 	build_path = "/obj/machinery/computer/robotics"
 	origin_tech = "programming=3"
 /obj/item/weapon/circuitboard/cloning
-	name = "Circuit board (Cloning)"
+	name = "Circuit board (Cloning Console)"
 	build_path = "/obj/machinery/computer/cloning"
 	origin_tech = "programming=3;biotech=3"
 /obj/item/weapon/circuitboard/arcade
@@ -251,6 +251,10 @@
 	name = "Circuit board (Bhangmeter)"
 	build_path = "/obj/machinery/computer/bhangmeter"
 	origin_tech = "programming=2"
+/obj/item/weapon/circuitboard/telesci_computer
+	name = "Circuit board (Telepad Control Console)"
+	build_path = "/obj/machinery/computer/telescience"
+	origin_tech = "programming=3;bluespace=2"
 /obj/item/weapon/circuitboard/pda_terminal
 	name = "Circuit board (PDA Terminal)"
 	build_path = "/obj/machinery/computer/pda_terminal"
@@ -261,7 +265,7 @@
 	if(issolder(I))
 		var/obj/item/weapon/solder/S = I
 		if(S.remove_fuel(2,user))
-			solder_improve()
+			solder_improve(user)
 	else if(iswelder(I))
 		var/obj/item/weapon/weldingtool/WT = I
 		if(WT.remove_fuel(1,user))
@@ -285,6 +289,8 @@
 /obj/item/weapon/circuitboard/security/solder_improve(mob/user as mob)
 	if(istype(src,/obj/item/weapon/circuitboard/security/advanced))
 		return ..()
+	if(istype(src,/obj/item/weapon/circuitboard/security/engineering))
+		return ..()
 	else
 		user << "<span class='notice'>You locate a short that makes the feed circuitry more elegant.</span>"
 		var/obj/item/weapon/circuitboard/security/advanced/A = new /obj/item/weapon/circuitboard/security/advanced(src.loc)
@@ -297,7 +303,7 @@
 		if(0)
 			if(istype(P, /obj/item/weapon/wrench))
 				playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
-				if(do_after(user, 5) && state == 0)
+				if(do_after(user, src, 5) && state == 0)
 					user << "<span class='notice'>You wrench the frame into place.</span>"
 					src.anchored = 1
 					src.state = 1
@@ -308,7 +314,7 @@
 					user << "The welding tool must be on to complete this task."
 					return 1
 				playsound(get_turf(src), 'sound/items/Welder.ogg', 50, 1)
-				if(do_after(user, 10) && state == 0)
+				if(do_after(user, src, 10) && state == 0)
 					if(!src || !WT.isOn()) return
 					user << "<span class='notice'>You deconstruct the frame.</span>"
 					var/obj/item/stack/sheet/metal/M = getFromPool(/obj/item/stack/sheet/metal, src.loc)
@@ -319,7 +325,7 @@
 		if(1)
 			if(istype(P, /obj/item/weapon/wrench))
 				playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
-				if(do_after(user, 20) && state == 1)
+				if(do_after(user, src, 20) && state == 1)
 					user << "<span class='notice'>You unfasten the frame.</span>"
 					src.anchored = 0
 					src.state = 0
@@ -363,7 +369,7 @@
 					return 1
 
 				playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
-				if (do_after(user, 20) && state == 2 && C.amount >= 5)
+				if (do_after(user, src, 20) && state == 2 && C.amount >= 5)
 					C.use(5)
 					user << "<span class='notice'>You add cables to the frame.</span>"
 					src.state = 3
@@ -386,7 +392,7 @@
 					return 1
 
 				playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
-				if(do_after(user, 20) && state == 3 && G.amount >= 2)
+				if(do_after(user, src, 20) && state == 3 && G.amount >= 2)
 					G.use(2)
 					user << "<span class='notice'>You put in the glass panel.</span>"
 					src.state = 4

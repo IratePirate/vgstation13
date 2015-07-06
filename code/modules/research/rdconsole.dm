@@ -67,10 +67,12 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 	req_access = list(access_tox)	//Data and setting manipulation requires scientist access.
 
-	l_color = "#CD00CD"
+	starting_materials = list()
+
+	light_color = LIGHT_COLOR_PINK
 
 /obj/machinery/computer/rdconsole/proc/Maximize()
-	files.known_tech=files.possible_tech
+	files.known_tech = tech_list.Copy()
 	for(var/datum/tech/KT in files.known_tech)
 		if(KT.level < KT.max_level)
 			KT.level=KT.max_level
@@ -92,24 +94,8 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 /obj/machinery/computer/rdconsole/proc/CallMaterialName(var/ID)
 	var/return_name = null
 	if (copytext(ID, 1, 2) == "$")
-		return_name = copytext(ID, 2)
-		switch(return_name)
-			if("metal")
-				return_name = "Metal"
-			if("glass")
-				return_name = "Glass"
-			if("gold")
-				return_name = "Gold"
-			if("silver")
-				return_name = "Silver"
-			if("plasma")
-				return_name = "Solid Plasma"
-			if("uranium")
-				return_name = "Uranium"
-			if("diamond")
-				return_name = "Diamond"
-			if("clown")
-				return_name = "Bananium"
+		var/datum/material/mat = materials.getMaterial(ID)
+		return mat.processed_name
 	else
 		for(var/R in typesof(/datum/reagent) - /datum/reagent)
 			var/datum/reagent/T = new R()
@@ -205,7 +191,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 	usr.set_machine(src)
 	if(href_list["menu"]) //Switches menu screens. Converts a sent text string into a number. Saves a LOT of code.
 		var/temp_screen = text2num(href_list["menu"])
-		if(temp_screen <= 1.1 || (3 <= temp_screen && 4.9 >= temp_screen) || src.allowed(usr) || emagged) //Unless you are making something, you need access.
+		if(temp_screen <= 1.1 || (2 <= temp_screen && 4.9 >= temp_screen) || src.allowed(usr) || emagged) //Unless you are making something, you need access.
 			screen = temp_screen
 		else
 			usr << "Unauthorized Access."
@@ -278,6 +264,9 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 	else if(href_list["deconstruct"]) //Deconstruct the item in the destructive analyzer and update the research holder.
 		if(linked_destroy)
+			if(!src.allowed(usr))
+				usr << "Unauthorized Access."
+				return
 			if(linked_destroy.busy)
 				usr << "<span class='warning'>The destructive analyzer is busy at the moment.</span>"
 			else
@@ -301,13 +290,9 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 									files.UpdateTech(T, temp_tech[T])
 							if(linked_destroy.loaded_item.reliability < 100 && linked_destroy.loaded_item.crit_fail)
 								files.UpdateDesign(linked_destroy.loaded_item.type)
-							if(linked_lathe) //Also sends salvaged materials to a linked protolathe, if any.
-								var/datum/material/metal = linked_lathe.materials.getMaterial("iron")
-								var/datum/material/glass = linked_lathe.materials.getMaterial("glass")
-								metal.stored += min((linked_lathe.max_material_storage - linked_lathe.TotalMaterials()), (linked_destroy.loaded_item.m_amt*linked_destroy.decon_mod))
-								glass.stored += min((linked_lathe.max_material_storage - linked_lathe.TotalMaterials()), (linked_destroy.loaded_item.g_amt*linked_destroy.decon_mod))
-								/*linked_lathe.materials["iron"]=metal
-								linked_lathe.materials["glass"]=glass*/
+							if(linked_lathe && linked_destroy.loaded_item.materials) //Also sends salvaged materials to a linked protolathe, if any.
+								for(var/matID in linked_destroy.loaded_item.materials.storage) //Transfers by ID
+									linked_lathe.materials.addAmount(matID, linked_destroy.loaded_item.materials.storage[matID])
 							linked_destroy.loaded_item = null
 						for(var/obj/I in linked_destroy.contents)
 							for(var/mob/M in I.contents)
@@ -428,15 +413,27 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 					linked_imprinter.stopped=0
 
 	else if(href_list["disposeI"] && linked_imprinter)  //Causes the circuit imprinter to dispose of a single reagent (all of it)
+		if(!src.allowed(usr))
+			usr << "Unauthorized Access."
+			return
 		linked_imprinter.reagents.del_reagent(href_list["dispose"])
 
 	else if(href_list["disposeallI"] && linked_imprinter) //Causes the circuit imprinter to dispose of all it's reagents.
+		if(!src.allowed(usr))
+			usr << "Unauthorized Access."
+			return
 		linked_imprinter.reagents.clear_reagents()
 
 	else if(href_list["disposeP"] && linked_lathe)  //Causes the protolathe to dispose of a single reagent (all of it)
+		if(!src.allowed(usr))
+			usr << "Unauthorized Access."
+			return
 		linked_lathe.reagents.del_reagent(href_list["dispose"])
 
 	else if(href_list["disposeallP"] && linked_lathe) //Causes the protolathe to dispose of all it's reagents.
+		if(!src.allowed(usr))
+			usr << "Unauthorized Access."
+			return
 		linked_lathe.reagents.clear_reagents()
 
 	else if(href_list["removeQItem"]) //Causes the protolathe to dispose of all it's reagents.
@@ -465,6 +462,9 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 		linked_imprinter.stopped=(href_list["setImprinterStopped"]=="1")
 
 	else if(href_list["lathe_ejectsheet"] && linked_lathe) //Causes the protolathe to eject a sheet of material
+		if(!src.allowed(usr))
+			usr << "Unauthorized Access."
+			return
 		var/desired_num_sheets = text2num(href_list["lathe_ejectsheet_amt"])
 		if (desired_num_sheets <= 0)
 			return
@@ -474,13 +474,16 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 			warning("PROTOLATHE: Unknown material [matID]! ([href])")
 		else
 			var/obj/item/stack/sheet/sheet = new M.sheettype(linked_lathe.output.loc)
-			var/available_num_sheets = round(M.stored/sheet.perunit)
+			var/available_num_sheets = round(linked_lathe.materials.storage[matID]/sheet.perunit)
 			if(available_num_sheets>0)
 				sheet.amount = min(available_num_sheets, desired_num_sheets)
-				M.stored = max(0, (M.stored-sheet.amount * sheet.perunit))
+				linked_lathe.materials.removeAmount(matID, sheet.amount * sheet.perunit)
 			else
 				del sheet
 	else if(href_list["imprinter_ejectsheet"] && linked_imprinter) //Causes the protolathe to eject a sheet of material
+		if(!src.allowed(usr))
+			usr << "Unauthorized Access."
+			return
 		var/desired_num_sheets = text2num(href_list["imprinter_ejectsheet_amt"])
 		if (desired_num_sheets <= 0) return
 		var/matID=href_list["imprinter_ejectsheet"]
@@ -489,10 +492,10 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 			warning("IMPRINTER: Unknown material [matID]! ([href])")
 		else
 			var/obj/item/stack/sheet/sheet = new M.sheettype(linked_imprinter.output.loc)
-			var/available_num_sheets = round(M.stored/sheet.perunit)
+			var/available_num_sheets = round(linked_imprinter.materials.storage[matID]/sheet.perunit)
 			if(available_num_sheets>0)
 				sheet.amount = min(available_num_sheets, desired_num_sheets)
-				M.stored = max(0, (M.stored-sheet.amount * sheet.perunit))
+				linked_imprinter.materials.removeAmount(matID, sheet.amount * sheet.perunit)
 			else
 				del sheet
 
@@ -540,7 +543,7 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 	else if(href_list["toggleAllCategories"]) //Filter all categories, if all are filtered, clear filter.
 		var/machine = href_list["machine"]
 		var/list/tempfilter = filtered[machine] //t-thanks BYOND
-		if(tempfilter.len == linked_lathe.part_sets.len)
+		if(tempfilter.len == (machine == "protolathe" ? linked_lathe.part_sets.len : linked_imprinter.part_sets.len))
 			filtered[machine] = list()
 		else
 			filtered[machine] = list()
@@ -586,11 +589,6 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 /obj/machinery/computer/rdconsole/attack_hand(mob/user as mob)
 	if(stat & (BROKEN|NOPOWER))
 		return
-
-	if(ishuman(user))
-		if(istype(user:gloves, /obj/item/clothing/gloves/space_ninja)&&user:gloves:candrain&&!user:gloves:draining)
-			call(/obj/item/clothing/gloves/space_ninja/proc/drain)("RESEARCH",src,user:wear_suit)
-			return
 
 	user.set_machine(src)
 	var/dat = "<style>a:link {color: #0066CC} a:visited {color: #0066CC}</style>"
@@ -897,10 +895,10 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 			for(var/matID in linked_lathe.materials.storage)
 				var/datum/material/M=linked_lathe.materials.getMaterial(matID)
-				dat += "<li>[M.stored] cm<sup>3</sup> of [M.processed_name]"
-				if(M.stored >= M.cc_per_sheet)
+				dat += "<li>[linked_lathe.materials.storage[matID]] cm<sup>3</sup> of [M.processed_name]"
+				if(linked_lathe.materials.storage[matID] >= M.cc_per_sheet)
 					dat += " - <A href='?src=\ref[src];lathe_ejectsheet=[matID];lathe_ejectsheet_amt=1'>(1 Sheet)</A> "
-					if(M.stored >= (M.cc_per_sheet*5))
+					if(linked_lathe.materials.storage[matID] >= (M.cc_per_sheet*5))
 						dat += "<A href='?src=\ref[src];lathe_ejectsheet=[matID];lathe_ejectsheet_amt=5'>(5 Sheets)</A> "
 					dat += "<A href='?src=\ref[src];lathe_ejectsheet=[matID];lathe_ejectsheet_amt=50'>(Max Sheets)</A>"
 				else
@@ -1015,12 +1013,12 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 
 			for(var/matID in linked_imprinter.materials.storage)
 				var/datum/material/M=linked_imprinter.materials.getMaterial(matID)
-				if(!(M.sheettype in linked_imprinter.allowed_materials))
+				if(!(matID in linked_imprinter.allowed_materials))
 					continue
-				dat += "<li>[M.stored] cm<sup>3</sup> of [M.processed_name]"
-				if(M.stored >= M.cc_per_sheet)
+				dat += "<li>[linked_imprinter.materials.storage[matID]] cm<sup>3</sup> of [M.processed_name]"
+				if(linked_imprinter.materials.storage[matID] >= M.cc_per_sheet)
 					dat += " - <A href='?src=\ref[src];imprinter_ejectsheet=[matID];imprinter_ejectsheet_amt=1'>(1 Sheet)</A> "
-					if(M.stored >= (M.cc_per_sheet*5))
+					if(linked_imprinter.materials.storage[matID] >= (M.cc_per_sheet*5))
 						dat += "<A href='?src=\ref[src];imprinter_ejectsheet=[matID];imprinter_ejectsheet_amt=5'>(5 Sheets)</A> "
 					dat += "<A href='?src=\ref[src];imprinter_ejectsheet=[matID];imprinter_ejectsheet_amt=50'>(Max Sheets)</A>"
 				else
@@ -1050,16 +1048,12 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 	req_access = list(access_tox)
 	circuit = "/obj/item/weapon/circuitboard/rdconsole/mommi"
 
-	l_color = "#CD00CD"
-
 /obj/machinery/computer/rdconsole/robotics
 	name = "Robotics R&D Console"
 	id = 2
 	req_one_access = list(access_robotics)
 	req_access=list()
 	circuit = "/obj/item/weapon/circuitboard/rdconsole/robotics"
-
-	l_color = "#CD00CD"
 
 /obj/machinery/computer/rdconsole/mechanic
 	name = "Mechanics R&D Console"
@@ -1068,20 +1062,14 @@ won't update every console in existence) but it's more of a hassle to do. Also, 
 	req_access=list()
 	circuit = "/obj/item/weapon/circuitboard/rdconsole/mechanic"
 
-	l_color = "#CD00CD"
-
 /obj/machinery/computer/rdconsole/core
 	name = "Core R&D Console"
 	id = 1
 	req_access = list(access_tox)
 	circuit = "/obj/item/weapon/circuitboard/rdconsole"
 
-	l_color = "#CD00CD"
-
 /obj/machinery/computer/rdconsole/pod
 	name = "Pod Bay R&D Console"
 	id = 5
 	req_access=list()
 	circuit = "/obj/item/weapon/circuitboard/rdconsole/pod"
-
-	l_color = "#CD00CD"

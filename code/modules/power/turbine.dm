@@ -37,7 +37,7 @@
 	var/id_tag = 0
 	var/door_status = 0
 
-	l_color = "#0000FF"
+	light_color = LIGHT_COLOR_BLUE
 
 // the inlet stage of the gas turbine electricity generator
 
@@ -224,7 +224,7 @@
 /obj/machinery/computer/turbine_computer/attackby(I as obj, user as mob)
 	if(istype(I, /obj/item/weapon/screwdriver))
 		playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 50, 1)
-		if(do_after(user, 20))
+		if(do_after(user, src, 20))
 			if (src.stat & BROKEN)
 				user << "<span class='notice'>The broken glass falls out.</span>"
 				var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )

@@ -46,12 +46,11 @@
 				if(C.amount >= 5)
 					playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
 					user << "<span class='notice'>You start to add cables to the frame.</span>"
-					if(do_after(user, 20))
+					if(do_after(user, src, 20))
 						if(C && C.amount >= 5) // Check again
 							C.use(5)
 							user << "<span class='notice'>You add cables to the frame.</span>"
-							build_state = 2
-							icon_state = "box_1"
+							set_build_state(2)
 			else if(istype(P, /obj/item/stack/sheet/glass/glass))
 				var/obj/item/stack/sheet/glass/glass/G=P
 				if(G.amount<1)
@@ -61,7 +60,7 @@
 				user << "<span class='notice'>You add the glass to the frame.</span>"
 				playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
 				new /obj/structure/displaycase_frame(src.loc)
-				del(src)
+				qdel(src)
 				return
 			else
 				if(istype(P, /obj/item/weapon/wrench))
@@ -70,7 +69,7 @@
 					//new /obj/item/stack/sheet/metal(src.loc, 5)
 					var/obj/item/stack/sheet/metal/M = getFromPool(/obj/item/stack/sheet/metal, src.loc)
 					M.amount = 5
-					del(src)
+					qdel(src)
 		if(2)
 			if(!..())
 				if(istype(P, /obj/item/weapon/circuitboard))
@@ -80,18 +79,21 @@
 						user << "<span class='notice'>You add the circuit board to the frame.</span>"
 						circuit = P
 						user.drop_item(B, src)
-						icon_state = "box_2"
-						build_state = 3
+						set_build_state(3)
 						components = list()
 						req_components = circuit.req_components.Copy()
 						for(var/A in circuit.req_components)
 							req_components[A] = circuit.req_components[A]
 						req_component_names = circuit.req_components.Copy()
+						/* Are you fucking kidding me
 						for(var/A in req_components)
 							var/cp = text2path(A)
 							var/obj/ct = new cp() // have to quickly instantiate it get name
 							req_component_names[A] = ct.name
-							del(ct)
+							del(ct)*/
+						for(var/A in req_components)
+							var/atom/path = text2path(A)
+							req_component_names[A] = initial(path.name)
 						if(circuit.frame_desc)
 							desc = circuit.frame_desc
 						else
@@ -103,8 +105,7 @@
 					if(istype(P, /obj/item/weapon/wirecutters))
 						playsound(get_turf(src), 'sound/items/Wirecutter.ogg', 50, 1)
 						user << "<span class='notice'>You remove the cables.</span>"
-						build_state = 1
-						icon_state = "box_0"
+						set_build_state(1)
 						var/obj/item/stack/cable_coil/A = new /obj/item/stack/cable_coil( src.loc )
 						A.amount = 5
 
@@ -112,7 +113,7 @@
 			if(!..())
 				if(istype(P, /obj/item/weapon/crowbar))
 					playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
-					build_state = 2
+					set_build_state(2)
 					circuit.loc = src.loc
 					circuit = null
 					if(components.len == 0)
@@ -124,7 +125,6 @@
 					desc = initial(desc)
 					req_components = null
 					components = null
-					icon_state = "box_1"
 				else
 					if(istype(P, /obj/item/weapon/screwdriver))
 						var/component_check = 1
@@ -136,7 +136,7 @@
 							playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 50, 1)
 							var/obj/machinery/new_machine = new src.circuit.build_path(src.loc)
 							for(var/obj/O in new_machine.component_parts)
-								del(O)
+								returnToPool(O)
 							new_machine.component_parts = list()
 							for(var/obj/O in src)
 								if(circuit.contain_parts) // things like disposal don't want their parts in them
@@ -149,7 +149,8 @@
 							else
 								circuit.loc = null
 							new_machine.RefreshParts()
-							del(src)
+							components = null
+							qdel(src)
 					else
 						if(istype(P, /obj/item/weapon)||istype(P, /obj/item/stack))
 							for(var/I in req_components)
@@ -192,6 +193,15 @@
 							if(P && P.loc != src && !istype(P, /obj/item/stack/cable_coil))
 								user << "<span class='warning'>You cannot add that component to the machine!</span>"
 
+/obj/machinery/constructable_frame/machine_frame/proc/set_build_state(var/state)
+	build_state = state
+	switch(state)
+		if(1)
+			icon_state = "box_0"
+		if(2)
+			icon_state = "box_1"
+		if(3)
+			icon_state = "box_2"
 
 //Machine Frame Circuit Boards
 /*Common Parts: Parts List: Ignitor, Timer, Infra-red laser, Infra-red sensor, t_scanner, Capacitor, Valve, sensor unit,
@@ -249,7 +259,7 @@ to destroy them and players will be able to make replacements.
 
 /obj/item/weapon/circuitboard/autolathe
 	name = "Circuit board (Autolathe)"
-	build_path = "/obj/machinery/autolathe"
+	build_path = "/obj/machinery/r_n_d/fabricator/mechanic_fab/autolathe"
 	board_type = "machine"
 	origin_tech = "engineering=2;programming=2"
 	frame_desc = "Requires 3 Matter Bins, 1 Manipulator, and 1 Console Screen."
@@ -378,7 +388,7 @@ obj/item/weapon/circuitboard/rdserver
 
 /obj/item/weapon/circuitboard/smes
 	name = "Circuit Board (SMES)"
-	build_path = "/obj/machinery/power/smes"
+	build_path = "/obj/machinery/power/battery/smes"
 	board_type = "machine"
 	origin_tech = "powerstorage=4;engineering=4;programming=4"
 	frame_desc = "Requires 4 matter bins, 3 manipulators, 3 micro-lasers, and 2 console screens."
@@ -387,6 +397,28 @@ obj/item/weapon/circuitboard/rdserver
 							"/obj/item/weapon/stock_parts/manipulator" = 3,
 							"/obj/item/weapon/stock_parts/micro_laser" = 3,
 							"/obj/item/weapon/stock_parts/console_screen" = 2)
+
+/obj/item/weapon/circuitboard/port_smes
+	name = "Circuit Board (Portable SMES)"
+	build_path = "/obj/machinery/power/battery/portable"
+	board_type = "machine"
+	origin_tech = "powerstorage=5;engineering=4;programming=4"
+	frame_desc = "Requires 4 matter bins, 3 manipulators, 3 micro-lasers, and 2 console screens."
+	req_components = list(
+							"/obj/item/weapon/stock_parts/matter_bin" = 4,
+							"/obj/item/weapon/stock_parts/manipulator" = 3,
+							"/obj/item/weapon/stock_parts/micro_laser" = 3,
+							"/obj/item/weapon/stock_parts/console_screen" = 2)
+
+/obj/item/weapon/circuitboard/battery_port
+	name = "Circuit Board (SMES Port)"
+	build_path = "/obj/machinery/power/battery_port"
+	board_type = "machine"
+	origin_tech = "powerstorage=5;engineering=4;programming=4"
+	frame_desc = "Requires 3 capacitors and 1 console screen."
+	req_components = list(
+							"/obj/item/weapon/stock_parts/capacitor" = 3,
+							"/obj/item/weapon/stock_parts/console_screen" = 1)
 
 /obj/item/weapon/circuitboard/chem_dispenser
 	name = "Circuit Board (Chemistry Dispenser)"

@@ -31,6 +31,20 @@ var/list/camera_names=list()
 	var/alarm_on = 0
 	var/busy = 0
 
+/obj/machinery/camera/update_icon()
+	var/EMPd = stat & EMPED
+	var/deactivated = !status
+	var/camtype = "camera"
+	if(assembly)
+		camtype = isXRay() ? "xraycam" : "camera" // Thanks to Krutchen for the icons.
+
+	if (deactivated)
+		icon_state = "[camtype]1"
+	else if (EMPd)
+		icon_state = "[camtype]emp"
+	else
+		icon_state = "[camtype]"
+
 /obj/machinery/camera/New()
 	wires = new(src)
 
@@ -46,19 +60,27 @@ var/list/camera_names=list()
 		ASSERT(src.network.len > 0)
 
 	if(!c_tag)
-		var/area/A=get_area(src)
-		var/basename=A.name
-		var/nethash=english_list(network)
-		var/suffix = 0
-		while(1)
-			c_tag = "[basename]"
-			if(suffix)
-				c_tag += " [suffix]"
-			if(!(nethash+c_tag in camera_names))
-				camera_names[nethash+c_tag]=src
-				break
-			suffix++
+		name_camera()
 	..()
+
+/obj/machinery/camera/proc/name_camera()
+	var/area/A=get_area(src)
+	var/basename=A.name
+	var/nethash=english_list(network)
+	var/suffix = 0
+	while(!suffix || nethash+c_tag in camera_names)
+		c_tag = "[basename]"
+		if(suffix)
+			c_tag += " [suffix]"
+		suffix++
+	camera_names[nethash+c_tag]=src
+
+/obj/machinery/camera/change_area(oldarea, newarea)
+	var/nethash=english_list(network)
+	camera_names[nethash+c_tag]=null
+	..()
+	if(name != replacetext(name,oldarea,newarea))
+		name_camera()
 
 /obj/machinery/camera/Destroy()
 	deactivate(null, 0) //kick anyone viewing out
@@ -72,18 +94,18 @@ var/list/camera_names=list()
 /obj/machinery/camera/emp_act(severity)
 	if(!isEmpProof())
 		if(prob(100/severity))
-			icon_state = "[initial(icon_state)]emp"
 			var/list/previous_network = network
 			network = list()
 			cameranet.removeCamera(src)
 			stat |= EMPED
-			SetLuminosity(0)
+			set_light(0)
 			triggerCameraAlarm()
+			update_icon()
 			spawn(900)
 				network = previous_network
-				icon_state = initial(icon_state)
 				stat &= ~EMPED
 				cancelCameraAlarm()
+				update_icon()
 				if(can_use())
 					cameranet.addCamera(src)
 			for(var/mob/O in mob_list)
@@ -122,9 +144,9 @@ var/list/camera_names=list()
 	if(!status)
 		return
 	status = 0
+	update_icon()
 	visible_message("<span class='warning'>\The [user] slashes at [src]!</span>")
 	playsound(get_turf(src), 'sound/weapons/slash.ogg', 100, 1)
-	icon_state = "[initial(icon_state)]1"
 	add_hiddenprint(user)
 	deactivate(user,0)
 
@@ -148,6 +170,43 @@ var/list/camera_names=list()
 
 			qdel(src)
 
+	// Upgrades!
+	else if(is_type_in_list(W, assembly.possible_upgrades)) // Is a possible upgrade
+		if (is_type_in_list(W, assembly.upgrades))
+			user << "The camera already has \a [W] inside!"
+			return
+		if (!panel_open)
+			user << "You can't reach into the camera's circuitry while the maintenance panel is closed."
+			return
+		if (!wires.CanDeconstruct())
+			user << "You can't reach into the camera's circuitry with the wires on the way."
+			return
+		user << "You attach the [W] into the camera's inner circuits."
+		assembly.upgrades += W
+		user.drop_item(W, src)
+		update_icon()
+		return
+
+	// Taking out upgrades
+	else if(iscrowbar(W))
+		if (!panel_open)
+			user << "You can't reach into the camera's circuitry while the maintenance panel is closed."
+			return
+		if (!wires.CanDeconstruct())
+			user << "You can't reach into the camera's circuitry with the wires on the way."
+			return
+		if (assembly.upgrades.len)
+			var/obj/U = locate(/obj) in assembly.upgrades
+			if(U)
+				user << "You unattach \the [U] from the camera."
+				playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
+				U.loc = get_turf(src)
+				assembly.upgrades -= U
+				update_icon()
+			return
+		else //Camera deconned, no upgrades
+			user << "The camera is firmly welded to the wall." //User might be trying to deconstruct the camera with a crowbar, let them know what's wrong
+			return
 
 	// OTHER
 	else if ((istype(W, /obj/item/weapon/paper) || istype(W, /obj/item/device/pda)) && isliving(user))
@@ -178,15 +237,6 @@ var/list/camera_names=list()
 				if (S.current == src)
 					O << "[U] holds \a [itemname] up to one of the cameras ..."
 					O << browse(text("<HTML><HEAD><TITLE>[]</TITLE></HEAD><BODY><TT>[]</TT></BODY></HTML>", itemname, info), text("window=[]", itemname))
-	else if(istype(W, /obj/item/weapon/melee/energy/blade))//Putting it here last since it's a special case. I wonder if there is a better way to do these than type casting.
-		deactivate(user,2)//Here so that you can disconnect anyone viewing the camera, regardless if it's on or off.
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, loc)
-		spark_system.start()
-		playsound(loc, 'sound/weapons/blade1.ogg', 50, 1)
-		playsound(loc, "sparks", 50, 1)
-		visible_message("<span class='notice'>The camera has been sliced apart by [] with an energy blade!</span>")
-		del(src)
 	else
 		..()
 	return
@@ -194,6 +244,7 @@ var/list/camera_names=list()
 /obj/machinery/camera/proc/deactivate(user as mob, var/choice = 1)
 	if(choice==1)
 		status = !( src.status )
+		update_icon()
 		if (!(src.status))
 			if(user)
 				visible_message("<span class='warning'>[user] has deactivated [src]!</span>")
@@ -201,7 +252,6 @@ var/list/camera_names=list()
 			else
 				visible_message("<span class='warning'> \The [src] deactivates!</span>")
 			playsound(get_turf(src), 'sound/items/Wirecutter.ogg', 100, 1)
-			icon_state = "[initial(icon_state)]1"
 			add_hiddenprint(user)
 		else
 			if(user)
@@ -210,7 +260,6 @@ var/list/camera_names=list()
 			else
 				visible_message("<span class='warning'> \the [src] reactivates!</span>")
 			playsound(get_turf(src), 'sound/items/Wirecutter.ogg', 100, 1)
-			icon_state = initial(icon_state)
 			add_hiddenprint(user)
 	// now disconnect anyone using the camera
 	//Apparently, this will disconnect anyone even if the camera was re-activated.
@@ -291,7 +340,7 @@ var/list/camera_names=list()
 	playsound(get_turf(src), 'sound/items/Welder.ogg', 50, 1)
 	WT.eyecheck(user)
 	busy = 1
-	if(do_after(user, 100))
+	if(do_after(user, src, 100))
 		busy = 0
 		if(!WT.isOn())
 			return 0

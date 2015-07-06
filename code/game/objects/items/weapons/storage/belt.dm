@@ -19,9 +19,13 @@
 
 /obj/item/weapon/storage/belt/utility
 	name = "tool-belt" //Carn: utility belt is nicer, but it bamboozles the text parsing.
-	desc = "Can hold various tools."
+	desc = "It has a tag that rates it for compatibility with standard tools, device analyzers, flashlights, cables, engineering tape, small fire extinguishers, compressed matter cartridges, light replacers, and fuel cans."
 	icon_state = "utilitybelt"
 	item_state = "utility"
+	w_class = 4
+	max_w_class = 2
+	storage_slots = 14
+	max_combined_w_class = 200 //This actually doesn't matter as long as it is arbitrarily high, bar will be set by storage slots
 	can_hold = list(
 		"/obj/item/weapon/crowbar",
 		"/obj/item/weapon/screwdriver",
@@ -34,7 +38,13 @@
 		"/obj/item/stack/cable_coil",
 		"/obj/item/device/t_scanner",
 		"/obj/item/device/analyzer",
-		"/obj/item/taperoll/engineering")
+		"/obj/item/taperoll/engineering",
+		"/obj/item/weapon/extinguisher",
+		"/obj/item/weapon/rcd_ammo",
+		"/obj/item/weapon/reagent_containers/glass/fuelcan",
+		"/obj/item/device/lightreplacer",
+		"/obj/item/device/device_analyser"
+		)
 
 /obj/item/weapon/storage/belt/utility/complete/New()
 	..()
@@ -65,7 +75,42 @@
 	new /obj/item/weapon/wirecutters(src)
 	new /obj/item/device/t_scanner(src)
 
+/obj/item/weapon/storage/belt/utility/chief
+	name = "advanced tool-belt"
+	desc = "The ancestral belt of Many-APCs-Charging, the original chief engineer from Space Native America. It's made out of the skins of the ancient enemy of engineers, giant spiders."
+	icon_state = "utilitychief"
+	item_state = "utilitychief"
+	w_class = 4
+	max_w_class = 3
+	storage_slots = 14
+	can_hold = list(
+		"/obj/item/weapon/crowbar",
+		"/obj/item/weapon/screwdriver",
+		"/obj/item/weapon/weldingtool",
+		"/obj/item/weapon/solder",
+		"/obj/item/weapon/wirecutters",
+		"/obj/item/weapon/wrench",
+		"/obj/item/device/multitool",
+		"/obj/item/device/flashlight",
+		"/obj/item/stack/cable_coil",
+		"/obj/item/device/t_scanner",
+		"/obj/item/device/analyzer",
+		"/obj/item/taperoll/engineering",
+		"/obj/item/weapon/extinguisher",
+		"/obj/item/weapon/rcd",
+		"/obj/item/weapon/pipe_dispenser",
+		"/obj/item/weapon/tile_painter",
+		"/obj/item/weapon/storage/component_exchanger",
+		"/obj/item/weapon/rcd_ammo",
+		"/obj/item/weapon/reagent_containers/glass/fuelcan",
+		"/obj/item/blueprints",
+		"/obj/item/device/lightreplacer",
+		"/obj/item/device/device_analyser",
+		"/obj/item/weapon/rcl"
+		)
 
+/obj/item/weapon/storage/belt/utility/chief/New()
+	..()
 
 /obj/item/weapon/storage/belt/medical
 	name = "medical belt"

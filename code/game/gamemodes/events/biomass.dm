@@ -27,12 +27,10 @@
 	if (!W || !user || !W.type)
 		return
 
-	switch(W.type)
+	switch(W.type) //This is absolutely terrible
 		if(/obj/item/weapon/circular_saw)
 			qdel(src)
 		if(/obj/item/weapon/kitchen/utensil/knife)
-			qdel(src)
-		if(/obj/item/weapon/scalpel)
 			qdel(src)
 		if(/obj/item/weapon/fireaxe)
 			qdel(src)
@@ -52,6 +50,8 @@
 
 		else // weapons with subtypes
 			if(istype(W, /obj/item/weapon/melee/energy/sword))
+				qdel(src)
+			else if(istype(W, /obj/item/weapon/scalpel))
 				qdel(src)
 			else if(istype(W, /obj/item/weapon/weldingtool))
 				var/obj/item/weapon/weldingtool/WeldingTool = W
@@ -196,10 +196,9 @@
 	for(var/type in typesof(/area/hallway))
 		var/area/Hallway = locate(type)
 
-		for(var/area/Related in Hallway.related)
-			for(var/turf/simulated/floor/Floor in Related.contents)
-				if(Floor.contents.len <= 0)
-					Floors += Floor
+		for(var/turf/simulated/floor/Floor in Hallway.contents)
+			if(Floor.contents.len <= 0)
+				Floors += Floor
 
 	if(Floors.len) // pick a floor to spawn at
 		var/turf/simulated/floor/Floor = pick(Floors)

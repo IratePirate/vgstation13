@@ -113,7 +113,7 @@ var/list/ai_list = list()
 	if(!safety)//Only used by AIize() to successfully spawn an AI.
 		if (!B)//If there is no player/brain inside.
 			new/obj/structure/AIcore/deactivated(loc)//New empty terminal.
-			del(src)//Delete AI.
+			qdel(src)//Delete AI.
 			return
 		else
 			if (B.brainmob.mind)
@@ -132,6 +132,40 @@ var/list/ai_list = list()
 	ai_list += src
 	..()
 	return
+
+/mob/living/silicon/ai/verb/rename_photo() //This is horrible but will do for now
+	set category = "AI Commands"
+	set name = "Modify Photo Files"
+	if(stat || aiRestorePowerRoutine)
+		return
+
+	var/list/nametemp = list()
+	var/find
+	var/datum/picture/selection
+	if(aicamera.aipictures.len == 0)
+		usr << "<font color=red><B>No images saved<B></font>"
+		return
+	for(var/datum/picture/t in aicamera.aipictures)
+		nametemp += t.fields["name"]
+	find = input("Select image to delete or rename.", "Photo Modification") in nametemp
+	for(var/datum/picture/q in aicamera.aipictures)
+		if(q.fields["name"] == find)
+			selection = q
+			break
+
+	if(!selection) return
+	var/choice = input(usr, "Would you like to rename or delete [selection.fields["name"]]?", "Photo Modification") in list("Rename","Delete","Cancel")
+	switch(choice)
+		if("Cancel")
+			return
+		if("Delete")
+			qdel(selection)
+		if("Rename")
+			var/new_name = sanitize(input(usr, "Write a new name for [selection.fields["name"]]:","Photo Modification"))
+			if(length(new_name) > 0)
+				selection.fields["name"] = new_name
+			else
+				usr << "You must write a name."
 
 /mob/living/silicon/ai/verb/pick_icon()
 	set category = "AI Commands"
@@ -422,19 +456,6 @@ var/list/ai_list = list()
 
 	return
 
-/mob/living/silicon/ai/meteorhit(obj/O as obj)
-	if(flags & INVULNERABLE)
-		return
-	for(var/mob/M in viewers(src, null))
-		M.show_message(text("<span class='warning'>[] has been hit by []</span>", src, O), 1)
-		//Foreach goto(19)
-	if (health > 0)
-		adjustBruteLoss(30)
-		if ((O.icon_state == "flaming"))
-			adjustFireLoss(40)
-		updatehealth()
-	return
-
 /mob/living/silicon/ai/bullet_act(var/obj/item/projectile/Proj)
 	..(Proj)
 	updatehealth()
@@ -473,16 +494,6 @@ var/list/ai_list = list()
 					if ((O.client && !( O.blinded )))
 						O.show_message(text("<span class='danger'>[] took a swipe at []!</span>", M, src), 1)
 	return
-
-/mob/living/silicon/ai/attack_hand(mob/living/carbon/M as mob)
-	if(ishuman(M))//Checks to see if they are ninja
-		if(istype(M:gloves, /obj/item/clothing/gloves/space_ninja)&&M:gloves:candrain&&!M:gloves:draining)
-			if(M:wear_suit:s_control)
-				M:wear_suit:transfer_ai("AICORE", "NINJASUIT", src, M)
-			else
-				M << "<span class='danger'>ERROR: </span>Remote access channel disabled."
-	return
-
 
 /mob/living/silicon/ai/attack_animal(mob/living/simple_animal/M as mob)
 	if(!istype(M))
@@ -745,7 +756,7 @@ var/list/ai_list = list()
 		src << "Camera lights deactivated."
 
 		for (var/obj/machinery/camera/C in lit_cameras)
-			C.SetLuminosity(0)
+			C.set_light(0)
 			lit_cameras = list()
 
 		return
@@ -771,10 +782,10 @@ var/list/ai_list = list()
 	remove = lit_cameras - visible
 
 	for (var/obj/machinery/camera/C in remove)
-		C.SetLuminosity(0)
+		C.set_light(0)
 		lit_cameras -= C
 	for (var/obj/machinery/camera/C in add)
-		C.SetLuminosity(AI_CAMERA_LUMINOSITY)
+		C.set_light(AI_CAMERA_LUMINOSITY)
 		lit_cameras |= C
 
 
@@ -782,7 +793,7 @@ var/list/ai_list = list()
 	if(istype(W, /obj/item/weapon/wrench))
 		if(anchored)
 			user.visible_message("<span class='notice'>\The [user] starts to unbolt \the [src] from the plating...</span>")
-			if(!do_after(user,40))
+			if(!do_after(user, src,40))
 				user.visible_message("<span class='notice'>\The [user] decides not to unbolt \the [src].</span>")
 				return
 			user.visible_message("<span class='notice'>\The [user] finishes unfastening \the [src]!</span>")
@@ -790,7 +801,7 @@ var/list/ai_list = list()
 			return
 		else
 			user.visible_message("<span class='notice'>\The [user] starts to bolt \the [src] to the plating...</span>")
-			if(!do_after(user,40))
+			if(!do_after(user, src,40))
 				user.visible_message("<span class='notice'>\The [user] decides not to bolt \the [src].</span>")
 				return
 			user.visible_message("<span class='notice'>\The [user] finishes fastening down \the [src]!</span>")

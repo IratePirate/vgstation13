@@ -2,16 +2,21 @@
 	anchored = 0
 	density = 1
 	icon = 'icons/obj/atmos.dmi'
-	icon_state = "sheater"
+	icon_state = "sheater0"
 	name = "space heater"
 	desc = "Made by Space Amish using traditional space techniques, this heater is guaranteed not to set the station on fire."
 	var/obj/item/weapon/cell/cell
 	var/on = 0
 	var/set_temperature = 50		// in celcius, add T0C for kelvin
 	var/heating_power = 40000
+	var/base_state = "sheater"
 
-	ghost_read=0
-	ghost_write=0
+	light_power_on = 0.75
+	light_range_on = 2
+	light_color = LIGHT_COLOR_ORANGE
+
+	ghost_read = 0
+	ghost_write = 0
 
 	flags = FPRINT
 	machine_flags = SCREWTOGGLE
@@ -27,9 +32,10 @@
 
 /obj/machinery/space_heater/update_icon()
 	overlays.len = 0
-	icon_state = "[initial(icon_state)][on]"
+	icon_state = "[base_state][on]"
+	set_light(on ? light_range_on : 0, light_power_on)
 	if(panel_open)
-		overlays  += "[initial(icon_state)]-open"
+		overlays  += "[base_state]-open"
 	return
 
 /obj/machinery/space_heater/examine(mob/user)

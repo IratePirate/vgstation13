@@ -129,6 +129,76 @@ But you can call procs that are of type /mob/living/carbon/human/proc/ for that 
 		usr << "<font color='blue'>[procname] returned: [returnval ? returnval : "null"]</font>"
 		feedback_add_details("admin_verb","APC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
+/client/proc/callatomproc(var/atom/target as  anything)
+	set category = "Debug"
+	set name = "Atom ProcCall"
+
+	if(!check_rights(R_DEBUG)) return
+
+	spawn(0)
+		var/lst[] // List reference
+		lst = new/list() // Make the list
+		var/returnval = null
+		var/class = null
+
+		var/procname = input("Proc path, eg: /proc/fake_blood","Path:", null) as text|null
+		if(!procname)	return
+
+		var/argnum = input("Number of arguments","Number:",0) as num|null
+		if(!argnum && (argnum!=0))	return
+
+		lst.len = argnum // Expand to right length
+		//TODO: make a list to store whether each argument was initialised as null.
+		//Reason: So we can abort the proccall if say, one of our arguments was a mob which no longer exists
+		//this will protect us from a fair few errors ~Carn
+
+		var/i
+		for(i=1, i<argnum+1, i++) // Lists indexed from 1 forwards in byond
+
+			// Make a list with each index containing one variable, to be given to the proc
+			class = input("What kind of variable?","Variable Type") in list("text","num","type","reference","mob reference","icon","file","client","mob's area","CANCEL")
+			switch(class)
+				if("CANCEL")
+					return
+
+				if("text")
+					lst[i] = input("Enter new text:","Text",null) as text
+
+				if("num")
+					lst[i] = input("Enter new number:","Num",0) as num
+
+				if("type")
+					lst[i] = input("Enter type:","Type") in typesof(/obj,/mob,/area,/turf)
+
+				if("reference")
+					lst[i] = input("Select reference:","Reference",src) as mob|obj|turf|area in world
+
+				if("mob reference")
+					lst[i] = input("Select reference:","Reference",usr) as mob in world
+
+				if("file")
+					lst[i] = input("Pick file:","File") as file
+
+				if("icon")
+					lst[i] = input("Pick icon:","Icon") as icon
+
+				if("client")
+					var/list/keys = list()
+					for(var/mob/M in mob_list)
+						keys += M.client
+					lst[i] = input("Please, select a player!", "Selection", null, null) as null|anything in keys
+
+				if("mob's area")
+					var/mob/temp = input("Select mob", "Selection", usr) as mob in world
+					lst[i] = temp.loc
+
+		log_admin("[key_name(src)] called [target]'s [procname]() with [lst.len ? "the arguments [list2params(lst)]":"no arguments"].")
+		returnval = call(target,procname)(arglist(lst)) // Pass the lst as an argument list to the proc
+
+		usr << "<font color='blue'>[procname] returned: [returnval ? returnval : "null"]</font>"
+		feedback_add_details("admin_verb","APC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+
 /client/proc/Cell()
 	set category = "Debug"
 	set name = "Air Status in Location"
@@ -1008,47 +1078,54 @@ Pressure: [env.return_pressure()]"}
 
 	for(var/obj/machinery/power/emitter/E in power_machines)
 		if(E.anchored)
-			E.active = 1
+			//We now have a toggle proc, so here goes
+			E.turn_on()
+			E.investigation_log(I_SINGULO,"turned <font color='green'>on</font> <font color='red'>via Start Singularity Debug verb.</font>")
 
 	for(var/obj/machinery/field_generator/F in field_gen_list)
 		if(F.anchored)
-			F.Varedit_start = 1
-	spawn(30)
-		for(var/obj/machinery/the_singularitygen/G in machines)
-			if(G.anchored)
-				var/obj/machinery/singularity/S = new /obj/machinery/singularity(get_turf(G), 50)
-				spawn(0)
-					del(G)
-				S.energy = 1750
-				S.current_size = 7
-				S.icon = 'icons/effects/224x224.dmi'
-				S.icon_state = "singularity_s7"
-				S.pixel_x = -96
-				S.pixel_y = -96
-				S.grav_pull = 0
-				//S.consume_range = 3
-				S.dissipate = 0
-				//S.dissipate_delay = 10
-				//S.dissipate_track = 0
-				//S.dissipate_strength = 10
+			//The gentleman who coded this was nice enough to add a proc
+			F.turn_on()
+			F.investigation_log(I_SINGULO,"<font color='green'>activated</font> <font color='red'>via Start Singularity Debug verb.</font>")
 
 	for(var/obj/machinery/power/rad_collector/Rad in rad_collectors)
 		if(Rad.anchored)
 			if(!Rad.P)
 				var/obj/item/weapon/tank/plasma/Plasma = new/obj/item/weapon/tank/plasma(Rad)
-				Plasma.air_contents.toxins = 70
+				Plasma.air_contents.toxins = 100 //Don't need to explain, space magic
+				Plasma.air_contents.temperature = 73.15 //Perfect freezer cooling
 				Rad.drain_ratio = 0
 				Rad.P = Plasma
 				Plasma.loc = Rad
 
 			if(!Rad.active)
 				Rad.toggle_power()
+				Rad.locked = 1
+
+	sleep(200) //Field generators take 15 seconds to warm up, so we'll give 20
+
+	for(var/obj/machinery/the_singularitygen/G in machines)
+		if(G.anchored)
+			var/obj/machinery/singularity/S = new /obj/machinery/singularity(get_turf(G), 50)
+			spawn(0)
+				del(G)
+			S.energy = 1250 //No energy dissipates
+			S.current_size = 7
+			S.icon = 'icons/effects/224x224.dmi'
+			S.icon_state = "singularity_s7"
+			S.pixel_x = -96
+			S.pixel_y = -96
+			S.grav_pull = 0
+			S.dissipate = 0
+			S.consume_range = 0 //Can't be too sure
+
+	sleep(50) //Extra five seconds for the radiation collectors to get their shit together
 
 	for(var/obj/machinery/power/battery/smes/SMES in power_machines)
 		if(SMES.anchored)
-			SMES.connect_to_network() // Just in case.
+			SMES.connect_to_network() //Just in case.
 			SMES.chargemode = 1
-			SMES.online=1
+			SMES.online = 1
 
 /client/proc/cheat_power()
 

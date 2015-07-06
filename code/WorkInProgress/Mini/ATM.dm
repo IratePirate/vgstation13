@@ -23,7 +23,6 @@ log transactions
 	anchored = 1
 	use_power = 1
 	idle_power_usage = 10
-	var/obj/machinery/account_database/linked_db
 	var/datum/money_account/authenticated_account
 	var/number_incorrect_tries = 0
 	var/previous_account_number = 0
@@ -36,13 +35,13 @@ log transactions
 	var/view_screen = NO_SCREEN
 	var/lastprint = 0 // Printer needs time to cooldown
 
+	machine_flags = PURCHASER //not strictly true, but it connects it to the account
+
 /obj/machinery/atm/New()
 	..()
 	machine_id = "[station_name()] RT #[num_financial_terminals++]"
-
-/obj/machinery/atm/initialize()
-	..()
-	reconnect_database()
+	if(ticker)
+		initialize()
 
 /obj/machinery/atm/process()
 	if(stat & NOPOWER)
@@ -79,18 +78,10 @@ log transactions
 					qdel(S)
 				authenticated_account.charge(-amount,null,"Credit deposit",terminal_id=machine_id,dest_name = "Terminal")
 
-/obj/machinery/atm/proc/reconnect_database()
-	for(var/obj/machinery/account_database/DB in account_DBs)
-		//Checks for a database on its Z-level, else it checks for a database at the main Station.
-		if((DB.z == src.z) || (DB.z == STATION_Z))
-			if(!(DB.stat & NOPOWER) && DB.activated )//If the database if damaged or not powered, people won't be able to use the ATM anymore
-				linked_db = DB
-				break
-
 /obj/machinery/atm/attackby(obj/item/I as obj, mob/user as mob)
 	if(iswrench(I))
 		user.visible_message("<span class='notice'>[user] begins to take apart the [src]!</span>", "<span class='notice'>You start to take apart the [src]</span>")
-		if(do_after(user, 40))
+		if(do_after(user, src, 40))
 			user.visible_message("<span class='notice'>[user] disassembles the [src]!</span>", "<span class='notice'>You disassemble the [src]</span>")
 			playsound(get_turf(src), 'sound/items/Ratchet.ogg', 100, 1)
 			new /obj/item/stack/sheet/metal (src.loc,2)
@@ -129,6 +120,9 @@ log transactions
 		..()
 
 /obj/machinery/atm/attack_hand(mob/user as mob)
+	if(isobserver(user))
+		user << "<span class='warning'>Your ghostly limb passes right through \the [src].</span>"
+		return
 	if(istype(user, /mob/living/silicon))
 		user << "<span class='warning'>Artificial unit recognized. Artificial units do not currently receive monetary compensation, as per NanoTrasen regulation #1005.</span>"
 		return

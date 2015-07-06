@@ -308,8 +308,7 @@ var/global/list/paint_variants = list(
 	throw_speed = 1
 	throw_range = 5
 	w_class = 3.0
-	m_amt = 15000
-	g_amt = 7500
+	starting_materials = list(MAT_IRON = 15000, MAT_GLASS = 7500)
 	w_type = RECYK_ELECTRONIC
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "engineering=2;materials=1"
@@ -474,7 +473,7 @@ var/global/list/paint_variants = list(
 
 	user << "Painting floor..."
 	playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-	if(do_after(user, 20))
+	if(do_after(user,A, 20))
 		activate()
 		var/turf/simulated/floor/T = get_turf(A)
 		selected.apply(T,pname,pdesc)

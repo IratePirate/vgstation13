@@ -9,6 +9,8 @@
 #define DEBUG
 #define PROFILE_MACHINES // Disable when not debugging.
 
+#define ARBITRARILY_LARGE_NUMBER 10000 //Used in delays.dm and vehicle.dm. Upper limit on delays
+
 #ifdef PROFILE_MACHINES
 #define CHECK_DISABLED(TYPE) if(disable_##TYPE) return
 var/global/disable_scrubbers = 0
@@ -34,6 +36,8 @@ var/global/disable_vents     = 0
 #define MOLES_PLASMA_VISIBLE	0.7 //Moles in a standard cell after which plasma is visible
 #define MIN_PLASMA_DAMAGE 1
 #define MAX_PLASMA_DAMAGE 10
+
+#define mouse_respawn_time 5 //Amount of time that must pass between a player dying as a mouse and repawning as a mouse. In minutes.
 
 #define BREATH_VOLUME 0.5	//liters in a normal breath
 #define BREATH_MOLES (ONE_ATMOSPHERE * BREATH_VOLUME /(T20C*R_IDEAL_GAS_EQUATION))
@@ -193,6 +197,8 @@ var/MAX_EXPLOSION_RANGE = 14
 #define SLOT_LEGS = 16384
 
 //FLAGS BITMASK
+
+#define PROXMOVE		1	//Will the code check us when we move or when something moves near us?
 
 #define MASKINTERNALS	8	// mask allows internals
 //#define SUITSPACE		8	// suit protects against space
@@ -473,13 +479,6 @@ var/MAX_EXPLOSION_RANGE = 14
 #define INV_SLOT_SIGHT "sight_slot"
 #define INV_SLOT_TOOL "tool_slot"
 
-var/list/accessable_z_levels = list("1" = 5, "3" = 10, "4" = 15, "5" = 10, "6" = 60)
-//This list contains the z-level numbers which can be accessed via space travel and the percentile chances to get there.
-//(Exceptions: extended, sandbox and nuke) -Errorage
-//Was list("3" = 30, "4" = 70).
-//Spacing should be a reliable method of getting rid of a body -- Urist.
-//Go away Urist, I'm restoring this to the longer list. ~Errorage
-
 #define IS_MODE_COMPILED(MODE) (ispath(text2path("/datum/game_mode/"+(MODE))))
 
 
@@ -548,7 +547,7 @@ var/static/list/scarySounds = list('sound/weapons/thudswoosh.ogg','sound/weapons
 
 var/list/liftable_structures = list(\
 
-	/obj/machinery/autolathe, \
+	/obj/machinery/r_n_d/fabricator/mechanic_fab/autolathe, \
 	/obj/machinery/constructable_frame, \
 	/obj/machinery/portable_atmospherics/hydroponics, \
 	/obj/machinery/computer, \
@@ -694,6 +693,20 @@ var/list/TAGGERLOCATIONS = list(
 #define ORGAN_DEAD			1024
 #define ORGAN_MUTATED		2048
 #define ORGAN_PEG			4096 // ROB'S MAGICAL PEGLEGS v2
+
+//////////////////MATERIAL DEFINES/////////////////
+
+#define MAT_IRON		"$iron"
+#define MAT_GLASS		"$glass"
+#define MAT_GOLD		"$gold"
+#define MAT_SILVER		"$silver"
+#define MAT_URANIUM		"$uranium"
+#define MAT_DIAMOND		"$diamond"
+#define MAT_PHAZON		"$phazon"
+#define MAT_PLASMA		"$plasma"
+#define MAT_CLOWN		"$clown"
+#define MAT_PLASTIC		"$plastic"
+
 
 //Please don't edit these values without speaking to Errorage first	~Carn
 //Admin Permissions
@@ -963,6 +976,7 @@ var/list/RESTRICTED_CAMERA_NETWORKS = list( //Those networks can only be accesse
 #define EJECTNOTDEL		32 //when we destroy the machine, does it remove all its items or destroy them?
 #define WELD_FIXED		64 //if it is attacked by a welder and is anchored, it'll toggle between welded and unwelded to the floor
 #define MULTITOOL_MENU	128 //if it has multitool menu functionality inherently
+#define PURCHASER		256 //it connects to the centcom database at roundstart
 
 #define MAX_N_OF_ITEMS 999 // Used for certain storage machinery, BYOND infinite loop detector doesn't look things over 1000.
 
@@ -1162,3 +1176,37 @@ var/list/RESTRICTED_CAMERA_NETWORKS = list( //Those networks can only be accesse
 #else
 	#define say_testing(a,x) null << "[x][a]"
 #endif
+
+//Bay lighting engine shit, not in /code/modules/lighting because BYOND is being shit about it
+#define LIGHTING_INTERVAL 5 // frequency, in 1/10ths of a second, of the lighting process
+
+#define LIGHTING_FALLOFF 1 // type of falloff to use for lighting; 1 for circular, 2 for square
+#define LIGHTING_LAMBERTIAN 1 // use lambertian shading for light sources
+#define LIGHTING_HEIGHT 1 // height off the ground of light sources on the pseudo-z-axis, you should probably leave this alone
+#define LIGHTING_TRANSITIONS 0 // smooth, animated transitions, similar to TG station
+#ifdef LIGHTING_TRANSITIONS
+#define LIGHTING_TRANSITION_SPEED (LIGHTING_INTERVAL - 2)
+#endif
+#define LIGHTING_ROUND_VALUE 1 / 128 //Value used to round lumcounts, values smaller than 1/255 don't matter (if they do, thanks sinking points), greater values will make lighting less precise, but in turn increase performance, VERY SLIGHTLY.
+
+#define LIGHTING_LAYER 10 // drawing layer for lighting overlays
+#define LIGHTING_ICON 'icons/effects/lighting_overlay.dmi' // icon used for lighting shading effects
+
+//Some defines to generalise colours used in lighting.
+//Important note on colors. Colors can end up significantly different from the basic html picture, especially when saturated
+#define LIGHT_COLOR_RED "#FA8282" //Warm but extremely diluted red. rgb(250, 130, 130)
+#define LIGHT_COLOR_GREEN "#64C864" //Bright but quickly dissipating neon green. rgb(100, 200, 100)
+#define LIGHT_COLOR_BLUE "#6496FA" //Cold, diluted blue. rgb(100, 150, 250)
+
+#define LIGHT_COLOR_CYAN "#7DE1E1" //Diluted cyan. rgb(125, 225, 225)
+#define LIGHT_COLOR_PINK "#E17DE1" //Diluted, mid-warmth pink. rgb(225, 125, 225)
+#define LIGHT_COLOR_YELLOW "#E1E17D" //Dimmed yellow, leaning kaki. rgb(225, 225, 125)
+#define LIGHT_COLOR_BROWN "#966432" //Clear brown, mostly dim. rgb(150, 100, 50)
+#define LIGHT_COLOR_ORANGE "#FA9632" //Mostly pure orange. rgb(250, 150, 50)
+
+//These ones aren't a direct colour like the ones above, because nothing would fit
+#define LIGHT_COLOR_FIRE "#FAA019" //Warm orange color, leaning strongly towards yellow. rgb(250, 160, 25)
+#define LIGHT_COLOR_FLARE "#FA644B" //Bright, non-saturated red. Leaning slightly towards pink for visibility. rgb(250, 100, 75)
+#define LIGHT_COLOR_SLIME_LAMP "#AFC84B" //Weird color, between yellow and green, very slimy. rgb(175, 200, 75)
+#define LIGHT_COLOR_TUNGSTEN "#FAE1AF" //Extremely diluted yellow, close to skin color (for some reason). rgb(250, 225, 175)
+#define LIGHT_COLOR_HALOGEN "#F0FAFA" //Barely visible cyan-ish hue, as the doctor prescribed. rgb(240, 250, 250)
