@@ -14,6 +14,12 @@
 			return 1
 		return 0
 
+/obj/item/projectile/bullet/dart
+	name = "shotgun dart"
+	damage = 5
+	damage_type = TOX
+	weaken = 5
+
 /obj/item/projectile/bullet/weakbullet
 	icon_state = "bbshell"
 	damage = 10
@@ -30,7 +36,7 @@
 			M.eye_blurry += 20
 			M.drowsyness += 20
 			if(M.dizziness <= 150)
-				M.make_dizzy(150)
+				M.Dizzy(150)
 				M.dizziness = 150
 			for(var/datum/reagent/ethanol/A in M.reagents.reagent_list)
 				M.paralysis += 2

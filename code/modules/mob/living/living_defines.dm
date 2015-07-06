@@ -20,9 +20,7 @@
 	var/list/atom/hallucinations = list() //A list of hallucinated people that try to attack the mob. See /obj/effect/fake_attacker in hallucinations.dm
 
 
-	var/last_special = 0 //Used by the resist verb, likely used to prevent players from bypassing next_move by logging in/out.
-
-	//Allows mobs to move through dense areas without restriction. For instance, in space or out of holder objects.
+	var/list/image/static_overlays
 
 	var/t_plasma = null
 	var/t_oxygen = null
@@ -30,6 +28,9 @@
 	var/t_n2 = null
 
 	var/now_pushing = null
+	var/mob_bump_flag = 0
+	var/mob_swap_flags = 0
+	var/mob_push_flags = 0
 
 	var/cameraFollow = null
 
@@ -50,5 +51,12 @@
 	//autoignition_temperature=0
 	//fire_fuel=0
 
-	// For beam damage stuff
-	var/list/last_beamchecks=list() // world.time of the last time a beam was checked (for fractional damage)
+	var/list/icon/pipes_shown = list()
+	var/last_played_vent
+
+	//
+	var/list/callOnLife = list() //
+
+/mob/living/proc/unsubLife(datum/sub)
+	while("\ref[sub]" in callOnLife)
+		callOnLife -= "\ref[sub]"

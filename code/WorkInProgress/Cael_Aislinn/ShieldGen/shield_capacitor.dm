@@ -73,7 +73,7 @@
 			user << "Controls are now [src.locked ? "locked." : "unlocked."]"
 			updateDialog()
 		else
-			user << "\red Access denied."
+			user << "<span class='warning'>Access denied.</span>"
 
 /obj/machinery/shield_capacitor/attack_paw(user as mob)
 	return src.attack_hand(user)
@@ -136,6 +136,7 @@
 		time_since_fail = 0
 
 /obj/machinery/shield_capacitor/Topic(href, href_list[])
+	if(!isAI(usr) && usr.z != z) return 1
 	..()
 	if( href_list["close"] )
 		usr << browse(null, "window=shield_capacitor")

@@ -20,7 +20,8 @@
 	display_contents_with_number = 0 // UNStABLE AS FuCK, turn on when it stops crashing clients
 	use_to_pickup = 1
 	slot_flags = SLOT_BELT
-	flags = FPRINT | TABLEPASS
+	flags = FPRINT
+
 
 // -----------------------------
 //          Trash bag
@@ -66,7 +67,7 @@
 	cant_hold = list("/obj/item/weapon/disk/nuclear")
 
 	suicide_act(mob/user)
-		viewers(user) << "\red <b>[user] puts the [src.name] over \his head and tightens the handles around \his neck! It looks like \he's trying to commit suicide.</b>"
+		viewers(user) << "<span class='danger'>[user] puts the [src.name] over \his head and tightens the handles around \his neck! It looks like \he's trying to commit suicide.</span>"
 		return(OXYLOSS)
 
 // -----------------------------
@@ -74,7 +75,7 @@
 // -----------------------------
 
 /obj/item/weapon/storage/bag/ore
-	name = "Mining Satchel"
+	name = "\improper Mining Satchel" //need the improper for the
 	desc = "This little bugger can be used to store and transport ores."
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "satchel"
@@ -98,7 +99,27 @@
 	max_combined_w_class = 200 //Doesn't matter what this is, so long as it's more or equal to storage_slots * plants.w_class
 	max_w_class = 3
 	w_class = 1
-	can_hold = list("/obj/item/weapon/reagent_containers/food/snacks/grown","/obj/item/seeds","/obj/item/weapon/grown", "/obj/item/weapon/reagent_containers/food/snacks/meat", "/obj/item/weapon/reagent_containers/food/snacks/egg",)
+	can_hold = list("/obj/item/weapon/reagent_containers/food/snacks/grown","/obj/item/seeds","/obj/item/weapon/grown", "/obj/item/weapon/reagent_containers/food/snacks/meat")
+
+// -----------------------------
+//          Food bag
+// -----------------------------
+
+/obj/item/weapon/storage/bag/food
+	icon = 'icons/obj/kitchen.dmi'
+	icon_state = "foodbag0"
+	inhand_states = list("left_hand" = 'icons/mob/in-hand/left/backpacks_n_bags.dmi', "right_hand" = 'icons/mob/in-hand/right/backpacks_n_bags.dmi')
+	name = "Food Delivery Bag"
+	storage_slots = 14; //the number of food items it can carry.
+	max_combined_w_class = 28 //Doesn't matter what this is, so long as it's more or equal to storage_slots * plants.w_class
+	max_w_class = 3
+	w_class = 3
+	can_hold = list("/obj/item/weapon/reagent_containers/food/snacks")
+
+/obj/item/weapon/storage/bag/food/update_icon()
+	if(contents.len < 1)
+		icon_state = "foodbag0"
+	else icon_state = "foodbag1"
 
 // -----------------------------
 //          Pill Collector
@@ -114,7 +135,6 @@
 	max_w_class = 3
 	w_class = 1
 	can_hold = list("/obj/item/weapon/reagent_containers/glass/bottle","/obj/item/weapon/reagent_containers/pill","/obj/item/weapon/reagent_containers/syringe")
-
 
 // -----------------------------
 //        Sheet Snatcher
@@ -147,7 +167,7 @@
 			current += S.amount
 		if(capacity == current)//If it's full, you're done
 			if(!stop_messages)
-				usr << "\red The snatcher is full."
+				usr << "<span class='warning'>The snatcher is full.</span>"
 			return 0
 		return 1
 
@@ -175,11 +195,11 @@
 				break
 
 		if(!inserted || !S.amount)
-			usr.u_equip(S)
+			usr.u_equip(S,1)
 			usr.update_icons()	//update our overlays
 			if (usr.client && usr.s_active != src)
 				usr.client.screen -= S
-			S.dropped(usr)
+			//S.dropped(usr)
 			if(!S.amount)
 				del S
 			else

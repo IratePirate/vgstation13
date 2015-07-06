@@ -9,7 +9,7 @@
 	var/mob/living/carbon/human/victim = null
 	var/obj/machinery/optable/optable = null
 
-	l_color = "#0000FF"
+	light_color = LIGHT_COLOR_BLUE
 
 /obj/machinery/computer/operating/New()
 	..()
@@ -87,15 +87,25 @@
 	user.set_machine(src)
 	onclose(user, "op")
 
-
 /obj/machinery/computer/operating/Topic(href, href_list)
 	if(..())
-		return
-	if ((usr.contents.Find(src) || (in_range(src, usr) && istype(src.loc, /turf))) || (istype(usr, /mob/living/silicon)))
+		return 1
+	else
 		usr.set_machine(src)
 	return
-
 
 /obj/machinery/computer/operating/process()
 	if(..())
 		src.updateDialog()
+	update_icon()
+
+/obj/machinery/computer/operating/update_icon()
+	..()
+	if(!(stat & (BROKEN | NOPOWER)))
+		updatemodules()
+		if(!isnull(src.optable) && (src.optable.check_victim()))
+			src.victim = src.optable.victim
+			if(victim.stat == DEAD)
+				icon_state = "operating-dead"
+			else
+				icon_state = "operating-living"

@@ -19,6 +19,7 @@ var/list/ai_list = list()
 	anchored = 1 // -- TLE
 	density = 1
 	status_flags = CANSTUN|CANPARALYSE
+	force_compose = 1
 	var/list/network = list("SS13")
 	var/obj/machinery/camera/current = null
 	var/list/connected_robots = list()
@@ -67,7 +68,18 @@ var/list/ai_list = list()
 			if (A.real_name == pickedName && possibleNames.len > 1) //fixing the theoretically possible infinite loop
 				possibleNames -= pickedName
 				pickedName = null
-
+	add_language(LANGUAGE_SOL_COMMON, 1)
+	add_language(LANGUAGE_UNATHI, 1)
+	add_language(LANGUAGE_SIIK_TAJR, 1)
+	add_language(LANGUAGE_SKRELLIAN, 1)
+	add_language(LANGUAGE_ROOTSPEAK, 1)
+	add_language(LANGUAGE_GUTTER, 1)
+	add_language(LANGUAGE_CLATTER, 1)
+	add_language(LANGUAGE_GREY, 1)
+	add_language(LANGUAGE_MONKEY, 1)
+	add_language(LANGUAGE_VOX, 1)
+	add_language(LANGUAGE_TRADEBAND, 1)
+	default_language = all_languages[LANGUAGE_SOL_COMMON]
 	real_name = pickedName
 	name = real_name
 	anchored = 1
@@ -96,13 +108,12 @@ var/list/ai_list = list()
 	if (istype(loc, /turf))
 		verbs.Add(/mob/living/silicon/ai/proc/ai_network_change, \
 		/mob/living/silicon/ai/proc/ai_statuschange, \
-		/mob/living/silicon/ai/proc/ai_hologram_change, \
-		/mob/living/silicon/ai/proc/toggle_camera_light)
+		/mob/living/silicon/ai/proc/ai_hologram_change)
 
 	if(!safety)//Only used by AIize() to successfully spawn an AI.
 		if (!B)//If there is no player/brain inside.
 			new/obj/structure/AIcore/deactivated(loc)//New empty terminal.
-			del(src)//Delete AI.
+			qdel(src)//Delete AI.
 			return
 		else
 			if (B.brainmob.mind)
@@ -122,9 +133,39 @@ var/list/ai_list = list()
 	..()
 	return
 
-/mob/living/silicon/ai/Destroy()
-	ai_list -= src
-	..()
+/mob/living/silicon/ai/verb/rename_photo() //This is horrible but will do for now
+	set category = "AI Commands"
+	set name = "Modify Photo Files"
+	if(stat || aiRestorePowerRoutine)
+		return
+
+	var/list/nametemp = list()
+	var/find
+	var/datum/picture/selection
+	if(aicamera.aipictures.len == 0)
+		usr << "<font color=red><B>No images saved<B></font>"
+		return
+	for(var/datum/picture/t in aicamera.aipictures)
+		nametemp += t.fields["name"]
+	find = input("Select image to delete or rename.", "Photo Modification") in nametemp
+	for(var/datum/picture/q in aicamera.aipictures)
+		if(q.fields["name"] == find)
+			selection = q
+			break
+
+	if(!selection) return
+	var/choice = input(usr, "Would you like to rename or delete [selection.fields["name"]]?", "Photo Modification") in list("Rename","Delete","Cancel")
+	switch(choice)
+		if("Cancel")
+			return
+		if("Delete")
+			qdel(selection)
+		if("Rename")
+			var/new_name = sanitize(input(usr, "Write a new name for [selection.fields["name"]]:","Photo Modification"))
+			if(length(new_name) > 0)
+				selection.fields["name"] = new_name
+			else
+				usr << "You must write a name."
 
 /mob/living/silicon/ai/verb/pick_icon()
 	set category = "AI Commands"
@@ -153,7 +194,7 @@ var/list/ai_list = list()
 	var/icontype = ""
 	/* Nuked your hidden shit.*/
 	if (custom_sprite == 1) icontype = ("Custom")//automagically selects custom sprite if one is available
-	else icontype = input("Select an icon!", "AI", null, null) in list("Monochrome", "Blue", "Inverted", "Text", "Smiley", "Angry", "Dorf", "Matrix", "Bliss", "Firewall", "Green", "Red", "Broken Output", "Triumvirate", "Triumvirate Static", "Searif", "Ravensdale", "Serithi", "Static", "Wasp", "Robert House", "Red October", "Fabulous", "Girl", "Girl Malf", "Boy", "Boy Malf", "Four-Leaf")
+	else icontype = input("Select an icon!", "AI", null, null) in list("Monochrome", "Blue", "Inverted", "Text", "Smiley", "Angry", "Dorf", "Matrix", "Bliss", "Firewall", "Green", "Red", "Broken Output", "Triumvirate", "Triumvirate Static", "Searif", "Ravensdale", "Serithi", "Static", "Wasp", "Robert House", "Red October", "Fabulous", "Girl", "Girl Malf", "Boy", "Boy Malf", "Four-Leaf", "Yes Man")
 	switch(icontype)
 		if("Custom") icon_state = "[src.ckey]-ai"
 		if("Clown") icon_state = "ai-clown2"
@@ -184,6 +225,7 @@ var/list/ai_list = list()
 		if("Boy Malf") icon_state = "ai-boy-malf"
 		if("Fabulous") icon_state = "ai-fabulous"
 		if("Four-Leaf") icon_state = "ai-4chan"
+		if("Yes Man") icon_state = "yes-man"
 		else icon_state = "ai"
 	//else
 			//usr <<"You can only change your display once!"
@@ -405,19 +447,13 @@ var/list/ai_list = list()
 
 		return
 
-	return
-
-/mob/living/silicon/ai/meteorhit(obj/O as obj)
-	if(flags & INVULNERABLE)
+	if (href_list["open"])
+		var/mob/target = locate(href_list["open"])
+		var/mob/living/silicon/ai/A = locate(href_list["open2"])
+		if(A && target)
+			A.open_nearest_door(target)
 		return
-	for(var/mob/M in viewers(src, null))
-		M.show_message(text("\red [] has been hit by []", src, O), 1)
-		//Foreach goto(19)
-	if (health > 0)
-		adjustBruteLoss(30)
-		if ((O.icon_state == "flaming"))
-			adjustFireLoss(40)
-		updatehealth()
+
 	return
 
 /mob/living/silicon/ai/bullet_act(var/obj/item/projectile/Proj)
@@ -436,10 +472,10 @@ var/list/ai_list = list()
 
 	switch(M.a_intent)
 
-		if ("help")
+		if (I_HELP)
 			for(var/mob/O in viewers(src, null))
 				if ((O.client && !( O.blinded )))
-					O.show_message(text("\blue [M] caresses [src]'s plating with its scythe like arm."), 1)
+					O.show_message(text("<span class='notice'>[M] caresses [src]'s plating with its scythe like arm.</span>"), 1)
 
 		else //harm
 			var/damage = rand(10, 20)
@@ -447,7 +483,7 @@ var/list/ai_list = list()
 				playsound(loc, 'sound/weapons/slash.ogg', 25, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("\red <B>[] has slashed at []!</B>", M, src), 1)
+						O.show_message(text("<span class='danger'>[] has slashed at []!</span>", M, src), 1)
 				if(prob(8))
 					flick("noise", flash)
 				adjustBruteLoss(damage)
@@ -456,27 +492,19 @@ var/list/ai_list = list()
 				playsound(loc, 'sound/weapons/slashmiss.ogg', 25, 1, -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
-						O.show_message(text("\red <B>[] took a swipe at []!</B>", M, src), 1)
+						O.show_message(text("<span class='danger'>[] took a swipe at []!</span>", M, src), 1)
 	return
-
-/mob/living/silicon/ai/attack_hand(mob/living/carbon/M as mob)
-	if(ishuman(M))//Checks to see if they are ninja
-		if(istype(M:gloves, /obj/item/clothing/gloves/space_ninja)&&M:gloves:candrain&&!M:gloves:draining)
-			if(M:wear_suit:s_control)
-				M:wear_suit:transfer_ai("AICORE", "NINJASUIT", src, M)
-			else
-				M << "\red <b>ERROR</b>: \black Remote access channel disabled."
-	return
-
 
 /mob/living/silicon/ai/attack_animal(mob/living/simple_animal/M as mob)
+	if(!istype(M))
+		return
 	if(M.melee_damage_upper == 0)
 		M.emote("[M.friendly] [src]")
 	else
 		if(M.attack_sound)
 			playsound(loc, M.attack_sound, 50, 1, 1)
 		for(var/mob/O in viewers(src, null))
-			O.show_message("\red <B>[M]</B> [M.attacktext] [src]!", 1)
+			O.show_message("<span class='warning'><B>[M]</B> [M.attacktext] [src]!</span>", 1)
 		M.attack_log += text("\[[time_stamp()]\] <font color='red'>attacked [src.name] ([src.ckey])</font>")
 		src.attack_log += text("\[[time_stamp()]\] <font color='orange'>was attacked by [M.name] ([M.ckey])</font>")
 		var/damage = rand(M.melee_damage_lower, M.melee_damage_upper)
@@ -575,7 +603,7 @@ var/list/ai_list = list()
 	src.cameraFollow = null
 	var/cameralist[0]
 
-	if(usr.stat == 2)
+	if(usr.stat == 2 || (usr.status_flags & FAKEDEATH))
 		usr << "You can't change your camera network because you are dead!"
 		return
 
@@ -605,7 +633,7 @@ var/list/ai_list = list()
 			if(network in C.network)
 				U.eyeobj.setLoc(get_turf(C))
 				break
-	src << "\blue Switched to [network] camera network."
+	src << "<span class='notice'>Switched to [network] camera network.</span>"
 //End of code by Mord_Sith
 
 
@@ -619,7 +647,7 @@ var/list/ai_list = list()
 	set category = "AI Commands"
 	set name = "AI Status"
 
-	if(usr.stat == 2)
+	if(usr.stat == 2 || (usr.status_flags & FAKEDEATH))
 		usr <<"You cannot change your emotional status because you are dead!"
 		return
 	var/list/ai_emotions = list("Very Happy", "Happy", "Neutral", "Unsure", "Confused", "Sad", "BSOD", "Blank", "Problems?", "Awesome", "Facepalm", "Friend Computer")
@@ -710,12 +738,15 @@ var/list/ai_list = list()
 
 	var/obj/machinery/power/apc/apc = src.loc
 	if(!istype(apc))
-		src << "\blue You are already in your Main Core."
+		src << "<span class='notice'>You are already in your Main Core.</span>"
 		return
 	apc.malfvacate()
 
 //Toggles the luminosity and applies it by re-entereing the camera.
-/mob/living/silicon/ai/proc/toggle_camera_light()
+/mob/living/silicon/ai/verb/toggle_camera_light()
+	set name = "Toggle Camera Light"
+	set desc = "Toggle internal infrared camera light"
+	set category = "AI Commands"
 	if(stat != CONSCIOUS)
 		return
 
@@ -725,7 +756,7 @@ var/list/ai_list = list()
 		src << "Camera lights deactivated."
 
 		for (var/obj/machinery/camera/C in lit_cameras)
-			C.SetLuminosity(0)
+			C.set_light(0)
 			lit_cameras = list()
 
 		return
@@ -751,29 +782,29 @@ var/list/ai_list = list()
 	remove = lit_cameras - visible
 
 	for (var/obj/machinery/camera/C in remove)
-		C.SetLuminosity(0)
+		C.set_light(0)
 		lit_cameras -= C
 	for (var/obj/machinery/camera/C in add)
-		C.SetLuminosity(AI_CAMERA_LUMINOSITY)
+		C.set_light(AI_CAMERA_LUMINOSITY)
 		lit_cameras |= C
 
 
 /mob/living/silicon/ai/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/weapon/wrench))
 		if(anchored)
-			user.visible_message("\blue \The [user] starts to unbolt \the [src] from the plating...")
-			if(!do_after(user,40))
-				user.visible_message("\blue \The [user] decides not to unbolt \the [src].")
+			user.visible_message("<span class='notice'>\The [user] starts to unbolt \the [src] from the plating...</span>")
+			if(!do_after(user, src,40))
+				user.visible_message("<span class='notice'>\The [user] decides not to unbolt \the [src].</span>")
 				return
-			user.visible_message("\blue \The [user] finishes unfastening \the [src]!")
+			user.visible_message("<span class='notice'>\The [user] finishes unfastening \the [src]!</span>")
 			anchored = 0
 			return
 		else
-			user.visible_message("\blue \The [user] starts to bolt \the [src] to the plating...")
-			if(!do_after(user,40))
-				user.visible_message("\blue \The [user] decides not to bolt \the [src].")
+			user.visible_message("<span class='notice'>\The [user] starts to bolt \the [src] to the plating...</span>")
+			if(!do_after(user, src,40))
+				user.visible_message("<span class='notice'>\The [user] decides not to bolt \the [src].</span>")
 				return
-			user.visible_message("\blue \The [user] finishes fastening down \the [src]!")
+			user.visible_message("<span class='notice'>\The [user] finishes fastening down \the [src]!</span>")
 			anchored = 1
 			return
 	else

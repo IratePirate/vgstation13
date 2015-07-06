@@ -18,7 +18,7 @@
 /obj/item/organ/attack_self(mob/user as mob)
 
 	// Convert it to an edible form, yum yum.
-	if(!robotic && user.a_intent == "help" && user.zone_sel.selecting == "mouth")
+	if(!robotic && user.a_intent == I_HELP && user.zone_sel.selecting == "mouth")
 		bitten(user)
 		return
 
@@ -219,7 +219,7 @@
 	if(robotic)
 		return
 
-	user << "\blue You take an experimental bite out of \the [src]."
+	user << "<span class='notice'>You take an experimental bite out of \the [src].</span>"
 	var/datum/reagent/blood = reagents.reagent_list["blood"]
 	blood_splatter(src,blood,1)
 

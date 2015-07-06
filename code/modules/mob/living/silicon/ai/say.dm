@@ -1,22 +1,29 @@
 /mob/living/silicon/ai/say(var/message)
-	if(parent && istype(parent) && parent.stat != 2)
+	if(parent && istype(parent) && parent.stat != 2) //If there is a defined "parent" AI, it is actually an AI, and it is alive, anything the AI tries to say is said by the parent instead.
 		parent.say(message)
 		return
-		//If there is a defined "parent" AI, it is actually an AI, and it is alive, anything the AI tries to say is said by the parent instead.
 	..(message)
 
-/mob/living/silicon/ai/say_understands(var/other)
-	if (istype(other, /mob/living/carbon/human))
-		return 1
-	if (istype(other, /mob/living/silicon/robot))
-		return 1
-	if (istype(other, /mob/living/silicon/decoy))
-		return 1
-	if (istype(other, /mob/living/carbon/brain))
-		return 1
-	if (istype(other, /mob/living/silicon/pai))
-		return 1
-	return ..()
+
+/mob/living/silicon/ai/compose_track_href(atom/movable/speaker, var/datum/language/speaking, raw_message, radio_freq)
+	//this proc assumes that the message originated from a radio. if the speaker is not a virtual speaker this will probably fuck up hard.
+	var/mob/M = speaker.GetSource()
+
+	var/atom/movable/virt_speaker = speaker.GetRadio()
+	if(!virt_speaker || !istype(virt_speaker, /obj/item/device/radio))
+		virt_speaker = src
+	if(speaker != src && M != src)
+		if(M)
+			var/faketrack = "byond://?src=\ref[virt_speaker];track2=\ref[src];track=\ref[M]"
+			if(speaker.GetTrack())
+				faketrack = "byond://?src=\ref[virt_speaker];track2=\ref[src];faketrack=\ref[M]"
+
+			return "<a href='byond://?src=\ref[virt_speaker];open2=\ref[src];open=\ref[M]'>\[OPEN\]</a> <a href='[faketrack]'>"
+	return ""
+
+/mob/living/silicon/ai/compose_job(atom/movable/speaker, var/datum/language/speaking, raw_message, radio_freq)
+	//Also includes the </a> for AI hrefs, for convenience.
+	return " [radio_freq ? "(" + speaker.GetJob() + ")" : ""]" + "[speaker.GetSource() ? "</a>" : ""]"
 
 /mob/living/silicon/ai/say_quote(var/text)
 	var/ending = copytext(text, length(text))
@@ -28,7 +35,62 @@
 
 	return "states, \"[text]\"";
 
-/mob/living/silicon/ai/proc/IsVocal()
+/mob/living/silicon/ai/IsVocal()
+	return !config.silent_ai
+
+/mob/living/silicon/ai/get_message_mode(message)
+	if(department_radio_keys[copytext(message, 1, 3)] == MODE_DEPARTMENT)
+		return MODE_HOLOPAD
+	else
+		return ..()
+
+/mob/living/silicon/ai/handle_inherent_channels(message, message_mode, var/datum/language/speaking)
+	. = ..()
+	if(.)
+		return .
+
+	if(message_mode == MODE_HOLOPAD)
+		holopad_talk(message,speaking)
+		return 1
+
+//For holopads only. Usable by AI.
+/mob/living/silicon/ai/proc/holopad_talk(var/message,var/datum/language/speaking)
+	var/turf/turf = get_turf(src)
+	log_say("[key_name(src)] (@[turf.x],[turf.y],[turf.z]) Holopad: [message]")
+
+	message = trim(message)
+
+	if (!message)
+		return
+
+	var/obj/machinery/hologram/holopad/T = current
+	if(istype(T) && T.hologram && T.master == src)//If there is a hologram and its master is the user.
+		send_speech(message, 7, speaking, T, "R")
+		src << "<i><span class='game say'>Holopad transmitted, <span class='name'>[real_name]</span> <span class='message'>\"[message]\"</span></span></i>"//The AI can "hear" its own message.
+	else
+		src << "No holopad connected."
+	return
+
+/mob/living/silicon/ai/send_speech(message, message_range, var/datum/language/speaking, obj/source = src, bubble_type)
+	say_testing(src, "send speech start, msg = [message]; message_range = [message_range]; language = [speaking ? speaking.name : "None"]; source = [source];")
+	if(isnull(message_range)) message_range = 7
+	if(source != current)
+		return ..()
+
+	var/list/listeners = new/list()
+
+	for (var/mob/living/L in get_hearers_in_view(message_range, source))
+		listeners.Add(L)
+
+	listeners.Add(observers)
+
+	var/rendered = compose_message(src, speaking, message)
+
+	for (var/atom/movable/listener in listeners)
+		if (listener)
+			listener.Hear(rendered, src, speaking, message)
+
+	send_speech_bubble(message, bubble_type, listeners)
 
 var/announcing_vox = 0 // Stores the time of the last announcement
 var/const/VOX_CHANNEL = 200
@@ -60,7 +122,9 @@ var/const/VOX_DELAY = 600
 
 
 /mob/living/silicon/ai/verb/announcement()
-
+	set name = "Announcement"
+	set desc = "Send an announcement to the crew"
+	set category = "AI Commands"
 	// If we're in an APC, and APC is ded, ABORT
 	if(parent && istype(parent) && parent.stat)
 		return
@@ -185,10 +249,12 @@ var/list/vox_tens=list(
 		//if (words != "")
 		//	words += "and "
 
-		if (number < 20)
+		if (number < 19) //BYOND LISTS START KEYS AT 1 NOT 0
 			words += vox_units[number+1]
 		else
-			words += vox_tens[(number / 10)+1]
+			var/indice = (number / 10)+1
+			if(indice < vox_tens.len)
+				words += vox_tens[indice]
 			if ((number % 10) > 0)
 				words.Add(vox_units[(number % 10)+1])
 

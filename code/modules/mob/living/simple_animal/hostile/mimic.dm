@@ -9,7 +9,7 @@
 	icon_state = "crate"
 	icon_living = "crate"
 
-	meat_type = /obj/item/weapon/reagent_containers/food/snacks/carpmeat
+	meat_type = /obj/item/weapon/reagent_containers/food/snacks/meat/carpmeat
 	response_help = "touches"
 	response_disarm = "pushes"
 	response_harm = "hits"
@@ -43,7 +43,7 @@
 
 /mob/living/simple_animal/hostile/mimic/Die()
 	..()
-	visible_message("\red <b>[src]</b> stops moving!")
+	visible_message("<span class='warning'><b>[src]</b> stops moving!</span>")
 	del(src)
 
 

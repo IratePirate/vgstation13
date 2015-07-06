@@ -276,7 +276,8 @@
 				src.medHUD = !src.medHUD
 		if("translator")
 			if(href_list["toggle"])
-				src.universal_speak = !src.universal_speak
+				universal_speak = !universal_speak
+				universal_understand = !universal_understand
 		if("doorjack")
 			if(href_list["jack"])
 				if(src.cable && src.cable.machine)
@@ -285,10 +286,10 @@
 			if(href_list["cancel"])
 				src.hackdoor = null
 			if(href_list["cable"])
-				var/turf/T = get_turf_or_move(src.loc)
+				var/turf/T = get_turf(src.loc)
 				src.cable = new /obj/item/weapon/pai_cable(T)
 				for (var/mob/M in viewers(T))
-					M.show_message("\red A port on [src] opens to reveal [src.cable], which promptly falls to the floor.", 3, "\red You hear the soft click of something light and hard falling to the ground.", 2)
+					M.show_message("<span class='warning'>A port on [src] opens to reveal [src.cable], which promptly falls to the floor.</span>", 3, "<span class='warning'>You hear the soft click of something light and hard falling to the ground.</span>", 2)
 	//src.updateUsrDialog()		We only need to account for the single mob this is intended for, and he will *always* be able to call this window
 	src.paiInterface()		 // So we'll just call the update directly rather than doing some default checks
 	return
@@ -339,7 +340,7 @@
 		if(s == "medical HUD")
 			dat += "<a href='byond://?src=\ref[src];software=medicalhud;sub=0'>Medical Analysis Suite</a> <br>"
 		if(s == "universal translator")
-			dat += "<a href='byond://?src=\ref[src];software=translator;sub=0'>Universal Translator</a>[(src.universal_speak) ? "<font color=#55FF55>•</font>" : "<font color=#FF5555>•</font>"] <br>"
+			dat += "<a href='byond://?src=\ref[src];software=translator;sub=0'>Universal Translator</a>[(universal_understand) ? "<font color=#55FF55>•</font>" : "<font color=#FF5555>•</font>"] <br>"
 		if(s == "projection array")
 			dat += "<a href='byond://?src=\ref[src];software=projectionarray;sub=0'>Projection Array</a> <br>"
 		if(s == "camera jack")
@@ -408,9 +409,9 @@
 /mob/living/silicon/pai/proc/CheckDNA(var/mob/M, var/mob/living/silicon/pai/P)
 	var/answer = input(M, "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", "[P] Check DNA", "No") in list("Yes", "No")
 	if(answer == "Yes")
-		var/turf/T = get_turf_or_move(P.loc)
+		var/turf/T = get_turf(P.loc)
 		for (var/mob/v in viewers(T))
-			v.show_message("\blue [M] presses \his thumb against [P].", 3, "\blue [P] makes a sharp clicking sound as it extracts DNA material from [M].", 2)
+			v.show_message("<span class='notice'>[M] presses \his thumb against [P].</span>", 3, "<span class='notice'>[P] makes a sharp clicking sound as it extracts DNA material from [M].</span>", 2)
 		var/datum/dna/dna = M.dna
 		P << "<font color = red><h3>[M]'s UE string : [dna.unique_enzymes]</h3></font>"
 		if(dna.unique_enzymes == P.master_dna)
@@ -501,7 +502,7 @@
 /mob/living/silicon/pai/proc/softwareTranslator()
 	var/dat = {"<h3>Universal Translator</h3><br>
 				When enabled, this device will automatically convert all spoken and written language into a format that any known recipient can understand.<br><br>
-				The device is currently [ (src.universal_speak) ? "<font color=#55FF55>en" : "<font color=#FF5555>dis" ]abled.</font><br>
+				The device is currently [ (universal_understand) ? "<font color=#55FF55>en" : "<font color=#FF5555>dis" ]abled.</font><br>
 				<a href='byond://?src=\ref[src];software=translator;sub=0;toggle=1'>Toggle Device</a><br>
 				"}
 	return dat
@@ -562,7 +563,7 @@
 /mob/living/silicon/pai/proc/softwareAtmo()
 	var/dat = "<h3>Atmospheric Sensor</h4>"
 
-	var/turf/T = get_turf_or_move(src.loc)
+	var/turf/T = get_turf(src.loc)
 	if (isnull(T))
 		dat += "Unable to obtain a reading.<br>"
 	else
@@ -662,7 +663,7 @@ Cable status :"}
 
 // Door Jack - supporting proc
 /mob/living/silicon/pai/proc/hackloop()
-	var/turf/T = get_turf_or_move(src.loc)
+	var/turf/T = get_turf(src.loc)
 	for(var/mob/living/silicon/ai/AI in player_list)
 		if(T.loc)
 			AI << "<font color = red><b>Network Alert: Brute-force encryption crack in progress in [T.loc].</b></font>"

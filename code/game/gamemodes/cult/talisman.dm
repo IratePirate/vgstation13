@@ -15,12 +15,6 @@
 			findNullRod(A)
 	return 0
 
-
-/obj/item/weapon/paper/talisman/examine()
-	set src in view(2)
-	..()
-	return
-
 /obj/item/weapon/paper/talisman/New()
 	..()
 	pixel_x=0
@@ -52,19 +46,19 @@
 				delete = call(/obj/effect/rune/proc/communicate)()
 			if("deafen")
 				deafen()
-				del(src)
+				qdel(src)
 			if("blind")
 				blind()
-				del(src)
+				qdel(src)
 			if("runestun")
-				user << "\red To use this talisman, attack your target directly."
+				user << "<span class='warning'>To use this talisman, attack your target directly.</span>"
 				return
 			if("supply")
 				supply()
 		user.take_organ_damage(5, 0)
 		if(src && src.imbue!="supply" && src.imbue!="runestun")
 			if(delete)
-				del(src)
+				qdel(src)
 		return
 	else
 		user << "You see strange symbols on the paper. Are they supposed to mean something?"
@@ -76,7 +70,7 @@
 		if(imbue == "runestun")
 			user.take_organ_damage(5, 0)
 			runestun(T)
-			del(src)
+			qdel(src)
 		else
 			..()   ///If its some other talisman, use the generic attack code, is this supposed to work this way?
 	else
@@ -88,7 +82,7 @@
 
 /obj/item/weapon/paper/talisman/proc/supply(var/key)
 	if (!src.uses)
-		del(src)
+		qdel(src)
 		return
 
 	var/dat = {"<B>There are [src.uses] bloody runes on the parchment.</B>

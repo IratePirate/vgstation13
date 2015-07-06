@@ -17,6 +17,10 @@
 /obj/structure/dispenser/plasma
 	oxygentanks = 0
 
+/obj/structure/dispenser/empty
+	plasmatanks = 0
+	oxygentanks = 0
+
 
 /obj/structure/dispenser/New()
 	. = ..()
@@ -24,7 +28,7 @@
 
 
 /obj/structure/dispenser/update_icon()
-	overlays.Cut()
+	overlays.len = 0
 	switch(oxygentanks)
 		if(1 to 3)	overlays += "oxygen-[oxygentanks]"
 		if(4 to INFINITY) overlays += "oxygen-4"
@@ -55,8 +59,7 @@
 /obj/structure/dispenser/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/weapon/tank/oxygen) || istype(I, /obj/item/weapon/tank/air) || istype(I, /obj/item/weapon/tank/anesthetic))
 		if(oxygentanks < 10)
-			user.drop_item()
-			I.loc = src
+			user.drop_item(I, src)
 			oxytanks.Add(I)
 			oxygentanks++
 			user << "<span class='notice'>You put [I] in [src].</span>"
@@ -66,8 +69,7 @@
 		return
 	if(istype(I, /obj/item/weapon/tank/plasma))
 		if(plasmatanks < 10)
-			user.drop_item()
-			I.loc = src
+			user.drop_item(I, src)
 			platanks.Add(I)
 			plasmatanks++
 			user << "<span class='notice'>You put [I] in [src].</span>"

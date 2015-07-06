@@ -4,7 +4,7 @@
 
 	icon = 'icons/obj/machines/broadcast.dmi'
 	icon_state = "broadcaster"
-	l_color="#4285F4"
+	light_color = LIGHT_COLOR_BLUE
 	use_power = 1
 	idle_power_usage = 50
 	active_power_usage = 1000
@@ -17,6 +17,7 @@
 
 	var/const/RADS_PER_TICK=150
 	var/const/MAX_TEMP=70 // Celsius
+	machine_flags = MULTITOOL_MENU
 
 /obj/machinery/media/transmitter/broadcast/initialize()
 	testing("[type]/initialize() called!")
@@ -49,16 +50,18 @@
 	broadcast() // Bzzt
 
 /obj/machinery/media/transmitter/broadcast/attackby(var/obj/item/W, mob/user)
-	if(istype(W, /obj/item/device/multitool))
-		update_multitool_menu(user)
-		return 1
+	. = ..()
+	if(.)
+		return .
 
 /obj/machinery/media/transmitter/broadcast/attack_ai(var/mob/user as mob)
 	src.add_hiddenprint(user)
 	attack_hand(user)
 
 /obj/machinery/media/transmitter/broadcast/attack_hand(var/mob/user as mob)
-	update_multitool_menu(user)
+	. = ..()
+	if(.)
+		return .
 
 /obj/machinery/media/transmitter/broadcast/multitool_menu(var/mob/user,var/obj/item/device/multitool/P)
 	// You need a multitool to use this, or be silicon
@@ -110,10 +113,10 @@
 		return
 	if(on)
 		overlays+="broadcaster on"
-		SetLuminosity(3) // OH FUUUUCK
+		set_light(3) // OH FUUUUCK
 		use_power = 2
 	else
-		SetLuminosity(1) // Only the tile we're on.
+		set_light(1) // Only the tile we're on.
 		use_power = 1
 	if(sources.len)
 		overlays+="broadcaster linked"
@@ -151,7 +154,7 @@
 				media_frequency = newfreq
 				connect_frequency()
 			else
-				usr << "\red Invalid FM frequency. (90.0, 200.0)"
+				usr << "<span class='warning'>Invalid FM frequency. (90.0, 200.0)</span>"
 
 /obj/machinery/media/transmitter/broadcast/process()
 	if(stat & (NOPOWER|BROKEN))
@@ -201,7 +204,7 @@
 		var/datum/gas_mixture/environment = loc.return_air()
 		switch(environment.temperature)
 			if(T0C to (T20C + 20))
-				integrity = between(0, integrity, 100)
+				integrity = Clamp(integrity, 0, 100)
 			if((T20C + 20) to INFINITY)
 				integrity = max(0, integrity - 1)
 

@@ -51,14 +51,11 @@ var/global/list/disposalpipeID2State=list(
 	"pipe-s",
 	"pipe-c",
 	"pipe-j1",
-	"pipe-j2",
 	"pipe-y",
 	"pipe-t",
-	"condisposal",
+	"disposal",
 	"outlet",
 	"intake",
-	"pipe-j1s",
-	"pipe-j2s"
 )
 
 /datum/pipe_info/disposal
@@ -76,7 +73,7 @@ var/global/list/disposalpipeID2State=list(
 /datum/pipe_info/disposal/Render(var/dispenser,var/label)
 	return "<li><a href='?src=\ref[dispenser];dmake=[id];type=[PIPE_UNARY]'>[label]</a></li>" //avoid hardcoding.
 
-//find these defines in code\game\machinery\pipe\consruction.dm
+//find these defines in code\ATMOSPHERICS\pipe\consruction.dm
 var/global/list/RPD_recipes=list(
 	"Regular Pipes" = list(
 		"Pipe"           = new /datum/pipe_info(PIPE_SIMPLE_STRAIGHT,	1, PIPE_BINARY),
@@ -103,6 +100,7 @@ var/global/list/RPD_recipes=list(
 		"Gas Mixer"      = new /datum/pipe_info(PIPE_GAS_MIXER,			1, PIPE_TRIN_M),
 		"Thermal Plate"  = new /datum/pipe_info(PIPE_THERMAL_PLATE,		1, PIPE_UNARY),
 		"Injector"       = new /datum/pipe_info(PIPE_INJECTOR,     		1, PIPE_UNARY),
+		"Dual-Port Vent" = new /datum/pipe_info(PIPE_DP_VENT,			1, PIPE_UNARY),
 	),
 	"Heat Exchange" = list(
 		"Pipe"           = new /datum/pipe_info(PIPE_HE_STRAIGHT,		1, PIPE_BINARY),
@@ -117,12 +115,12 @@ var/global/list/RPD_recipes=list(
 		"4-Way Manifold" = new /datum/pipe_info(PIPE_INSUL_MANIFOLD4W,	1, PIPE_BINARY),
 	),
 	"Disposal Pipes" = list(
-		"Pipe"       = new /datum/pipe_info/disposal(DISP_PIPE_STRAIGHT,	PIPE_BINARY),
+		"Pipe"       = new /datum/pipe_info/disposal(DISP_PIPE_STRAIGHT,	PIPE_UNARY),
 		"Bent Pipe"  = new /datum/pipe_info/disposal(DISP_PIPE_BENT,		PIPE_BENT),
 		"Junction"   = new /datum/pipe_info/disposal(DISP_JUNCTION,			PIPE_TRINARY),
 		"Y-Junction" = new /datum/pipe_info/disposal(DISP_YJUNCTION,		PIPE_TRINARY),
-		"Trunk"      = new /datum/pipe_info/disposal(DISP_END_TRUNK,		PIPE_TRINARY),
-		"Bin"        = new /datum/pipe_info/disposal(DISP_END_BIN,			PIPE_UNARY),
+		"Trunk"      = new /datum/pipe_info/disposal(DISP_END_TRUNK,		PIPE_UNARY),
+		"Bin"        = new /datum/pipe_info/disposal(DISP_END_BIN,			PIPE_BINARY),
 		"Outlet"     = new /datum/pipe_info/disposal(DISP_END_OUTLET,		PIPE_UNARY),
 		"Chute"      = new /datum/pipe_info/disposal(DISP_END_CHUTE,		PIPE_UNARY),
 	)
@@ -135,14 +133,14 @@ var/global/list/RPD_recipes=list(
 	opacity = 0
 	density = 0
 	anchored = 0.0
-	flags = FPRINT | TABLEPASS| CONDUCT
+	flags = FPRINT
+	siemens_coefficient = 1
 	force = 10.0
 	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = 3.0
-	m_amt = 75000
-	g_amt = 37500
+	starting_materials = list(MAT_IRON = 75000, MAT_GLASS = 37500)
 	w_type = RECYK_ELECTRONIC
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "engineering=4;materials=2"
@@ -406,6 +404,9 @@ var/global/list/RPD_recipes=list(
 		return
 	usr.set_machine(src)
 	src.add_fingerprint(usr)
+	if(!src.Adjacent(usr))
+		usr.unset_machine(usr)
+		return
 	if(href_list["setdir"])
 		p_dir= text2num(href_list["setdir"])
 		show_menu(usr)
@@ -476,16 +477,18 @@ var/global/list/RPD_recipes=list(
 		return 0
 	if(istype(A,/area/shuttle)||istype(A,/turf/space/transit))
 		return 0
+	if(istype(A, /obj/structure/lattice) || istype(A,/obj/structure/catwalk))
+		A = get_turf(A)
 
 	switch(p_class)
 		if(-2) // Paint pipes
-			if(!istype(A,/obj/machinery/atmospherics/pipe) || istype(A,/obj/machinery/atmospherics/pipe/tank) || istype(A,/obj/machinery/atmospherics/unary/vent) || istype(A,/obj/machinery/atmospherics/pipe/simple/heat_exchanging) || istype(A,/obj/machinery/atmospherics/pipe/simple/insulated))
+			if(!istype(A,/obj/machinery/atmospherics/pipe) || istype(A,/obj/machinery/atmospherics/unary/tank) || istype(A,/obj/machinery/atmospherics/unary/vent) || istype(A,/obj/machinery/atmospherics/pipe/simple/heat_exchanging) || istype(A,/obj/machinery/atmospherics/pipe/simple/insulated))
 				// Avoid spewing errors about invalid mode -2 when clicking on stuff that aren't pipes.
 				user << "\The [src]'s error light flickers.  Perhaps you need to only use it on pipes and pipe meters?"
 				return 0
 			var/obj/machinery/atmospherics/pipe/P = A
 			if(!(paint_color in P.available_colors))
-				user << "\red This [P] can't be painted [paint_color]. Available colors: [english_list(P.available_colors)]"
+				user << "<span class='warning'>This [P] can't be painted [paint_color]. Available colors: [english_list(P.available_colors)]</span>"
 				return 0
 			playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
 			P._color = paint_color
@@ -497,10 +500,14 @@ var/global/list/RPD_recipes=list(
 			if(istype(A,/obj/item/pipe) || istype(A,/obj/item/pipe_meter) || istype(A,/obj/structure/disposalconstruct) || istype(A,/obj/item/pipe_gsensor))
 				user << "Destroying Pipe..."
 				playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-				if(do_after(user, 5))
-					activate()
-					del(A)
-					return 1
+				if(do_after(user,A, 5))
+					if(A)
+						activate()
+						if(istype(A, /obj/item/pipe))
+							returnToPool(A)
+						else
+							qdel(A)
+						return 1
 				return 0
 
 			// Avoid spewing errors about invalid mode -1 when clicking on stuff that aren't pipes.
@@ -512,9 +519,10 @@ var/global/list/RPD_recipes=list(
 				return 0
 			user << "Building Pipes ..."
 			playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-			if(do_after(user, 20))
+			if(do_after(user,A, 20))
 				activate()
-				var/obj/item/pipe/P = new (A, pipe_type=p_type, dir=p_dir)
+				var/obj/item/pipe/P = getFromPool(/obj/item/pipe, A)
+				P.New(A,pipe_type=p_type,dir=p_dir) //new (A, pipe_type=p_type, dir=p_dir)
 				P.update()
 				P.add_fingerprint(usr)
 				return 1
@@ -526,7 +534,7 @@ var/global/list/RPD_recipes=list(
 				return 0
 			user << "Building Meter..."
 			playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-			if(do_after(user, 20))
+			if(do_after(user,A, 20))
 				activate()
 				new /obj/item/pipe_meter(A)
 				return 1
@@ -538,7 +546,7 @@ var/global/list/RPD_recipes=list(
 				return 0
 			user << "Building Pipes..."
 			playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-			if(do_after(user, 20))
+			if(do_after(user,A, 20))
 				activate()
 				var/obj/structure/disposalconstruct/C = new (A)
 				// This may still produce runtimes, but I checked and /obj/structure/disposalconstruct
@@ -574,7 +582,7 @@ var/global/list/RPD_recipes=list(
 				return 0
 			user << "Building Sensor..."
 			playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-			if(do_after(user, 20))
+			if(do_after(user,A, 20))
 				activate()
 				new /obj/item/pipe_gsensor(A)
 				return 1

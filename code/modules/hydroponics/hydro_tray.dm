@@ -9,6 +9,9 @@
 	flags = OPENCONTAINER
 	volume = 100
 
+	machine_flags = SCREWTOGGLE | CROWDESTROY | WRENCHMOVE | FIXED2WORK
+
+
 	var/draw_warnings = 1 //Set to 0 to stop it from drawing the alert lights.
 
 	// Plant maintenance vars.
@@ -112,7 +115,7 @@
 		"radium" =         list( -1.5,  0,   0.2 ),
 		"adminordrazine" = list(  1,    1,   1   ),
 		"robustharvest" =  list(  0,    0.2, 0   ),
-		"left4zed" =       list(  0,    0,   0.2 )
+		"left4zed" =       list( -0.1, -0.2, 2   )
 		)
 
 	// Mutagen list specifies minimum value for the mutation to take place, rather
@@ -129,6 +132,18 @@
 	create_reagents(200)
 	connect()
 	update_icon()
+	component_parts = newlist(
+		/obj/item/weapon/circuitboard/hydroponics,
+		/obj/item/weapon/stock_parts/matter_bin,
+		/obj/item/weapon/stock_parts/matter_bin,
+		/obj/item/weapon/stock_parts/scanning_module,
+		/obj/item/weapon/stock_parts/capacitor,
+		/obj/item/weapon/reagent_containers/glass/beaker,
+		/obj/item/weapon/reagent_containers/glass/beaker,
+		/obj/item/weapon/stock_parts/console_screen
+	)
+
+	RefreshParts()
 	if(closed_system)
 		flags &= ~OPENCONTAINER
 
@@ -231,7 +246,11 @@
 		if(istype(T))
 			environment = T.return_air()
 
-	if(!environment) return
+	if(!environment)
+		if(istype(T, /turf/space))
+			environment = space_gas
+		else
+			return
 
 	// Handle gas consumption.
 	if(seed.consume_gasses && seed.consume_gasses.len)
@@ -280,15 +299,13 @@
 	//'	update_connected_network()
 
 	// Handle light requirements.
-	var/area/A = T.loc
-	if(A)
-		var/light_available
-		if(A.lighting_use_dynamic)
-			light_available = max(0,min(10,T.lighting_lumcount)-5)
-		else
-			light_available =  5
-		if(abs(light_available - seed.ideal_light) > seed.light_tolerance)
-			health -= healthmod
+
+	var/light_available = 5
+	if(T.dynamic_lighting)
+		light_available = T.get_lumcount(0.5) * 10
+
+	if(abs(light_available - seed.ideal_light) > seed.light_tolerance)
+		health -= healthmod
 
 	// Toxin levels beyond the plant's tolerance cause damage, but
 	// toxins are sucked up each tick and slowly reduce over time.
@@ -362,7 +379,7 @@
 			if(weedkiller_reagents[R.id])
 				weedlevel -= weedkiller_reagents[R.id] * reagent_total
 			if(pestkiller_reagents[R.id])
-				pestlevel += pestkiller_reagents[R.id] * reagent_total
+				pestlevel += pestkiller_reagents[R.id] * reagent_total //Pest reducing reagents have negative pest level
 
 			// Beneficial reagents have a few impacts along with health buffs.
 			if(beneficial_reagents[R.id])
@@ -445,7 +462,7 @@
 //Refreshes the icon and sets the luminosity
 /obj/machinery/portable_atmospherics/hydroponics/update_icon()
 
-	overlays.Cut()
+	overlays.len = 0
 
 	// Updates the plant overlay.
 	if(!isnull(seed))
@@ -488,14 +505,14 @@
 	// Update bioluminescence.
 	if(seed)
 		if(seed.biolum)
-			SetLuminosity(round(seed.potency/10))
+			set_light(round(seed.potency/10))
 			if(seed.biolum_colour)
-				l_color = seed.biolum_colour
+				light_color = seed.biolum_colour
 			else
-				l_color = null
+				light_color = null
 			return
 
-	SetLuminosity(0)
+	set_light(0)
 	return
 
  // If a weed growth is sufficient, this proc is called.
@@ -515,7 +532,7 @@
 	pestlevel = 0
 	sampled = 0
 	update_icon()
-	visible_message("\blue [src] has been overtaken by [seed.display_name].")
+	visible_message("<span class='info'>[src] has been overtaken by [seed.display_name]</span>.")
 
 	return
 
@@ -572,14 +589,17 @@
 	weedlevel = 0
 
 	update_icon()
-	visible_message("\red The \blue [previous_plant] \red has suddenly mutated into \blue [seed.display_name]!")
+	visible_message("<span class='alert'>The</span> <span class='info'>[previous_plant]</span> <span class='alert'>has suddenly mutated into</span> <span class='info'>[seed.display_name]!</span>")
 
 	return
 
 /obj/machinery/portable_atmospherics/hydroponics/attackby(var/obj/item/O as obj, var/mob/user as mob)
 
-	if (O.is_open_container())
+	if(O.is_open_container())
 		return 0
+
+	if(..())
+		return 1
 
 	if(istype(O, /obj/item/weapon/wirecutters) || istype(O, /obj/item/weapon/scalpel))
 
@@ -632,7 +652,7 @@
 		if(!seed)
 
 			var/obj/item/seeds/S = O
-			user.drop_item(O)
+			user.drop_item(S)
 
 			if(!S.seed)
 				user << "The packet seems to be empty. You throw it away."
@@ -666,16 +686,16 @@
 			update_icon()
 
 		else
-			user << "\red \The [src] already has seeds in it!"
+			user << "<span class='alert'>\The [src] already has seeds in it!</span>"
 
 	else if (istype(O, /obj/item/weapon/minihoe))  // The minihoe
 
 		if(weedlevel > 0)
-			user.visible_message("\red [user] starts uprooting the weeds.", "\red You remove the weeds from the [src].")
+			user.visible_message("<span class='alert'>[user] starts uprooting the weeds.</span>", "<span class='alert'>You remove the weeds from the [src].</span>")
 			weedlevel = 0
 			update_icon()
 		else
-			user << "\red This plot is completely devoid of weeds. It doesn't need uprooting."
+			user << "<span class='alert'>This plot is completely devoid of weeds. It doesn't need uprooting.</span>"
 
 	else if (istype(O, /obj/item/weapon/storage/bag/plants))
 
@@ -690,7 +710,7 @@
 	else if ( istype(O, /obj/item/weapon/plantspray) )
 
 		var/obj/item/weapon/plantspray/spray = O
-		user.drop_item(O)
+		user.drop_item(spray)
 		toxins += spray.toxicity
 		pestlevel -= spray.pest_kill_str
 		weedlevel -= spray.weed_kill_str
@@ -704,7 +724,7 @@
 	else if(istype(O, /obj/item/weapon/wrench))
 
 		//If there's a connector here, the portable_atmospherics setup can handle it.
-		if(locate(/obj/machinery/atmospherics/portables_connector/) in loc)
+		if(locate(/obj/machinery/atmospherics/unary/portables_connector/) in loc)
 			return ..()
 
 		playsound(loc, 'sound/items/Ratchet.ogg', 50, 1)
@@ -714,16 +734,21 @@
 	else if(istype(O, /obj/item/apiary))
 
 		if(seed)
-			user << "\red [src] is already occupied!"
+			user << "<span class='alert'>[src] is already occupied!</span>"
 		else
-			user.drop_item()
+			user.drop_item(O)
 			qdel(O)
 
 			var/obj/machinery/apiary/A = new(src.loc)
 			A.icon = src.icon
 			A.icon_state = src.icon_state
 			A.hydrotray_type = src.type
+			A.component_parts = component_parts.Copy()
+			A.contents = contents.Copy()
+			contents.len = 0
+			component_parts.len = 0
 			qdel(src)
+
 	return
 
 /obj/machinery/portable_atmospherics/hydroponics/attack_tk(mob/user as mob)
@@ -734,10 +759,17 @@
 	else if(dead)
 		remove_dead(user)
 
+/obj/machinery/portable_atmospherics/hydroponics/attack_ai(mob/user as mob)
+
+	return //Until we find something smart for you to do, please steer clear. Thanks
+
+/obj/machinery/portable_atmospherics/hydroponics/attack_robot(mob/user as mob)
+
+	if(isMoMMI(user) && Adjacent(user)) //Are we a beep ping ?
+		return attack_hand(user) //Let them use the tray
+
 /obj/machinery/portable_atmospherics/hydroponics/attack_hand(mob/user as mob)
 
-	if(istype(usr,/mob/living/silicon))
-		return
 	if(isobserver(user))
 		if(!(..()))
 			return 0
@@ -747,18 +779,28 @@
 		remove_dead(user)
 
 	else
-		if(seed && !dead)
-			usr << "[src] has \blue [seed.display_name] \black planted."
-			if(health <= (seed.endurance / 2))
-				usr << "The plant looks \red unhealthy."
-		else
-			usr << "[src] is empty."
-		usr << "Water: [round(waterlevel,0.1)]/100"
-		usr << "Nutrient: [round(nutrilevel,0.1)]/10"
-		if(weedlevel >= 5)
-			usr << "[src] is \red filled with weeds!"
-		if(pestlevel >= 5)
-			usr << "[src] is \red filled with tiny worms!"
+		examine(user) //using examine() to display the reagents inside the tray as well
+
+/obj/machinery/portable_atmospherics/hydroponics/examine(mob/user)
+	..()
+	view_contents(user)
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/view_contents(mob/user)
+	if(src.seed && !src.dead)
+		user << "[src] has <span class='info'>[src.seed.display_name]</span> planted."
+		if(src.health <= (src.seed.endurance / 2))
+			user << "The plant looks <span class='alert'>unhealthy.</span>"
+	else if(src.seed && src.dead)
+		user << "[src] is full of dead plant matter."
+	else
+		user << "[src] has nothing planted."
+	if (Adjacent(user) || isobserver(user) || issilicon(user))
+		user << "Water: [round(src.waterlevel,0.1)]/100"
+		user << "Nutrient: [round(src.nutrilevel,0.1)]/10"
+		if(src.weedlevel >= 5)
+			user << "[src] is <span class='alert'>filled with weeds!</span>"
+		if(src.pestlevel >= 5)
+			user << "[src] is <span class='alert'>filled with tiny worms!</span>"
 
 		if(!istype(src,/obj/machinery/portable_atmospherics/hydroponics/soil))
 
@@ -772,25 +814,24 @@
 				if(istype(T))
 					environment = T.return_air()
 
-			if(!environment) //We're in a crate or nullspace, bail out.
-				return
+			if(!environment)
+				if(istype(T, /turf/space))
+					environment = space_gas
+				else //Somewhere we shouldn't be, panic
+					return
 
-			var/area/A = get_area(T)
-			var/light_available
-			if(A)
-				if(A.lighting_use_dynamic)
-					light_available = max(0,min(10,T.lighting_lumcount))
-				else
-					light_available =  5
+			var/light_available = 5
+			if(T.dynamic_lighting)
+				light_available = T.get_lumcount() * 10
 
-			usr << "The tray's sensor suite is reporting a light level of [light_available] lumens and a temperature of [environment.temperature]K."
+			user << "The tray's sensor suite is reporting a light level of [light_available] lumens and a temperature of [environment.temperature]K."
 
 /obj/machinery/portable_atmospherics/hydroponics/verb/close_lid()
 	set name = "Toggle Tray Lid"
 	set category = "Object"
 	set src in view(1)
 
-	if(!usr || usr.stat || usr.restrained())
+	if(!usr || usr.stat || usr.restrained() || (usr.status_flags & FAKEDEATH))
 		return
 
 	closed_system = !closed_system
@@ -811,10 +852,10 @@
 	draw_warnings = 0
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/attackby(var/obj/item/O as obj, var/mob/user as mob)
-	if(istype(O, /obj/item/weapon/shovel))
+	if(istype(O, /obj/item/weapon/pickaxe/shovel))
 		user << "You clear up [src]!"
 		qdel(src)
-	else if(istype(O,/obj/item/weapon/shovel) || istype(O,/obj/item/weapon/tank))
+	else if(istype(O,/obj/item/weapon/pickaxe/shovel) || istype(O,/obj/item/weapon/tank))
 		return
 	else
 		..()
@@ -822,5 +863,7 @@
 /obj/machinery/portable_atmospherics/hydroponics/soil/New()
 	..()
 	verbs -= /obj/machinery/portable_atmospherics/hydroponics/verb/close_lid
+	component_parts = list()
+
 
 #undef HYDRO_SPEED_MULTIPLIER

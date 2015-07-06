@@ -10,7 +10,7 @@
 /obj/machinery/computer/lasercon
 	New()
 		spawn(1)
-			for(var/obj/machinery/zero_point_emitter/las in world)
+			for(var/obj/machinery/zero_point_emitter/las in machines)
 				if(las.id == src.id)
 					lasers += las
 
@@ -51,7 +51,7 @@
 	var/obj/machinery/engine/laser/laser = src.laser[1]
 
 	if(!laser)
-		t += "\red No laser found"
+		t += "<span class='warning'>No laser found</span>"
 	else
 
 
@@ -68,7 +68,7 @@
 */
 
 /obj/machinery/computer/lasercon/Topic(href, href_list)
-	..()
+	if(..()) return 1
 	if( href_list["close"] )
 		usr << browse(null, "window=laser_control")
 		usr.machine = null

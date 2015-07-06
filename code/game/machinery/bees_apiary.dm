@@ -50,30 +50,30 @@
 		return
 	if(istype(O, /obj/item/queen_bee))
 		if(health > 0)
-			user << "\red There is already a queen in there."
+			user << "<span class='warning'>There is already a queen in there.</span>"
 		else
 			health = 10
 			nutrilevel += 10
-			user.drop_item()
-			del(O)
-			user << "\blue You carefully insert the queen into [src], she gets busy making a hive."
+			user.drop_item(O)
+			qdel(O)
+			user << "<span class='notice'>You carefully insert the queen into [src], she gets busy making a hive.</span>"
 			bees_in_hive = 0
 	else if(istype(O, /obj/item/beezeez))
 		beezeez += 100
 		nutrilevel += 10
-		user.drop_item()
+		user.drop_item(O)
 		if(health > 0)
-			user << "\blue You insert [O] into [src]. A relaxed humming appears to pick up."
+			user << "<span class='notice'>You insert [O] into [src]. A relaxed humming appears to pick up.</span>"
 		else
-			user << "\blue You insert [O] into [src]. Now it just needs some bees."
-		del(O)
+			user << "<span class='notice'>You insert [O] into [src]. Now it just needs some bees.</span>"
+		qdel(O)
 	else if(istype(O, /obj/item/weapon/minihoe))
 		if(health > 0)
-			user << "\red <b>You begin to dislodge the apiary from the tray, the bees don't like that.</b>"
+			user << "<span class='danger'>You begin to dislodge the apiary from the tray, the bees don't like that.</span>"
 			angry_swarm(user)
 		else
-			user << "\blue You begin to dislodge the dead apiary from the tray."
-		if(do_after(user, 50))
+			user << "<span class='notice'>You begin to dislodge the dead apiary from the tray.</span>"
+		if(do_after(user, src, 50))
 			var/obj/machinery/created_tray = new hydrotray_type(src.loc)
 			created_tray.component_parts = list()
 			for(var/obj/I in src.component_parts)
@@ -84,30 +84,30 @@
 				I.loc = created_tray
 				contents -= I
 			new /obj/item/apiary(src.loc)
-			user << "\red You dislodge the apiary from the tray."
-			del(src)
+			user << "<span class='warning'>You dislodge the apiary from the tray.</span>"
+			qdel(src)
 	else if(istype(O, /obj/item/weapon/bee_net))
 		var/obj/item/weapon/bee_net/N = O
 		if(N.caught_bees > 0)
-			user << "\blue You empty the bees into the apiary."
+			user << "<span class='notice'>You empty the bees into the apiary.</span>"
 			bees_in_hive += N.caught_bees
 			N.caught_bees = 0
 		else
-			user << "\blue There are no more bees in the net."
+			user << "<span class='notice'>There are no more bees in the net.</span>"
 	else if(istype(O, /obj/item/weapon/reagent_containers/glass))
 		var/obj/item/weapon/reagent_containers/glass/G = O
 		if(harvestable_honey > 0)
 			if(health > 0)
-				user << "\red You begin to harvest the honey. The bees don't seem to like it."
+				user << "<span class='warning'>You begin to harvest the honey. The bees don't seem to like it.</span>"
 				angry_swarm(user)
 			else
-				user << "\blue You begin to harvest the honey."
-			if(do_after(user,50))
+				user << "<span class='notice'>You begin to harvest the honey.</span>"
+			if(do_after(user, src, 50))
 				G.reagents.add_reagent("honey",harvestable_honey)
 				harvestable_honey = 0
-				user << "\blue You successfully harvest the honey."
+				user << "<span class='notice'>You successfully harvest the honey.</span>"
 		else
-			user << "\blue There is no honey left to harvest."
+			user << "<span class='notice'>There is no honey left to harvest.</span>"
 	else
 		angry_swarm(user)
 
@@ -120,17 +120,16 @@
 		return 0
 
 /obj/machinery/apiary/process()
-
 	if(swarming > 0)
 		swarming -= 1
 		if(swarming <= 0)
 			for(var/mob/living/simple_animal/bee/B in src.loc)
 				bees_in_hive += B.strength
-				del(B)
+				returnToPool(B)
 	else if(bees_in_hive < 10)
 		for(var/mob/living/simple_animal/bee/B in src.loc)
 			bees_in_hive += B.strength
-			del(B)
+			returnToPool(B)
 
 	if(world.time > (lastcycle + cycledelay))
 		lastcycle = world.time
@@ -173,7 +172,8 @@
 
 		//make some new bees
 		if(bees_in_hive >= 10 && prob(bees_in_hive * 10))
-			var/mob/living/simple_animal/bee/B = new(get_turf(src), src)
+			var/turf/T = get_turf(src)
+			var/mob/living/simple_animal/bee/B = getFromPool(/mob/living/simple_animal/bee, T, src)
 			owned_bee_swarms.Add(B)
 			B.mut = mut
 			B.toxic = toxic
@@ -199,9 +199,13 @@
 				if(prob(10))
 					H.lastcycle -= 5
 				if(prob(10))
-					H.seed.lifespan = max(initial(H.seed.lifespan) * 1.5, H.seed.lifespan + 1)
+					if(!isnull(seed_types[H.seed.name]))
+						H.seed = H.seed.diverge(-1)
+					if(H.seed) H.seed.lifespan = max(initial(H.seed.lifespan) * 1.5, H.seed.lifespan + 1)
 				if(prob(10))
-					H.seed.endurance = max(initial(H.seed.endurance) * 1.5, H.seed.endurance + 1)
+					if(!isnull(seed_types[H.seed.name]))
+						H.seed = H.seed.diverge(-1)
+					if(H.seed) H.seed.endurance = max(initial(H.seed.endurance) * 1.5, H.seed.endurance + 1)
 				if(H.toxins && prob(10))
 					H.toxins = min(0, H.toxins - 1)
 					toxic++
@@ -212,7 +216,7 @@
 		B.target_turf = get_turf(src)
 		B.strength -= 1
 		if(B.strength <= 0)
-			del(B)
+			returnToPool(B)
 		else if(B.strength <= 5)
 			B.icon_state = "bees[B.strength]"
 	bees_in_hive = 0
@@ -229,8 +233,8 @@
 		var/spawn_strength = bees_in_hive
 		if(bees_in_hive >= 5)
 			spawn_strength = 6
-
-		var/mob/living/simple_animal/bee/B = new(get_turf(src), src)
+		var/turf/T = get_turf(src)
+		var/mob/living/simple_animal/bee/B = getFromPool(/mob/living/simple_animal/bee, T, src)
 		B.target = M
 		B.strength = spawn_strength
 		B.feral = 25
@@ -249,5 +253,5 @@
 		if(toxic > 0)
 			H.reagents.add_reagent("toxin", toxic)
 
-	usr << "\blue You harvest the honeycomb from the hive. There is a wild buzzing!"
+	usr << "<span class='notice'>You harvest the honeycomb from the hive. There is a wild buzzing!</span>"
 	angry_swarm(usr)

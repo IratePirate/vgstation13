@@ -11,15 +11,15 @@
 	var/opened = 0
 	var/useramount = 30 // Last used amount
 
-	machine_flags = SCREWTOGGLE | CROWDESTROY
+	machine_flags = SCREWTOGGLE | CROWDESTROY | WRENCHMOVE | FIXED2WORK
 
-	l_color = "#7BF9FF"
+	light_color = LIGHT_COLOR_CYAN
 	power_change()
 		..()
 		if(!(stat & (BROKEN|NOPOWER)))
-			SetLuminosity(2)
+			set_light(2)
 		else
-			SetLuminosity(0)
+			set_light(0)
 
 /********************************************************************
 **   Adding Stock Parts to VV so preconstructed shit has its candy **
@@ -58,10 +58,6 @@
 	if (prob(50))
 		qdel(src)
 
-/obj/machinery/snackbar_machine/meteorhit()
-	qdel(src)
-	return
-
 /obj/machinery/snackbar_machine/power_change()
 	if(powered())
 		stat &= ~NOPOWER
@@ -76,8 +72,7 @@
 			user << "A beaker is already loaded into the machine."
 			return
 		src.beaker = B
-		user.drop_item()
-		B.loc = src
+		user.drop_item(B, src)
 		user << "You add the beaker to the machine!"
 		src.updateUsrDialog()
 		update_icon()
@@ -86,9 +81,7 @@
 		..()
 
 /obj/machinery/snackbar_machine/Topic(href, href_list)
-	if(stat & (BROKEN|NOPOWER)) 		return
-	if(usr.stat || usr.restrained())	return
-	if(!in_range(src, usr)) 			return
+	if(..()) return 1
 
 	src.add_fingerprint(usr)
 	usr.set_machine(src)
@@ -231,7 +224,7 @@
 	var/image/overlay = image('icons/obj/chemical.dmi', src, "[icon_state]_overlay")
 	if(reagents.total_volume)
 		overlay.icon += mix_color_from_reagents(reagents.reagent_list)
-	overlays.Cut()
+	overlays.len = 0
 	overlays += overlay
 
 /obj/machinery/snackbar_machine/on_reagent_change()

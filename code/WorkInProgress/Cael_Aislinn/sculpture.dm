@@ -24,7 +24,7 @@
 
 /mob/living/simple_animal/sculpture/proc/GrabMob(var/mob/living/target)
 	if(target && target != src && ishuman(target) && !observed)
-		G = new /obj/item/weapon/grab(src, target)
+		G = getFromPool(/obj/item/weapon/grab,src,target)
 		target.Stun(1)
 		target.Paralyse(1)
 		G.loc = src
@@ -144,7 +144,7 @@
 		spawn()
 			while(get_turf(src) != target_turf && num_turfs > 0)
 				for(var/obj/structure/window/W in next_turf)
-					W.destroy()
+					W.Destroy(brokenup = 1)
 					sleep(5)
 				for(var/obj/structure/table/O in next_turf)
 					O.ex_act(1)
@@ -182,8 +182,8 @@
 			else if(istype(thisturf, /turf/unsimulated/wall))
 				continue
 			turfs += thisturf
-		var/turf/target_turf = pick(turfs)
-
+		var/turf/target_turf = safepick(turfs)
+		if(!target_turf) return
 		//MUH 6 QUADRILLION WINDOWS
 		//rampage along a path to get to it, in the blink of an eye
 		var/turf/next_turf = get_step_towards(src, target_turf)
@@ -191,7 +191,7 @@
 		spawn()
 			while(get_turf(src) != target_turf && num_turfs > 0)
 				for(var/obj/structure/window/W in next_turf)
-					W.destroy()
+					W.Destroy(brokenup = 1)
 					sleep(5)
 				for(var/obj/structure/table/O in next_turf)
 					O.ex_act(1)
@@ -254,6 +254,7 @@
 /mob/living/simple_animal/sculpture/Bump(atom/movable/AM as mob, yes)
 	if(!G && !observed)
 		GrabMob(AM)
+	..()
 
 /mob/living/simple_animal/sculpture/Bumped(atom/movable/AM as mob, yes)
 	if(!G && !observed)

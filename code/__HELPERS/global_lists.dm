@@ -9,8 +9,10 @@ var/global/list/player_list = list()				//List of all mobs **with clients attach
 var/global/list/mob_list = list()					//List of all mobs, including clientless
 var/global/list/living_mob_list = list()			//List of all alive mobs, including clientless. Excludes /mob/new_player
 var/global/list/dead_mob_list = list()				//List of all dead mobs, including clientless. Excludes /mob/new_player
+var/list/observers = new/list()
+var/global/list/areas = list()
+var/global/list/turfs = list()
 
-var/global/list/cable_list = list()					//Index for all cables, so that powernets don't have to look through the entire world all the time
 var/global/list/chemical_reactions_list				//list of all /datum/chemical_reaction datums. Used during chemical reactions
 var/global/list/chemical_reagents_list				//list of all /datum/reagent datums indexed by reagent id. Used by chemistry stuff
 var/global/list/landmarks_list = list()				//list of all landmarks created
@@ -48,6 +50,7 @@ var/global/list/sec_hud_users = list() //list of all entities using a security H
 		surgery_steps += S
 	sort_surgeries()
 
+
 /* // Uncomment to debug chemical reaction list.
 /client/verb/debug_chemical_list()
 
@@ -59,3 +62,5 @@ var/global/list/sec_hud_users = list() //list of all entities using a security H
 				. += "    has: [t]\n"
 	world << .
 */
+
+var/global/list/escape_list = list()

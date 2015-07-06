@@ -38,7 +38,7 @@
 		log_admin("MODE FAILURE: BORER. NOT ENOUGH BORER CANDIDATES.")
 		return 0 // not enough candidates for borer
 
-	for(var/obj/machinery/atmospherics/unary/vent_pump/v in world)
+	for(var/obj/machinery/atmospherics/unary/vent_pump/v in atmos_machines)
 		if(!v.welded && v.z == STATION_Z && v.canSpawnMice==1) // No more spawning in atmos.  Assuming the mappers did their jobs, anyway.
 			found_vents.Add(v)
 
@@ -125,16 +125,16 @@
 	for(var/datum/mind/borer in borers)
 		var/borerwin = 1
 		if((borer.current) && istype(borer.current,/mob/living/simple_animal/borer))
-			world << "<B>The borer was [borer.current.key].</B>"
-			world << "<B>The last host was [borer.current:host.key].</B>"
+			completion_text += "<br><B>The borer was [borer.current.key].</B>"
+			completion_text += "<br><B>The last host was [borer.current:host.key].</B>"
 
 			var/count = 1
 			for(var/datum/objective/objective in borer.objectives)
 				if(objective.check_completion())
-					world << "<B>Objective #[count]</B>: [objective.explanation_text] \green <B>Success</B>"
+					completion_text += "<br><B>Objective #[count]</B>: [objective.explanation_text] <span class='good'><B>Success</B></span>"
 					feedback_add_details("borer_objective","[objective.type]|SUCCESS")
 				else
-					world << "<B>Objective #[count]</B>: [objective.explanation_text] \red Failed"
+					completion_text += "<br><B>Objective #[count]</B>: [objective.explanation_text] <span class='warning'>Failed</span>"
 					feedback_add_details("borer_objective","[objective.type]|FAIL")
 					borerwin = 0
 				count++
@@ -143,9 +143,9 @@
 			borerwin = 0
 
 		if(borerwin)
-			world << "<B>The borer was successful!<B>"
+			completion_text += "<br><B>The borer was successful!<B>"
 			feedback_add_details("borer_success","SUCCESS")
 		else
-			world << "<B>The borer has failed!<B>"
+			completion_text += "<br><B>The borer has failed!<B>"
 			feedback_add_details("borer_success","FAIL")
-	return 1
+	return completion_text

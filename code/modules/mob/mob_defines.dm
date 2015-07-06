@@ -6,12 +6,10 @@
 	w_type = RECYK_BIOLOGICAL
 
 //	flags = NOREACT
+	flags = HEAR | PROXMOVE
 	var/datum/mind/mind
 
 	var/stat = 0 //Whether a mob is alive or dead. TODO: Move this to living - Nodrak
-
-	//Not in use yet
-	var/obj/effect/organstructure/organStructure = null
 
 	var/obj/screen/flash = null
 	var/obj/screen/blind = null
@@ -42,17 +40,18 @@
 	var/obj/screen/m_suitclothesbg = null
 	var/obj/screen/m_hat = null
 	var/obj/screen/m_hatbg = null
+	var/obj/screen/m_glasses = null
+	var/obj/screen/m_glassesbg = null
 
-	//construct spells hud icons
-	var/obj/screen/construct_spell1 = null
-	var/obj/screen/construct_spell2 = null
-	var/obj/screen/construct_spell3 = null
-	var/obj/screen/construct_spell4 = null
-	var/obj/screen/construct_spell5 = null
+	//spells hud icons - this interacts with add_spell and remove_spell
+	var/list/obj/screen/movable/spell_master/spell_masters = null
 
 	//thou shall always be able to see the Geometer of Blood
 	var/image/narsimage = null
 	var/image/narglow = null
+
+	//thou shall always be able to see the Bluespace Rift
+	var/image/riftimage = null
 
 	/*A bunch of this stuff really needs to go under their own defines instead of being globally attached to mob.
 	A variable should only be globally attached to turfs/objects/whatever, when it is in fact needed as such.
@@ -76,7 +75,6 @@
 	var/sdisabilities = 0	//Carbon
 	var/disabilities = 0	//Carbon
 	var/atom/movable/pulling = null
-	var/next_move = null
 	var/monkeyizing = null	//Carbon
 	var/other = 0.0
 	var/hand = null
@@ -93,7 +91,7 @@
 	var/gen_record = ""
 	var/blinded = null
 	var/bhunger = 0			//Carbon
-	var/ajourn = 0
+	var/obj/effect/rune/ajourn
 	var/druggy = 0			//Carbon
 	var/confused = 0		//Carbon
 	var/antitoxs = null
@@ -109,7 +107,6 @@
 	var/list/callOnFace = list()
 	var/list/pinned = list()            // List of things pinning this creature to walls (see living_defense.dm)
 	var/list/embedded = list()          // Embedded items, since simple mobs don't have organs.
-	var/list/languages = list()         // For speaking/listening.
 	var/list/abilities = list()         // For species-derived or admin-given powers.
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
 	var/emote_type = 1		// Define emote default type, 1 for seen emotes, 2 for heard emotes
@@ -123,9 +120,8 @@
 	var/bodytemperature = 310.055	//98.7 F
 	var/drowsyness = 0.0//Carbon
 	var/dizziness = 0//Carbon
-	var/is_dizzy = 0
-	var/is_jittery = 0
 	var/jitteriness = 0//Carbon
+	var/flying = 0
 	var/charges = 0.0
 	var/nutrition = 400.0//Carbon
 
@@ -136,7 +132,7 @@
 	var/losebreath = 0.0//Carbon
 	var/intent = null//Living
 	var/shakecamera = 0
-	var/a_intent = "help"//Living
+	var/a_intent = I_HELP//Living
 	var/m_int = null//Living
 	var/m_intent = "run"//Living
 	var/lastKnownIP = null
@@ -202,7 +198,7 @@
 	var/mob/living/carbon/LAssailant = null
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
-	var/obj/effect/proc_holder/spell/list/spell_list = list()
+	var/spell/list/spell_list = list()
 
 //Changlings, but can be used in other modes
 //	var/obj/effect/proc_holder/changpower/list/power_list = list()
@@ -221,12 +217,13 @@
 
 	var/status_flags = CANSTUN|CANWEAKEN|CANPARALYSE|CANPUSH	//bitflags defining which status effects can be inflicted (replaces canweaken, canstun, etc)
 
-	var/area/lastarea = null
-
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 
 	var/list/radar_blips = list() // list of screen objects, radar blips
 	var/radar_open = 0 	// nonzero is radar is open
+
+	var/force_compose = 0 //If this is nonzero, the mob will always compose it's own hear message instead of using the one given in the arguments.
+
 
 
 	var/obj/control_object //Used by admins to possess objects. All mobs should have this var
@@ -234,8 +231,8 @@
 	//Whether or not mobs can understand other mobtypes. These stay in /mob so that ghosts can hear everything.
 	var/universal_speak = 0 // Set to 1 to enable the mob to speak to everyone -- TLE
 	var/universal_understand = 0 // Set to 1 to enable the mob to understand everyone, not necessarily speak
-	var/robot_talk_understand = 0
-	var/alien_talk_understand = 0
+	/*var/robot_talk_understand = 0
+	var/alien_talk_understand = 0*/
 
 	var/has_limbs = 1 //Whether this mob have any limbs he can move with
 	var/can_stand = 1 //Whether this mob have ability to stand
@@ -258,3 +255,8 @@
 	var/origin_x = 0
 	var/origin_y = 0
 	var/origin_z = 0
+
+	var/iscorpse = 0 //Keeps track of whether this was spawned from a landmark or not.
+
+	var/list/languages[0]
+	var/stat_fucked = 0

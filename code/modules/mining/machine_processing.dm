@@ -82,16 +82,16 @@ a.notsmelting {
 				</tr>"}
 	for(var/ore_id in machine.ore.storage)
 		var/datum/material/ore_info=machine.ore.getMaterial(ore_id)
-		if(ore_info.stored)
+		if(machine.ore.storage[ore_id])
 			// Can't do squat unless we have at least one.
-			if(ore_info.stored<1)
+			if(machine.ore.storage[ore_id]<1)
 				if(ore_id in machine.selected)
 					machine.on=0
 					machine.selected -= ore_id
 			dat += {"
 			<tr>
 				<td class="clmName">[ore_info.name]</td>
-				<td>[ore_info.stored]</td>
+				<td>[machine.ore.storage[ore_id]]</td>
 				<td>
 					<a href="?src=\ref[src];toggle_select=[ore_id]" "}
 			if(ore_id in machine.selected)
@@ -171,7 +171,6 @@ a.notsmelting {
 			src.output = locate(/obj/machinery/mineral/output, get_step(src, dir))
 			if(src.output) break
 
-		processing_objects.Add(src)
 
 		ore = new
 
@@ -212,7 +211,8 @@ a.notsmelting {
 						for(var/ore_id in recipe.ingredients)
 							ore.removeAmount(ore_id,1)
 						// Spawn yield
-						new recipe.yieldtype(output.loc)
+						//new recipe.yieldtype(output.loc)
+						getFromPool(recipe.yieldtype,output.loc)
 
 						located=1
 						break
@@ -226,11 +226,11 @@ a.notsmelting {
 					on=0
 
 					// Spawn slag
-					var/obj/item/weapon/ore/slag/slag = new /obj/item/weapon/ore/slag(output.loc)
+					var/obj/item/weapon/ore/slag/slag = getFromPool(/obj/item/weapon/ore/slag, (output.loc))
 
 					// Take one of every ore selected and give it to the slag.
 					for(var/ore_id in ore.storage)
-						if(ore.getAmount(ore_id)>0 && ore_id in selected)
+						if(ore.getAmount(ore_id)>0 && (ore_id in selected))
 							ore.removeAmount(ore_id,1)
 							slag.mats.addAmount(ore_id,1)
 
@@ -240,11 +240,12 @@ a.notsmelting {
 		for (i = 0; i < 10; i++)
 			var/obj/item/I = locate(/obj/item, input.loc)
 			if(istype(I,/obj/item/weapon/ore))
-				var/obj/item/weapon/ore/O=I
-				var/datum/material/po=ore.getMaterial(O.material)
-				if (po.oretype && istype(O,po.oretype))
-					po.stored++
-					qdel(O)
+				var/obj/item/weapon/ore/O = I
+				var/datum/material/po = ore.getMaterial(O.material)
+				score["oremined"] += 1
+				if(po && po.oretype && istype(O, po.oretype))
+					ore.addAmount(O.material, 1)
+					returnToPool(O)
 					continue
 			if(I)
 				I.loc = src.output.loc
@@ -283,7 +284,7 @@ a.notsmelting {
 							ore.removeAmount(ore_id,1)
 
 						// Spawn yield
-						new recipe.yieldtype(output.loc)
+						getFromPool(recipe.yieldtype,output.loc)
 
 						located=1
 						break
@@ -297,7 +298,7 @@ a.notsmelting {
 					on=0
 
 					// Spawn slag
-					var/obj/item/weapon/ore/slag/slag = new /obj/item/weapon/ore/slag(output.loc)
+					var/obj/item/weapon/ore/slag/slag = getFromPool(/obj/item/weapon/ore/slag, (output.loc))
 
 					// Take one of every ore selected and give it to the slag.
 					for(var/ore_id in ore.storage)
@@ -386,16 +387,16 @@ a.notsmelting {
 			</tr>"}
 	for(var/ore_id in machine.ore.storage)
 		var/datum/material/ore_info=machine.ore.getMaterial(ore_id)
-		if(ore_info.stored)
+		if(machine.ore.storage[ore_id])
 			// Can't do squat unless we have at least one.
-			if(ore_info.stored<1)
+			if(machine.ore.storage[ore_id]<1)
 				if(ore_id in machine.selected)
 					machine.on=0
 					machine.selected -= ore_id
 			html += {"
 			<tr>
 				<td class="clmName">[ore_info.name]</td>
-				<td>[ore_info.stored]</td>
+				<td>[machine.ore.storage[ore_id]]</td>
 				<td>
 					<a href="?src=\ref[src];toggle_select=[ore_id]" "}
 			if (ore_id in machine.selected)

@@ -13,7 +13,7 @@
 	var/stop = 0.0
 	var/screen = 0 // 0 - No Access Denied, 1 - Access allowed
 
-	l_color = "#B40000"
+	light_color = LIGHT_COLOR_RED
 
 	attack_ai(var/mob/user as mob)
 		src.add_hiddenprint(user)
@@ -56,7 +56,7 @@
 				var/loc_display = "Unknown"
 				var/mob/living/carbon/M = T.imp_in
 				if(M.z == 1 && !istype(M.loc, /turf/space))
-					var/turf/mob_loc = get_turf_loc(M)
+					var/turf/mob_loc = get_turf(M)
 					loc_display = mob_loc.loc
 				if(T.malfunction)
 					loc_display = pick(teleportlocs)
@@ -82,8 +82,8 @@
 
 	Topic(href, href_list)
 		if(..())
-			return
-		if((usr.contents.Find(src) || (in_range(src, usr) && istype(src.loc, /turf))) || (istype(usr, /mob/living/silicon)))
+			return 1
+		else
 			usr.set_machine(src)
 
 			if(href_list["inject1"])
@@ -110,7 +110,7 @@
 				var/obj/item/weapon/implant/I = locate(href_list["warn"])
 				if((I)&&(I.imp_in))
 					var/mob/living/carbon/R = I.imp_in
-					R << "\green You hear a voice in your head saying: '[warning]'"
+					R << "<span class='good'>You hear a voice in your head saying: '[warning]'</span>"
 
 			src.add_fingerprint(usr)
 		src.updateUsrDialog()

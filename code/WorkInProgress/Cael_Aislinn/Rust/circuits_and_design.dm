@@ -1,77 +1,99 @@
-
 //////////////////////////////////////
 // RUST Core Control computer
 
 /obj/item/weapon/circuitboard/rust_core_control
-	name = "Circuit board (RUST core controller)"
+	name = "Circuit board (R-UST Mk. 7 core controller)"
 	build_path = "/obj/machinery/computer/rust_core_control"
 	origin_tech = "programming=4;engineering=4"
 
-datum/design/rust_core_control
-	name = "Circuit Design (RUST core controller)"
-	desc = "Allows for the construction of circuit boards used to build a core control console for the RUST fusion engine."
+/datum/design/rust_core_control
+	name = "Circuit Design (R-UST Mk. 7 core controller)"
+	desc = "Allows for the construction of circuit boards used to build a core control console for the R-UST Mk. 7 fusion engine."
 	id = "rust_core_control"
 	req_tech = list("programming" = 4, "engineering" = 4)
 	build_type = IMPRINTER
-	materials = list("$glass" = 2000, "sacid" = 20)
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	category = "Misc"
 	build_path = "/obj/item/weapon/circuitboard/rust_core_control"
+
+//////////////////////////////////////
+// RUST Core Monitor computer
+
+/obj/item/weapon/circuitboard/rust_core_monitor
+	name = "Circuit board (R-UST Mk. 7 core monitor)"
+	build_path = "/obj/machinery/computer/rust_core_monitor"
+	origin_tech = "programming=4;engineering=4"
+
+/datum/design/rust_core_monitor
+	name = "Circuit Design (R-UST Mk. 7 core monitor)"
+	desc = "Allows for the construction of circuit boards used to build a core monitoring console for the R-UST Mk. 7 fusion engine."
+	id = "rust_core_monitor"
+	req_tech = list("programming" = 4, "engineering" = 4)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	category = "Misc"
+	build_path = "/obj/item/weapon/circuitboard/rust_core_monitor"
+
 
 //////////////////////////////////////
 // RUST Fuel Control computer
 
 /obj/item/weapon/circuitboard/rust_fuel_control
-	name = "Circuit board (RUST fuel controller)"
+	name = "Circuit board (R-UST Mk. 7 fuel controller)"
 	build_path = "/obj/machinery/computer/rust_fuel_control"
 	origin_tech = "programming=4;engineering=4"
 
-datum/design/rust_fuel_control
-	name = "Circuit Design (RUST fuel controller)"
-	desc = "Allows for the construction of circuit boards used to build a fuel injector control console for the RUST fusion engine."
+/datum/design/rust_fuel_control
+	name = "Circuit Design (R-UST Mk. 7 fuel controller)"
+	desc = "Allows for the construction of circuit boards used to build a fuel injector control console for the R-UST Mk. 7 fusion engine."
 	id = "rust_fuel_control"
 	req_tech = list("programming" = 4, "engineering" = 4)
 	build_type = IMPRINTER
-	materials = list("$glass" = 2000, "sacid" = 20)
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	category = "Misc"
 	build_path = "/obj/item/weapon/circuitboard/rust_fuel_control"
 
 //////////////////////////////////////
 // RUST Fuel Port board
 
 /obj/item/weapon/module/rust_fuel_port
-	name = "Internal circuitry (RUST fuel port)"
+	name = "Internal circuitry (R-UST Mk. 7 fuel port)"
 	icon_state = "card_mod"
 	origin_tech = "engineering=4;materials=5"
 
-datum/design/rust_fuel_port
-	name = "Internal circuitry (RUST fuel port)"
-	desc = "Allows for the construction of circuit boards used to build a fuel injection port for the RUST fusion engine."
+/datum/design/rust_fuel_port
+	name = "Internal circuitry (R-UST Mk. 7 fuel port)"
+	desc = "Allows for the construction of circuit boards used to build a fuel injection port for the R-UST Mk. 7 fusion engine."
 	id = "rust_fuel_port"
 	req_tech = list("engineering" = 4, "materials" = 5)
 	build_type = IMPRINTER
-	materials = list("$glass" = 2000, "sacid" = 20, "$uranium" = 3000)
+	materials = list(MAT_GLASS = 2000, "sacid" = 20, MAT_URANIUM = 3000)
+	category = "Misc"
 	build_path = "/obj/item/weapon/module/rust_fuel_port"
 
 //////////////////////////////////////
 // RUST Fuel Compressor board
 
 /obj/item/weapon/module/rust_fuel_compressor
-	name = "Internal circuitry (RUST fuel compressor)"
+	name = "Internal circuitry (R-UST Mk. 7 fuel compressor)"
 	icon_state = "card_mod"
 	origin_tech = "materials=6;plasmatech=4"
 
-datum/design/rust_fuel_compressor
-	name = "Circuit Design (RUST fuel compressor)"
-	desc = "Allows for the construction of circuit boards used to build a fuel compressor of the RUST fusion engine."
+/datum/design/rust_fuel_compressor
+	name = "Circuit Design (R-UST Mk. 7 fuel compressor)"
+	desc = "Allows for the construction of circuit boards used to build a fuel compressor of the R-UST Mk. 7 fusion engine."
 	id = "rust_fuel_compressor"
 	req_tech = list("materials" = 6, "plasmatech" = 4)
 	build_type = IMPRINTER
-	materials = list("$glass" = 2000, "sacid" = 20, "$plasma" = 3000, "$diamond" = 1000)
+	materials = list(MAT_GLASS = 2000, "sacid" = 20, MAT_PLASMA = 3000, MAT_DIAMOND = 1000)
+	category = "Misc"
 	build_path = "/obj/item/weapon/module/rust_fuel_compressor"
 
 //////////////////////////////////////
 // RUST Tokamak Core board
 
 /obj/item/weapon/circuitboard/rust_core
-	name = "Internal circuitry (RUST tokamak core)"
+	name = "Internal circuitry (R-UST Mk. 7 tokamak core)"
 	build_path = "/obj/machinery/power/rust_core"
 	board_type = "machine"
 	origin_tech = "bluespace=3;plasmatech=4;magnets=5;powerstorage=6"
@@ -81,23 +103,24 @@ datum/design/rust_fuel_compressor
 							"/obj/item/weapon/stock_parts/micro_laser/ultra" = 1,
 							"/obj/item/weapon/stock_parts/subspace/crystal" = 1,
 							"/obj/item/weapon/stock_parts/console_screen" = 1,
-							"/obj/item/weapon/cable_coil" = 5)
+							"/obj/item/stack/cable_coil" = 5)
 
-datum/design/rust_core
-	name = "Internal circuitry (RUST tokamak core)"
+/datum/design/rust_core
+	name = "Internal circuitry (R-UST Mk. 7 tokamak core)"
 	desc = "The circuit board that for a RUST-pattern tokamak fusion core."
 	id = "pacman"
 	req_tech = list(bluespace = 3, plasmatech = 4, magnets = 5, powerstorage = 6)
 	build_type = IMPRINTER
 	reliability_base = 79
-	materials = list("$glass" = 2000, "sacid" = 20, "$plasma" = 3000, "$diamond" = 2000)
+	materials = list(MAT_GLASS = 2000, "sacid" = 20, MAT_PLASMA = 3000, MAT_DIAMOND = 2000)
+	category = "Misc"
 	build_path = "/obj/item/weapon/circuitboard/rust_core"
 
 //////////////////////////////////////
 // RUST Fuel Injector board
 
 /obj/item/weapon/circuitboard/rust_injector
-	name = "Internal circuitry (RUST fuel injector)"
+	name = "Internal circuitry (R-UST Mk. 7 fuel injector)"
 	build_path = "/obj/machinery/power/rust_fuel_injector"
 	board_type = "machine"
 	origin_tech = "powerstorage=3;engineering=4;plasmatech=4;materials=6"
@@ -107,14 +130,31 @@ datum/design/rust_core
 							"/obj/item/weapon/stock_parts/scanning_module/phasic" = 1,
 							"/obj/item/weapon/stock_parts/matter_bin/super" = 1,
 							"/obj/item/weapon/stock_parts/console_screen" = 1,
-							"/obj/item/weapon/cable_coil" = 5)
+							"/obj/item/stack/cable_coil" = 5)
 
-datum/design/rust_injector
-	name = "Internal circuitry (RUST tokamak core)"
+/datum/design/rust_injector
+	name = "Internal circuitry (R-UST Mk. 7 tokamak core)"
 	desc = "The circuit board that for a RUST-pattern particle accelerator."
 	id = "pacman"
 	req_tech = list(powerstorage = 3, engineering = 4, plasmatech = 4, materials = 6)
 	build_type = IMPRINTER
 	reliability_base = 79
-	materials = list("$glass" = 2000, "sacid" = 20, "$plasma" = 3000, "$uranium" = 2000)
+	materials = list(MAT_GLASS = 2000, "sacid" = 20, MAT_PLASMA = 3000, MAT_URANIUM = 2000)
+	category = "Misc"
 	build_path = "/obj/item/weapon/circuitboard/rust_core"
+
+//Gyrotron controller board.
+/obj/item/weapon/circuitboard/rust_gyrotron_control
+	name = "Circuit board (R-UST Mk. 7 gyrotron controller)"
+	build_path = "/obj/machinery/computer/rust_gyrotron_controller"
+	origin_tech = "programming=4;engineering=4"
+
+/datum/design/rust_gyrotron_control
+	name = "Circuit Design (R-UST Mk. 7 gyrotron controller)"
+	desc = "Allows for the construction of circuit boards used to build a gyrotron control console for the R-UST Mk. 7 fusion engine."
+	id = "rust_gyrotron_control"
+	req_tech = list("programming" = 4, "engineering" = 4)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	category = "Misc"
+	build_path = "/obj/item/weapon/circuitboard/rust_gyrotron_control"

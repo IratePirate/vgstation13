@@ -1,6 +1,21 @@
 var/global/list/seed_types = list()       // A list of all seed data.
 var/global/list/gene_tag_masks = list()   // Gene obfuscation for delicious trial and error goodness.
 
+// Debug for testing seed genes.
+/client/proc/show_plant_genes()
+	set category = "Debug"
+	set name = "Show Plant Genes"
+	set desc = "Prints the round's plant gene masks."
+
+	if(!holder)	return
+
+	if(!gene_tag_masks)
+		usr << "Gene masks not set."
+		return
+
+	for(var/mask in gene_tag_masks)
+		usr << "[mask]: [gene_tag_masks[mask]]"
+
 // Predefined/roundstart varieties use a string key to make it
 // easier to grab the new variety when mutating. Post-roundstart
 // and mutant varieties use their uid converted to a string instead.
@@ -48,6 +63,7 @@ proc/populate_seed_list()
 	var/seed_noun = "seeds"        // Descriptor for packet.
 	var/display_name               // Prettier name.
 	var/roundstart                 // If set, seed will not display variety number.
+	var/mysterious                 // Only used for the random seed packets.
 
 	// Output.
 	var/list/products              // Possible fruit/other product paths.
@@ -83,7 +99,7 @@ proc/populate_seed_list()
 	var/spread = 0                  // 0 limits plant to tray, 1 = creepers, 2 = vines.
 	var/carnivorous = 0             // 0 = none, 1 = eat pests in tray, 2 = eat living things  (when a vine).
 	var/parasite = 0                // 0 = no, 1 = gain health from weed level.
-	var/immutable = 0                // If set, plant will never mutate. If -1, plant is  highly mutable.
+	var/immutable = 0               // If set, plant will never mutate. If -1, plant is  highly mutable.
 	var/alter_temp                  // If set, the plant will periodically alter local temp by this amount.
 
 	// Cosmetics.
@@ -103,14 +119,76 @@ proc/populate_seed_list()
 	roundstart = 0
 	seed_name = "strange plant"     // TODO: name generator.
 	display_name = "strange plants" // TODO: name generator.
+	mysterious = 1
 
 	seed_noun = pick("spores","nodes","cuttings","seeds")
-	products = list(/obj/item/weapon/reagent_containers/food/snacks/grown/generic_fruit)
+	products = list(pick(typesof(/obj/item/weapon/reagent_containers/food/snacks/grown)-/obj/item/weapon/reagent_containers/food/snacks/grown))
 	potency = rand(5,30)
 
-	//TODO: Finish generalizing the product icons so this can be randomized.
-	packet_icon = "seed-berry"
-	plant_icon = "berry"
+	var/list/plant_icons = pick(list(
+		list("seed-chili",              "chili"),
+		list("seed-icepepper",          "chiliice"),
+		list("seed-berry",              "berry"),
+		list("seed-glowberry",          "glowberry"),
+		list("seed-poisonberry",        "poisonberry"),
+		list("seed-deathberry",         "deathberry"),
+		list("seed-nettle",             "nettle"),
+		list("seed-deathnettle",        "deathnettle"),
+		list("seed-tomato",             "tomato"),
+		list("seed-bloodtomato",        "bloodtomato"),
+		list("seed-killertomato",       "killertomato"),
+		list("seed-bluetomato",         "bluetomato"),
+		list("seed-bluespacetomato",    "bluespacetomato"),
+		list("seed-eggplant",           "eggplant"),
+		list("seed-eggy",               "eggy"),
+		list("seed-apple",              "apple"),
+		list("seed-goldapple",          "goldapple"),
+		list("seed-ambrosiavulgaris",   "ambrosiavulgaris"),
+		list("seed-ambrosiadeus",       "ambrosiadeus"),
+		list("mycelium-chanter",        "chanter"),
+		list("mycelium-plump",          "plump"),
+		list("mycelium-reishi",         "reishi"),
+		list("mycelium-liberty",        "liberty"),
+		list("mycelium-amanita",        "amanita"),
+		list("mycelium-angel",          "angel"),
+		list("mycelium-tower",          "towercap"),
+		list("mycelium-glowshroom",     "glowshroom"),
+		list("mycelium-walkingmushroom","walkingmushroom"),
+		list("mycelium-plast",          "plastellium"),
+		list("seed-harebell",           "harebell"),
+		list("seed-poppy",              "poppy"),
+		list("seed-sunflower",          "sunflower"),
+		list("seed-grapes",             "grape"),
+		list("seed-greengrapes",        "greengrape"),
+		list("seed-peanut",             "peanut"),
+		list("seed-cabbage",            "cabbage"),
+		list("seed-shand",              "shand"),
+		list("seed-mtear",              "mtear"),
+		list("seed-banana",             "banana"),
+		list("seed-corn",               "corn"),
+		list("seed-potato",             "potato"),
+		list("seed-soybean",            "soybean"),
+		list("seed-wheat",              "wheat"),
+		list("seed-rice",               "rice"),
+		list("seed-carrot",             "carrot"),
+		list("seed-ambrosiavulgaris",   "weeds"),
+		list("seed-whitebeet",          "whitebeet"),
+		list("seed-sugarcane",          "sugarcane"),
+		list("seed-watermelon",         "watermelon"),
+		list("seed-pumpkin",            "pumpkin"),
+		list("seed-lime",               "lime"),
+		list("seed-lemon",              "lemon"),
+		list("seed-orange",             "orange"),
+		list("seed-grass",              "grass"),
+		list("seed-cocoapod",           "cocoapod"),
+		list("seed-cherry",             "cherry"),
+		list("seed-kudzu",              "kudzu"),
+		list("seed-replicapod",         "replicapod")
+		))
+
+	packet_icon = plant_icons[1]
+	plant_icon = plant_icons[2]
+
 	if(prob(20))
 		harvest_repeat = 1
 
@@ -130,53 +208,54 @@ proc/populate_seed_list()
 
 	var/additional_chems = rand(0,5)
 
-	var/list/possible_chems = list(
-		"bicaridine",
-		"hyperzine",
-		"cryoxadone",
-		"blood",
-		"water",
-		"potassium",
-		"plasticide",
-		"slimetoxin",
-		"aslimetoxin",
-		"inaprovaline",
-		"space_drugs",
-		"paroxetine",
-		"mercury",
-		"sugar",
-		"radium",
-		"ryetalyn",
-		"alkysine",
-		"thermite",
-		"tramadol",
-		"cryptobiolin",
-		"dermaline",
-		"dexalin",
-		"plasma",
-		"synaptizine",
-		"impedrezene",
-		"hyronalin",
-		"peridaxon",
-		"toxin",
-		"rezadone",
-		"ethylredoxrazine",
-		"slimejelly",
-		"cyanide",
-		"mindbreaker",
-		"stoxin"
-		)
+	if(additional_chems)
+		var/list/possible_chems = list(
+			"bicaridine",
+			"hyperzine",
+			"cryoxadone",
+			"blood",
+			"water",
+			"potassium",
+			"plasticide",
+			"slimetoxin",
+			"aslimetoxin",
+			"inaprovaline",
+			"space_drugs",
+			"paroxetine",
+			"mercury",
+			"sugar",
+			"radium",
+			"ryetalyn",
+			"alkysine",
+			"thermite",
+			"tramadol",
+			"cryptobiolin",
+			"dermaline",
+			"dexalin",
+			"plasma",
+			"synaptizine",
+			"impedrezene",
+			"hyronalin",
+			"peridaxon",
+			"toxin",
+			"rezadone",
+			"ethylredoxrazine",
+			"slimejelly",
+			"cyanide",
+			"mindbreaker",
+			"stoxin"
+			)
 
-	for(var/x=1;x<=additional_chems;x++)
-		if(!possible_chems.len)
-			break
-		var/new_chem = pick(possible_chems)
-		possible_chems -= new_chem
-		chems[new_chem] = list(rand(1,10),rand(10,20))
+		for(var/x=1;x<=additional_chems;x++)
+			if(!possible_chems.len)
+				break
+			var/new_chem = pick(possible_chems)
+			possible_chems -= new_chem
+			chems[new_chem] = list(rand(1,10),rand(10,20))
 
 	if(prob(90))
 		requires_nutrients = 1
-		nutrient_consumption = rand(100)*0.1
+		nutrient_consumption = rand(100)/100
 	else
 		requires_nutrients = 0
 
@@ -217,7 +296,7 @@ proc/populate_seed_list()
 	else if(vine_prob < 10)
 		spread = 1
 
-	if(prob(5))
+	if(prob(10))
 		biolum = 1
 		biolum_colour = "#[pick(list("FF0000","FF7F00","FFFF00","00FF00","0000FF","4B0082","8F00FF"))]"
 
@@ -237,7 +316,7 @@ proc/populate_seed_list()
 
 	if(!degree || immutable > 0) return
 
-	source_turf.visible_message("\blue \The [display_name] quivers!")
+	source_turf.visible_message("<span class='notice'>\The [display_name] quivers!</span>")
 
 	//This looks like shit, but it's a lot easier to read/change this way.
 	var/total_mutations = rand(1,1+degree)
@@ -246,7 +325,7 @@ proc/populate_seed_list()
 			if(0) //Plant cancer!
 				lifespan = max(0,lifespan-rand(1,5))
 				endurance = max(0,endurance-rand(10,20))
-				source_turf.visible_message("\red \The [display_name] withers rapidly!")
+				source_turf.visible_message("<span class='warning'>\The [display_name] withers rapidly!</span>")
 			if(1)
 				nutrient_consumption =      max(0,  min(5,   nutrient_consumption + rand(-(degree*0.1),(degree*0.1))))
 				water_consumption =         max(0,  min(50,  water_consumption    + rand(-degree,degree)))
@@ -265,7 +344,7 @@ proc/populate_seed_list()
 				if(prob(degree*5))
 					carnivorous =           max(0,  min(2,   carnivorous          + rand(-degree,degree)))
 					if(carnivorous)
-						source_turf.visible_message("\blue \The [display_name] shudders hungrily.")
+						source_turf.visible_message("<span class='notice'>\The [display_name] shudders hungrily.</span>")
 			if(6)
 				weed_tolerance  =           max(0,  min(10,  weed_tolerance       + (rand(-2,2)   * degree)))
 				if(prob(degree*5))          parasite = !parasite
@@ -279,31 +358,31 @@ proc/populate_seed_list()
 				potency =                   max(0,  min(200, potency              + (rand(-20,20) * degree)))
 				if(prob(degree*5))
 					spread =                max(0,  min(2,   spread               + rand(-1,1)))
-					source_turf.visible_message("\blue \The [display_name] spasms visibly, shifting in the tray.")
+					source_turf.visible_message("<span class='notice'>\The [display_name] spasms visibly, shifting in the tray.</span>")
 			if(9)
 				maturation =                max(0,  min(30,  maturation      + (rand(-1,1)   * degree)))
 				if(prob(degree*5))
 					harvest_repeat = !harvest_repeat
 			if(10)
-				if(prob(degree*2))
+				if(prob(degree*4))
 					biolum = !biolum
 					if(biolum)
-						source_turf.visible_message("\blue \The [display_name] begins to glow!")
-						if(prob(degree*2))
+						source_turf.visible_message("<span class='notice'>\The [display_name] begins to glow!</span>")
+						if(prob(degree*4))
 							biolum_colour = "#[pick(list("FF0000","FF7F00","FFFF00","00FF00","0000FF","4B0082","8F00FF"))]"
-							source_turf.visible_message("\blue \The [display_name]'s glow <font=[biolum_colour]>changes colour</font>!")
+							source_turf.visible_message("<span class='notice'>\The [display_name]'s glow <font color='[biolum_colour]'>changes colour</font>!</span>")
 					else
-						source_turf.visible_message("\blue \The [display_name]'s glow dims...")
+						source_turf.visible_message("<span class='notice'>\The [display_name]'s glow dims...</span>")
 			if(11)
 				if(prob(degree*2))
 					flowers = !flowers
 					if(flowers)
-						source_turf.visible_message("\blue \The [display_name] sprouts a bevy of flowers!")
+						source_turf.visible_message("<span class='notice'>\The [display_name] sprouts a bevy of flowers!</span>")
 						if(prob(degree*2))
 							flower_colour = "#[pick(list("FF0000","FF7F00","FFFF00","00FF00","0000FF","4B0082","8F00FF"))]"
-						source_turf.visible_message("\blue \The [display_name]'s flowers <font=[flower_colour]>changes colour</font>!")
+						source_turf.visible_message("<span class='notice'>\The [display_name]'s flowers <font='[flower_colour]'>changes colour</font>!</span>")
 					else
-						source_turf.visible_message("\blue \The [display_name]'s flowers wither and fall off.")
+						source_turf.visible_message("<span class='notice'>\The [display_name]'s flowers wither and fall off.</span>")
 	return
 
 //Mutates a specific trait/set of traits.
@@ -332,24 +411,24 @@ proc/populate_seed_list()
 
 				var/list/gene_chem = gene_value[rid]
 
-				if(chems[rid])
+				if(!(rid in chems) || !chems[rid])
+					chems[rid] = gene_chem.Copy()
+					continue
 
-					var/list/chem_value = chems[rid]
+				for(var/i=1;i<=gene_chem.len;i++)
 
-					chems[rid][1] = max(1,round((gene_chem[1] + chem_value[1])/2))
+					if(isnull(gene_chem[i]))
+						chems[rid][i] = 0
+						gene_chem[i] = 0
+					if(!chems[rid][i]) continue
 
-					if(gene_chem.len > 1)
-						if(chem_value > 1)
-							chems[rid][2] = max(1,round((gene_chem[2] + chem_value[2])/2))
-						else
-							chems[rid][2] = gene_chem[2]
-
-				else
-					var/list/new_chem = gene_chem[rid]
-					chems[rid] = new_chem.Copy()
+					if(chems[rid][i])
+						chems[rid][i] = max(1,round((gene_chem[i] + chems[rid][i])/2))
+					else
+						chems[rid][i] = gene_chem[i]
 
 			var/list/new_gasses = gene.values[3]
-			if(istype(new_gasses))
+			if(islist(new_gasses))
 				if(!exude_gasses) exude_gasses = list()
 				exude_gasses |= new_gasses
 				for(var/gas in exude_gasses)
@@ -485,6 +564,7 @@ proc/populate_seed_list()
 
 //Place the plant products at the feet of the user.
 /datum/seed/proc/harvest(var/mob/user,var/yield_mod,var/harvest_sample)
+
 	if(!user)
 		return
 
@@ -493,7 +573,7 @@ proc/populate_seed_list()
 		got_product = 1
 
 	if(!got_product && !harvest_sample)
-		user << "\red You fail to harvest anything useful."
+		user << "<span class='warning'>You fail to harvest anything useful.</span>"
 	else
 		user << "You [harvest_sample ? "take a sample" : "harvest"] from the [display_name]."
 
@@ -522,11 +602,19 @@ proc/populate_seed_list()
 		for(var/i = 0;i<total_yield;i++)
 			var/product_type = pick(products)
 			var/obj/item/product = new product_type(get_turf(user))
+			if(mysterious)
+				product.name += "?"
+				product.desc += " On second thought, something about this one looks strange."
+
+			if(biolum)
+				if(biolum_colour)
+					product.light_color = biolum_colour
+				product.set_light(biolum)
 
 			//Handle spawning in living, mobile products (like dionaea).
 			if(istype(product,/mob/living))
 
-				product.visible_message("\blue The pod disgorges [product]!")
+				product.visible_message("<span class='notice'>The pod disgorges [product]!</span>")
 				handle_living_product(product)
 
 			// Make sure the product is inheriting the correct seed type reference.
@@ -537,6 +625,8 @@ proc/populate_seed_list()
 				var/obj/item/weapon/grown/current_product = product
 				current_product.plantname = name
 
+			score["stuffharvested"] += 1
+
 
 // When the seed in this machine mutates/is modified, the tray seed value
 // is set to a new datum copied from the original. This datum won't actually
@@ -546,7 +636,7 @@ proc/populate_seed_list()
 	if(immutable > 0) return
 
 	//Set up some basic information.
-	var/datum/seed/new_seed = new
+	var/datum/seed/new_seed = new /datum/seed()
 	new_seed.name = "new line"
 	new_seed.uid = 0
 	new_seed.roundstart = 0
@@ -558,9 +648,12 @@ proc/populate_seed_list()
 	if(consume_gasses) new_seed.consume_gasses = consume_gasses.Copy()
 	if(exude_gasses)   new_seed.exude_gasses = exude_gasses.Copy()
 
-	new_seed.seed_name =            "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][seed_name]"
-	new_seed.display_name =         "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][display_name]"
-	new_seed.seed_noun =            seed_noun
+	if(modified != -1)
+		new_seed.seed_name = "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][seed_name]"
+		new_seed.display_name = "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][display_name]"
+	else
+		new_seed.seed_name = "[seed_name]"
+		new_seed.display_name = "[display_name]"
 
 	new_seed.requires_nutrients =   requires_nutrients
 	new_seed.nutrient_consumption = nutrient_consumption
@@ -596,6 +689,7 @@ proc/populate_seed_list()
 	new_seed.flower_icon =          flower_icon
 	new_seed.alter_temp = 			alter_temp
 
+	ASSERT(istype(new_seed)) //something happened...
 	return new_seed
 
 // Actual roundstart seed types after this point.
@@ -803,7 +897,7 @@ proc/populate_seed_list()
 	name = "realeggplant"
 	seed_name = "egg-plant"
 	display_name = "egg-plants"
-	products = list(/obj/item/weapon/reagent_containers/food/snacks/egg)
+	products = list(/obj/item/weapon/reagent_containers/food/snacks/meat/egg)
 	mutants = null
 	packet_icon = "seed-eggy"
 	plant_icon = "eggy"
@@ -860,13 +954,14 @@ proc/populate_seed_list()
 	packet_icon = "seed-ambrosiavulgaris"
 	plant_icon = "ambrosiavulgaris"
 	harvest_repeat = 1
-	chems = list("nutriment" = list(1), "space_drugs" = list(1,8), "kelotane" = list(1,8,1), "bicaridine" = list(1,10,1), "toxin" = list(1,10))
+	chems = list("nutriment" = list(1), "space_drugs" = list(1,8), "kelotane" = list(1,8,1), "bicaridine" = list(1,10,1), "toxin" = list(1,5))
 
 	lifespan = 60
 	maturation = 6
 	production = 6
 	yield = 6
 	potency = 5
+
 
 /datum/seed/ambrosia/cruciatus
 	name = "ambrosiacruciatus"
@@ -882,6 +977,8 @@ proc/populate_seed_list()
 	yield = 6
 	potency = 5
 
+
+
 /datum/seed/ambrosia/deus
 	name = "ambrosiadeus"
 	seed_name = "ambrosia deus"
@@ -890,7 +987,7 @@ proc/populate_seed_list()
 	mutants = null
 	packet_icon = "seed-ambrosiadeus"
 	plant_icon = "ambrosiadeus"
-	chems = list("nutriment" = list(1), "bicaridine" = list(1,8), "synaptizine" = list(1,8,1), "hyperzine" = list(1,10,1), "space_drugs" = list(1,10))
+	chems = list("nutriment" = list(1), "bicaridine" = list(1,8), "synaptizine" = list(1), "hyperzine" = list(1,10,1), "space_drugs" = list(1,10))
 
 //Mushrooms/varieties.
 /datum/seed/mushroom
@@ -947,7 +1044,7 @@ proc/populate_seed_list()
 	mutants = list("libertycap","glowshroom")
 	packet_icon = "mycelium-reishi"
 	plant_icon = "reishi"
-	chems = list("nutriment" = list(1,50), "psilocybin" = list(3,5))
+	chems = list("nutriment" = list(1), "stoxin" = list(3,3), "space_drugs" = list(1,25))
 
 	maturation = 10
 	production = 5
@@ -963,7 +1060,7 @@ proc/populate_seed_list()
 	mutants = null
 	packet_icon = "mycelium-liberty"
 	plant_icon = "liberty"
-	chems = list("nutriment" = list(1), "stoxin" = list(3,3), "space_drugs" = list(1,25))
+	chems = list("nutriment" = list(1,50), "psilocybin" = list(3,5))
 
 	lifespan = 25
 	production = 1
@@ -1054,7 +1151,7 @@ proc/populate_seed_list()
 	mutants = null
 	packet_icon = "mycelium-plast"
 	plant_icon = "plastellium"
-	chems = list("plasticide" = list(1,10))
+	chems = list("plasticide" = list(3,12))
 
 	lifespan = 15
 	maturation = 5
@@ -1093,7 +1190,6 @@ proc/populate_seed_list()
 	production = 6
 	yield = 6
 	growth_stages = 3
-	plant_icon = ""
 
 /datum/seed/flower/sunflower
 	name = "sunflowers"
@@ -1480,7 +1576,7 @@ proc/populate_seed_list()
 	products = list(/obj/item/weapon/reagent_containers/food/snacks/grown/cherries)
 	plant_icon = "cherry"
 	harvest_repeat = 1
-	chems = list("nutriment" = list(1,15), "sugar" = list(1,15))
+	chems = list("nutriment" = list(1,15))
 
 	lifespan = 35
 	maturation = 5

@@ -33,6 +33,8 @@
 		"purple"=PIPE_COLOR_PURPLE
 	)
 
+/obj/machinery/atmospherics/pipe/singularity_pull(/obj/machinery/singularity/S, size)
+	return
 /obj/machinery/atmospherics/pipe/proc/pipeline_expansion()
 	return null
 
@@ -45,38 +47,39 @@
 
 /obj/machinery/atmospherics/pipe/return_air()
 	if(!parent)
-		parent = new /datum/pipeline()
+		parent = getFromDPool(/datum/pipeline)
 		parent.build_pipeline(src)
-
 	return parent.air
 
 
 /obj/machinery/atmospherics/pipe/build_network()
 	if(!parent)
-		parent = new /datum/pipeline()
+		parent = getFromDPool(/datum/pipeline)
 		parent.build_pipeline(src)
-
 	return parent.return_network()
 
 
 /obj/machinery/atmospherics/pipe/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
 	if(!parent)
-		parent = new /datum/pipeline()
+		parent = getFromDPool(/datum/pipeline)
 		parent.build_pipeline(src)
-
 	return parent.network_expand(new_network, reference)
 
 
 /obj/machinery/atmospherics/pipe/return_network(obj/machinery/atmospherics/reference)
 	if(!parent)
-		parent = new /datum/pipeline()
+		parent = getFromDPool(/datum/pipeline)
 		parent.build_pipeline(src)
-
 	return parent.return_network(reference)
 
 
 /obj/machinery/atmospherics/pipe/Destroy()
-	del(parent)
+	if(parent)
+		returnToDPool(parent)
+	for(var/obj/machinery/meter/M in src.loc)
+		if(M.target == src)
+			new /obj/item/pipe_meter(src.loc)
+			qdel(M)
 	if(air_temporary && loc)
 		loc.assume_air(air_temporary)
 
@@ -128,7 +131,7 @@
 	level = T.intact ? 2 : 1
 	initialize(1)
 	if(!node1&&!node2)
-		usr << "\red There's nothing to connect this pipe section to! (with how the pipe code works, at least one end needs to be connected to something, otherwise the game deletes the segment)"
+		usr << "<span class='warning'>There's nothing to connect this pipe section to! A pipe segment must be connected to at least one other object!</span>"
 		return 0
 	update_icon()
 	build_network()
@@ -149,9 +152,8 @@
 
 /obj/machinery/atmospherics/pipe/simple/process()
 	if(!parent) //This should cut back on the overhead calling build_network thousands of times per cycle
-		..()
-	else
-		. = PROCESS_KILL
+		. = ..()
+	atmos_machines.Remove(src)
 
 	/*if(!node1)
 		parent.mingle_with_turf(loc, volume)
@@ -210,9 +212,9 @@
 	else
 		return 1
 
-/obj/machinery/atmospherics/pipe/simple/examine()
+/obj/machinery/atmospherics/pipe/simple/examine(mob/user)
 	..()
-	usr << "<span class='info'>This [src.name] is rated up to [format_num(alert_pressure)] kPa.</span>"
+	user << "<span class='info'>This [src.name] is rated up to [format_num(alert_pressure)] kPa.</span>"
 
 /obj/machinery/atmospherics/pipe/simple/proc/groan()
 	src.visible_message("<span class='warning'>\The [src] groans from the pressure!</span>");
@@ -317,12 +319,12 @@
 /obj/machinery/atmospherics/pipe/simple/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node1 = null
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node2 = null
 
 	update_icon()
@@ -424,187 +426,6 @@
 	color=IPIPE_COLOR_BLUE
 	_color = "blue"
 
-/obj/machinery/atmospherics/pipe/tank
-	icon = 'icons/obj/atmospherics/pipe_tank.dmi'
-	icon_state = "intact"
-	name = "Pressure Tank"
-	desc = "A large vessel containing pressurized gas."
-	volume = 2000 //in liters, 1 meters by 1 meters by 2 meters
-	dir = SOUTH
-	initialize_directions = SOUTH
-	density = 1
-	var/obj/machinery/atmospherics/node1
-
-/obj/machinery/atmospherics/pipe/tank/New()
-	initialize_directions = dir
-	..()
-
-
-/obj/machinery/atmospherics/pipe/tank/process()
-	if(!parent)
-		..()
-	else
-		. = PROCESS_KILL
-	/*			if(!node1)
-		parent.mingle_with_turf(loc, 200)
-		if(!nodealert)
-			//world << "Missing node from [src] at [src.x],[src.y],[src.z]"
-			nodealert = 1
-	else if (nodealert)
-		nodealert = 0
-	*/
-
-/obj/machinery/atmospherics/pipe/tank/carbon_dioxide
-	name = "Pressure Tank (Carbon Dioxide)"
-
-/obj/machinery/atmospherics/pipe/tank/carbon_dioxide/New()
-	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
-
-	air_temporary.carbon_dioxide = (25*ONE_ATMOSPHERE)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature)
-
-	..()
-
-/obj/machinery/atmospherics/pipe/tank/toxins
-	icon = 'icons/obj/atmospherics/orange_pipe_tank.dmi'
-	name = "Pressure Tank (Plasma)"
-
-/obj/machinery/atmospherics/pipe/tank/toxins/New()
-	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
-
-	air_temporary.toxins = (25*ONE_ATMOSPHERE)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature)
-
-	..()
-
-/obj/machinery/atmospherics/pipe/tank/oxygen_agent_b
-	icon = 'icons/obj/atmospherics/red_orange_pipe_tank.dmi'
-	name = "Pressure Tank (Oxygen + Plasma)"
-
-/obj/machinery/atmospherics/pipe/tank/oxygen_agent_b/New()
-	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T0C
-
-	var/datum/gas/oxygen_agent_b/trace_gas = new
-	trace_gas.moles = (25*ONE_ATMOSPHERE)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature)
-
-	air_temporary.trace_gases += trace_gas
-
-	..()
-
-/obj/machinery/atmospherics/pipe/tank/oxygen
-	icon = 'icons/obj/atmospherics/blue_pipe_tank.dmi'
-	name = "Pressure Tank (Oxygen)"
-
-/obj/machinery/atmospherics/pipe/tank/oxygen/New()
-	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
-
-	air_temporary.oxygen = (25*ONE_ATMOSPHERE)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature)
-
-	..()
-
-/obj/machinery/atmospherics/pipe/tank/nitrogen
-	icon = 'icons/obj/atmospherics/red_pipe_tank.dmi'
-	name = "Pressure Tank (Nitrogen)"
-
-/obj/machinery/atmospherics/pipe/tank/nitrogen/New()
-	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
-
-	air_temporary.nitrogen = (25*ONE_ATMOSPHERE)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature)
-
-	..()
-
-/obj/machinery/atmospherics/pipe/tank/air
-	icon = 'icons/obj/atmospherics/red_pipe_tank.dmi'
-	name = "Pressure Tank (Air)"
-
-/obj/machinery/atmospherics/pipe/tank/air/New()
-	air_temporary = new
-	air_temporary.volume = volume
-	air_temporary.temperature = T20C
-
-	air_temporary.oxygen = (25*ONE_ATMOSPHERE*O2STANDARD)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature)
-	air_temporary.nitrogen = (25*ONE_ATMOSPHERE*N2STANDARD)*(air_temporary.volume)/(R_IDEAL_GAS_EQUATION*air_temporary.temperature)
-
-	..()
-
-
-/obj/machinery/atmospherics/pipe/tank/Destroy()
-	if(node1)
-		node1.disconnect(src)
-
-	..()
-
-
-/obj/machinery/atmospherics/pipe/tank/pipeline_expansion()
-	return list(node1)
-
-
-/obj/machinery/atmospherics/pipe/tank/update_icon()
-	if(node1)
-		icon_state = "intact"
-		dir = get_dir(src, node1)
-	else
-		icon_state = "exposed"
-
-
-/obj/machinery/atmospherics/pipe/tank/initialize()
-
-	var/connect_direction = dir
-
-	node1=findConnecting(connect_direction)
-
-	update_icon()
-
-
-/obj/machinery/atmospherics/pipe/tank/disconnect(obj/machinery/atmospherics/reference)
-	if(reference == node1)
-		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			del(parent)
-		node1 = null
-
-	update_icon()
-
-	return null
-
-
-/obj/machinery/atmospherics/pipe/tank/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
-	if(istype(W, /obj/item/weapon/pipe_dispenser) || istype(W, /obj/item/device/pipe_painter))
-		return // Coloring pipes.
-	if (istype(W, /obj/item/device/analyzer) && get_dist(user, src) <= 1)
-		for (var/mob/O in viewers(user, null))
-			O << "\red [user] has used the analyzer on \icon[icon]"
-
-		var/pressure = parent.air.return_pressure()
-		var/total_moles = parent.air.total_moles()
-
-		user << "\blue Results of analysis of \icon[icon]"
-		if (total_moles>0)
-			var/o2_concentration = parent.air.oxygen/total_moles
-			var/n2_concentration = parent.air.nitrogen/total_moles
-			var/co2_concentration = parent.air.carbon_dioxide/total_moles
-			var/plasma_concentration = parent.air.toxins/total_moles
-
-			var/unknown_concentration =  1-(o2_concentration+n2_concentration+co2_concentration+plasma_concentration)
-
-			user << "\blue Pressure: [round(pressure,0.1)] kPa"
-			user << "\blue Nitrogen: [round(n2_concentration*100)]%"
-			user << "\blue Oxygen: [round(o2_concentration*100)]%"
-			user << "\blue CO2: [round(co2_concentration*100)]%"
-			user << "\blue Plasma: [round(plasma_concentration*100)]%"
-			if(unknown_concentration>0.01)
-				user << "\red Unknown: [round(unknown_concentration*100)]%"
-			user << "\blue Temperature: [round(parent.air.temperature-T0C)]&deg;C"
-		else
-			user << "\blue Tank is empty!"
-
 /obj/machinery/atmospherics/pipe/manifold
 	icon = 'icons/obj/atmospherics/pipe_manifold.dmi'
 	icon_state = "manifold"
@@ -627,7 +448,7 @@
 	level = T.intact ? 2 : 1
 	initialize(1)
 	if(!node1&&!node2&&!node3)
-		usr << "\red There's nothing to connect this manifold to! (with how the pipe code works, at least one end needs to be connected to something, otherwise the game deletes the segment)"
+		usr << "<span class='warning'>There's nothing to connect this manifold to! A pipe segment must be connected to at least one other object!</span>"
 		return 0
 	update_icon() // Skipped in initialize()!
 	build_network()
@@ -669,9 +490,8 @@
 
 /obj/machinery/atmospherics/pipe/manifold/process()
 	if(!parent)
-		..()
-	else
-		. = PROCESS_KILL
+		. = ..()
+	atmos_machines.Remove(src)
 	/*
 	if(!node1)
 		parent.mingle_with_turf(loc, 70)
@@ -707,17 +527,17 @@
 /obj/machinery/atmospherics/pipe/manifold/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node1 = null
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node2 = null
 
 	if(reference == node3)
 		if(istype(node3, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node3 = null
 
 	update_icon()
@@ -873,7 +693,7 @@
 	level = T.intact ? 2 : 1
 	initialize(1)
 	if(!node1 && !node2 && !node3 && !node4)
-		usr << "\red There's nothing to connect this manifold to! (with how the pipe code works, at least one end needs to be connected to something, otherwise the game deletes the segment)"
+		usr << "<span class='warning'>There's nothing to connect this manifold to! A pipe segment must be connected to at least one other object!</span>"
 		return 0
 	update_icon()
 	build_network()
@@ -904,9 +724,8 @@
 
 /obj/machinery/atmospherics/pipe/manifold4w/process()
 	if(!parent)
-		..()
-	else
-		. = PROCESS_KILL
+		. = ..()
+	atmos_machines.Remove(src)
 	/*
 	if(!node1)
 		parent.mingle_with_turf(loc, 70)
@@ -944,22 +763,22 @@
 /obj/machinery/atmospherics/pipe/manifold4w/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node1 = null
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node2 = null
 
 	if(reference == node3)
 		if(istype(node3, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node3 = null
 
 	if(reference == node4)
 		if(istype(node4, /obj/machinery/atmospherics/pipe))
-			del(parent)
+			returnToDPool(parent)
 		node4 = null
 
 	update_icon()
@@ -1081,71 +900,29 @@
 /obj/machinery/atmospherics/pipe/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
 	if(istype(W, /obj/item/weapon/pipe_dispenser) || istype(W, /obj/item/device/pipe_painter))
 		return // Coloring pipes.
-	if (istype(src, /obj/machinery/atmospherics/pipe/tank))
-		return ..()
-	if (istype(src, /obj/machinery/atmospherics/unary/vent))
-		return ..()
 
 	if(istype(W, /obj/item/weapon/reagent_containers/glass/paint/red))
 		src._color = "red"
 		src.color = PIPE_COLOR_RED
-		user << "\red You paint the pipe red."
+		user << "<span class='notice'>You paint the pipe red.</span>"
 		update_icon()
 		return 1
 	if(istype(W, /obj/item/weapon/reagent_containers/glass/paint/blue))
 		src._color = "blue"
 		src.color = PIPE_COLOR_BLUE
-		user << "\red You paint the pipe blue."
+		user << "<span class='notice'>You paint the pipe blue.</span>"
 		update_icon()
 		return 1
 	if(istype(W, /obj/item/weapon/reagent_containers/glass/paint/green))
 		src._color = "green"
 		src.color = PIPE_COLOR_GREEN
-		user << "\red You paint the pipe green."
+		user << "<span class='notice'>You paint the pipe green.</span>"
 		update_icon()
 		return 1
 	if(istype(W, /obj/item/weapon/reagent_containers/glass/paint/yellow))
 		src._color = "yellow"
 		src.color = PIPE_COLOR_YELLOW
-		user << "\red You paint the pipe yellow."
+		user << "<span class='notice'>You paint the pipe yellow.</span>"
 		update_icon()
 		return 1
-
-	if (!istype(W, /obj/item/weapon/wrench))
-		return ..()
-	var/turf/T = src.loc
-	if (level==1 && isturf(T) && T.intact)
-		user << "<span class='warning'>You must remove the plating first.</span>"
-		return 1
-	var/datum/gas_mixture/int_air = return_air()
-	var/datum/gas_mixture/env_air = loc.return_air()
-	add_fingerprint(user)
-	if ((int_air.return_pressure()-env_air.return_pressure()) > 2*ONE_ATMOSPHERE)
-		if(istype(W, /obj/item/weapon/wrench/socket))
-			user << "<span class='warning'>You begin to open the pressure release valve on the pipe...</span>"
-			if(do_after(user, 50))
-				playsound(get_turf(src), 'sound/machines/hiss.ogg', 50, 1)
-				user.visible_message("[user] vents \the [src].",
-									"You have vented \the [src].",
-									"You hear a ratchet.")
-				var/datum/gas_mixture/transit = new
-				transit.add(int_air)
-				transit.divide(parent.members.len) //we get the total pressure over the number of pipes to find gas per pipe
-				env_air.add(transit) //put it in the air
-				del(transit) //remove the carrier
-		else
-			user << "<span class='warning'>You cannot unwrench this [src], it too exerted due to internal pressure.</span>"
-			return 1
-	playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
-	user << "<span class='notice'>You begin to unfasten \the [src]...</span>"
-	if (do_after(user, 40))
-		user.visible_message( \
-			"[user] unfastens \the [src].", \
-			"<span class='notice'>You have unfastened \the [src].</span>", \
-			"You hear a ratchet.")
-		new /obj/item/pipe(loc, make_from=src)
-		for (var/obj/machinery/meter/meter in T)
-			if (meter.target == src)
-				new /obj/item/pipe_meter(T)
-				del(meter)
-		qdel(src)
+	return ..()

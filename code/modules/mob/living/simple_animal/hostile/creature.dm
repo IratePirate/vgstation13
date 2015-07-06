@@ -38,15 +38,15 @@
 	..()
 	if(emergency_shuttle.location == 1)
 		if(!enroute && !target)	//The shuttle docked, all monsters rush for the escape hallway
-			if(!shuttletarget || (get_dist(src, shuttletarget) >= 2))
-				shuttletarget = pick(get_area_turfs(locate(/area/hallway/secondary/exit)))
+			if(!shuttletarget && escape_list.len) //Make sure we didn't already assign it a target, and that there are targets to pick
+				shuttletarget = pick(escape_list) //Pick a shuttle target
 			enroute = 1
 			stop_automated_movement = 1
 			spawn()
 				if(!src.stat)
 					horde()
 
-		if(get_dist(src, shuttletarget) <= 2)		//The monster reached the escape hallway
+		if(get_dist(src, shuttletarget) <= 2) //The monster reached the escape hallway
 			enroute = 0
 			stop_automated_movement = 0
 
@@ -57,7 +57,7 @@
 			var/obj/machinery/door/airlock/D = A
 			if(D.density && !D.locked && !D.welded)
 				D.open()
-		else if(istype(A,/obj/structure/mineral_door))
+		else if(istype(A,/obj/machinery/door/mineral))
 			var/obj/machinery/door/D = A
 			if(D.density)
 				D.open()

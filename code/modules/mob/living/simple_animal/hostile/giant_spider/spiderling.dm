@@ -29,7 +29,7 @@
 	melee_damage_lower = 0
 	melee_damage_upper = 0
 	attacktext = "barrels into"
-	a_intent = "help"
+	a_intent = I_HELP
 	//throw_message = "sinks in slowly, before being pushed out of "
 	//status_flags = CANPUSH
 	search_objects = 0
@@ -94,7 +94,7 @@
 							return
 
 						if(prob(50))
-							src.visible_message("\blue You hear something squeezing through the ventilation ducts.",2)
+							src.visible_message("<span class='notice'>You hear something squeezing through the ventilation ducts.</span>",2)
 						sleep(travel_time)
 
 						if(!exit_vent || exit_vent.welded)

@@ -127,20 +127,22 @@ var/datum/controller/air_system/air_master
 	//Outputs: None.
 
 	//set background = 1
-	world << "\red \b Processing Geometry..."
+	world << "<span class='danger'>Processing Geometry...</span>"
 	sleep(-1)
 
 	var/start_time = world.timeofday
 
 	var/simulated_turf_count = 0
 
-	for(var/turf/simulated/S in world)
+	for(var/turf/simulated/S in turfs)
+		if(iscatwalk(S)) continue
 		simulated_turf_count++
 		if(!S.zone && !S.blocks_air)
 			if(S.CanPass(null, S, 0, 0))
 				new/zone(S)
 
-	for(var/turf/simulated/S in world)
+	for(var/turf/simulated/S in turfs)
+		if(iscatwalk(S)) continue
 		S.update_air_properties()
 
 	world << {"<font color='red'><b>Geometry initialized in [round(0.1*(world.timeofday-start_time),0.1)] seconds.</b>

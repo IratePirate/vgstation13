@@ -96,14 +96,14 @@ Class Procs:
 	set background = 1
 	#endif
 
-	world << "\red \b Processing Geometry..."
+	world << "<span class='danger'>Processing Geometry...</span>"
 	sleep(-1)
 
 	var/start_time = world.timeofday
 
 	var/simulated_turf_count = 0
 
-	for(var/turf/simulated/S in world)
+	for(var/turf/simulated/S in turfs)
 		simulated_turf_count++
 		S.update_air_properties()
 
@@ -156,11 +156,12 @@ Total Unsimulated Turfs: [world.maxx*world.maxy*world.maxz - simulated_turf_coun
 			updated++
 			#endif
 			//sleep(1)
+			tcheck(85,1)
 
 		#ifdef ZASDBG
 		if(updated != updating.len)
 			tick_progress = "[updating.len - updated] tiles left unupdated."
-			world << "\red [tick_progress]"
+			world << "<span class='warning'>[tick_progress]</span>"
 			. = 0
 		#endif
 
@@ -170,6 +171,8 @@ Total Unsimulated Turfs: [world.maxx*world.maxy*world.maxz - simulated_turf_coun
 
 	for(var/connection_edge/edge in edges)
 		edge.tick()
+		tcheck(85,1)
+
 
 	//Process fires.
 	if(.)
@@ -177,6 +180,7 @@ Total Unsimulated Turfs: [world.maxx*world.maxy*world.maxz - simulated_turf_coun
 
 	for(var/obj/fire/fire in active_hotspots)
 		fire.process()
+		tcheck(85,1)
 
 	//Process zones.
 	if(.)
@@ -188,6 +192,7 @@ Total Unsimulated Turfs: [world.maxx*world.maxy*world.maxz - simulated_turf_coun
 		zones_to_update = list()
 		for(var/zone/zone in updating)
 			zone.tick()
+			tcheck(85,1)
 			zone.needs_update = 0
 
 	if(.)
@@ -245,7 +250,7 @@ Total Unsimulated Turfs: [world.maxx*world.maxy*world.maxz - simulated_turf_coun
 	if(block & AIR_BLOCKED) return
 
 	var/direct = !(block & ZONE_BLOCKED)
-	var/space = !istype(B)
+	var/space = (!istype(B))
 
 	if(direct && !space)
 		if(equivalent_pressure(A.zone,B.zone) || current_cycle == 0)

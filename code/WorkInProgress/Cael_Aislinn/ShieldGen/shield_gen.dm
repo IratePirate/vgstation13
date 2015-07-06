@@ -82,7 +82,7 @@
 			user << "Controls are now [src.locked ? "locked." : "unlocked."]"
 			updateDialog()
 		else
-			user << "\red Access denied."
+			user << "<span class='warning'>Access denied.</span>"
 
 /obj/machinery/shield_gen/attack_paw(user as mob)
 	return src.attack_hand(user)
@@ -99,7 +99,7 @@
 /obj/machinery/shield_gen/attack_ghost(mob/user)
 	if(isAdminGhost(user)) src.attack_hand(user)
 	return
-	
+
 /obj/machinery/shield_gen/interact(mob/user)
 	if ( (get_dist(src, user) > 1 ) || (stat & (BROKEN|NOPOWER)) )
 		if (!istype(user, /mob/living/silicon))
@@ -188,7 +188,8 @@
 		average_field_strength = 0
 
 /obj/machinery/shield_gen/Topic(href, href_list[])
-	..()
+	if(!isAI(usr) && usr.z != z) return 1
+	if(..()) return 1
 	if( href_list["close"] )
 		usr << browse(null, "window=shield_generator")
 		usr.unset_machine()

@@ -331,10 +331,10 @@
 /obj/structure/closet/crate/secure/New()
 	..()
 	if(locked)
-		overlays.Cut()
+		overlays.len = 0
 		overlays += redlight
 	else
-		overlays.Cut()
+		overlays.len = 0
 		overlays += greenlight
 
 /obj/structure/closet/crate/rcd/New()
@@ -355,22 +355,37 @@
 	new /obj/item/clothing/suit/radiation(src)
 	new /obj/item/clothing/head/radiation(src)
 
+/obj/structure/closet/CanPass(atom/movable/mover, turf/target, height=1.5, air_group = 0)
+	if(air_group || (height==0 || wall_mounted)) return 1
+	if(istype(mover, /obj/structure/closet/crate)) return 0
+	return (!density)
+
 /obj/structure/closet/crate/open()
+	if(src.opened)
+		return 0
+	if(!src.can_open())
+		return 0
 	playsound(get_turf(src), sound_effect_open, 15, 1, -3)
 
 	dump_contents()
 
 	icon_state = icon_opened
 	src.opened = 1
+	src.density = 0
 	return 1
 
 /obj/structure/closet/crate/close()
+	if(!src.opened)
+		return 0
+	if(!src.can_close())
+		return 0
 	playsound(get_turf(src), sound_effect_close, 15, 1, -3)
 
 	take_contents()
 
 	icon_state = icon_closed
 	src.opened = 0
+	src.density = 1
 	return 1
 
 /obj/structure/closet/crate/insert(var/atom/movable/AM, var/include_mobs = 0)
@@ -420,7 +435,7 @@
 		if (allowed(user))
 			user << "<span class='notice'>You unlock [src].</span>"
 			src.locked = 0
-			overlays.Cut()
+			overlays.len = 0
 			overlays += greenlight
 			return
 		else
@@ -433,11 +448,11 @@
 	if(istype(W, /obj/item/weapon/card) && src.allowed(user) && !locked && !opened && !broken)
 		user << "<span class='notice'>You lock \the [src].</span>"
 		src.locked = 1
-		overlays.Cut()
+		overlays.len = 0
 		overlays += redlight
 		return
-	else if ( (istype(W, /obj/item/weapon/card/emag)||istype(W, /obj/item/weapon/melee/energy/blade)) && locked &&!broken)
-		overlays.Cut()
+	else if ( istype(W, /obj/item/weapon/card/emag) && locked &&!broken)
+		overlays.len = 0
 		overlays += emag
 		overlays += sparks
 		spawn(6) overlays -= sparks //Tried lots of stuff but nothing works right. so i have to use this *sadface*
@@ -446,7 +461,6 @@
 		src.broken = 1
 		user << "<span class='notice'>You unlock \the [src].</span>"
 		return
-
 	return ..()
 
 /obj/structure/closet/crate/attack_paw(mob/user as mob)
@@ -454,27 +468,22 @@
 
 /obj/structure/closet/crate/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(opened)
-		if(isrobot(user))
-			return
-		user.drop_item()
-		if(W)
-			W.loc = src.loc
+		return ..()
 	else if(istype(W, /obj/item/weapon/packageWrap))
 		return
-	else if(istype(W, /obj/item/weapon/cable_coil))
+	else if(istype(W, /obj/item/stack/cable_coil))
 		if(rigged)
 			user << "<span class='notice'>[src] is already rigged!</span>"
 			return
 		user  << "<span class='notice'>You rig [src].</span>"
-		user.drop_item()
+		user.drop_item(W)
 		del(W)
 		rigged = 1
 		return
 	else if(istype(W, /obj/item/device/radio/electropack))
 		if(rigged)
 			user  << "<span class='notice'>You attach [W] to [src].</span>"
-			user.drop_item()
-			W.loc = src
+			user.drop_item(W, src.loc)
 			return
 	else if(istype(W, /obj/item/weapon/wirecutters))
 		if(rigged)
@@ -491,10 +500,10 @@
 	if(!broken && !opened  && prob(50/severity))
 		if(!locked)
 			src.locked = 1
-			overlays.Cut()
+			overlays.len = 0
 			overlays += redlight
 		else
-			overlays.Cut()
+			overlays.len = 0
 			overlays += emag
 			overlays += sparks
 			spawn(6) overlays -= sparks //Tried lots of stuff but nothing works right. so i have to use this *sadface*

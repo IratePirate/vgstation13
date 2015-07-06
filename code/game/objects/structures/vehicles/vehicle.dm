@@ -25,6 +25,7 @@
 
 	var/empstun = 0
 	var/health = 100
+	var/max_health = 100
 	var/destroyed = 0
 	var/inertia_dir = 0
 
@@ -35,8 +36,17 @@
 	var/obj/item/key/mykey
 
 	var/vin=null
+	var/datum/delay_controller/move_delayer = new(1,ARBITRARILY_LARGE_NUMBER) //See setup.dm, 12
+	var/movement_delay = 0 //Speed of the vehicle decreases as this value increases. Anything above 6 is slow, 1 is fast and 0 is very fast
+
+/obj/structure/stool/bed/chair/vehicle/proc/getMovementDelay()
+	return movement_delay
+
+/obj/structure/stool/bed/chair/vehicle/proc/delayNextMove(var/delay, var/additive=0)
+	move_delayer.delayNext(delay,additive)
 
 /obj/structure/stool/bed/chair/vehicle/New()
+	..()
 	processing_objects |= src
 	handle_rotation()
 
@@ -57,9 +67,9 @@
 		var/obj/item/weapon/weldingtool/WT = W
 		if (WT.remove_fuel(0))
 			if(destroyed)
-				user << "\red \The [src.name] is destroyed beyond repair."
+				user << "<span class='warning'>\The [src.name] is destroyed beyond repair.</span>"
 			add_fingerprint(user)
-			user.visible_message("\blue [user] has fixed some of the dents on \the [src].", "\blue You fix some of the dents on \the [src]")
+			user.visible_message("<span class='notice'>[user] has fixed some of the dents on \the [src].</span>", "<span class='notice'>You fix some of the dents on \the [src]</span>")
 			health += 20
 			HealthCheck()
 		else
@@ -87,17 +97,29 @@
 		return
 	if(empstun > 0)
 		if(user)
-			user << "\red \the [src] is unresponsive."
+			user << "<span class='warning'>\the [src] is unresponsive.</span>"
+		return
+	if(move_delayer.blocked())
 		return
 	if(istype(src.loc, /turf/space))
 		if(!src.Process_Spacemove(0))	return
+
 	step(src, direction)
+	delayNextMove(getMovementDelay())
 	update_mob()
 	handle_rotation()
 	/*
 	if(istype(src.loc, /turf/space) && (!src.Process_Spacemove(0, user)))
 		var/turf/space/S = src.loc
 		S.Entered(src)*/
+
+/obj/structure/stool/bed/chair/vehicle/forceMove(var/atom/NewLoc)
+	..()
+	if(buckled_mob)
+		if(buckled_mob.buckled == src)
+			buckled_mob.loc = loc
+	update_mob()
+	handle_rotation()
 
 /obj/structure/stool/bed/chair/vehicle/proc/Process_Spacemove(var/check_drift = 0, mob/user)
 	if(can_spacemove && buckled_mob)
@@ -183,7 +205,7 @@
 /* The cart has very grippy tires and or magnets to keep it from slipping when on a good surface
 	//Check to see if we slipped
 	if(prob(Process_Spaceslipping(5)))
-		src << "\blue <B>You slipped!</B>"
+		src << "<span class='notice'><B>You slipped!</B></span>"
 		src.inertia_dir = src.last_move
 		step(src, src.inertia_dir)
 		return 0
@@ -196,14 +218,15 @@
 	..()
 	if(buckled_mob)
 		if(buckled_mob.buckled == src)
-			buckled_mob.loc = loc
+			buckled_mob.forceMove(loc)
+
+/obj/structure/stool/bed/chair/vehicle/proc/can_buckle(mob/M, mob/user)
+	if(M != user || !ishuman(user) || !Adjacent(user) || user.restrained() || user.lying || user.stat || user.buckled || destroyed)
+		return 0
+	return 1
 
 /obj/structure/stool/bed/chair/vehicle/buckle_mob(mob/M, mob/user)
-	if(M != user || !ismob(M) || get_dist(src, user) > 1 || user.restrained() || user.lying || user.stat || M.buckled || istype(user, /mob/living/silicon) || destroyed)
-		return
-
-	if(!check_key(M))
-		M << "\red You don't have the key for this."
+	if(!can_buckle(M,user))
 		return
 
 	unbuckle()
@@ -226,11 +249,14 @@
 		buckled_mob.pixel_y = 0
 	..()
 
-/obj/structure/stool/bed/chair/vehicle/handle_rotation()
+/obj/structure/stool/bed/chair/vehicle/handle_layer()
 	if(dir == SOUTH)
 		layer = FLY_LAYER
 	else
 		layer = OBJ_LAYER
+
+/obj/structure/stool/bed/chair/vehicle/handle_rotation()
+	handle_layer()
 
 	if(buckled_mob)
 		if(buckled_mob.loc != loc)
@@ -262,7 +288,7 @@
 			src.empstun = (rand(5,10))
 		if(2)
 			src.empstun = (rand(1,5))
-	src.visible_message("\red The [src.name]'s motor short circuits!")
+	src.visible_message("<span class='danger'>The [src.name]'s motor short circuits!</span>")
 	spark_system.attach(src)
 	spark_system.set_up(5, 0, src)
 	spark_system.start()
@@ -283,13 +309,14 @@
 			return
 		if(istype(Proj, /obj/item/projectile/energy/electrode))
 			if(prob(25))
-				unbuckle()
 				visible_message("<span class='warning'>\The [src.name] absorbs the [Proj]")
 				if(!istype(buckled_mob, /mob/living/carbon/human))
-					return buckled_mob.bullet_act(Proj)
+					buckled_mob.bullet_act(Proj)
 				else
 					var/mob/living/carbon/human/H = buckled_mob
-					return H.electrocute_act(0, src, 1, 0)
+					H.electrocute_act(0, src, 1, 0)
+				unbuckle()
+				return
 	if(!hitrider)
 		visible_message("<span class='warning'>[Proj] hits \the [nick]!</span>")
 		if(!Proj.nodamage && Proj.damage_type == BRUTE || Proj.damage_type == BURN)
@@ -297,7 +324,7 @@
 		HealthCheck()
 
 /obj/structure/stool/bed/chair/vehicle/proc/HealthCheck()
-	if(health > 100) health = 100
+	if(health > max_health) health = max_health
 	if(health <= 0 && !destroyed)
 		die()
 
@@ -319,3 +346,9 @@
 	visible_message("<span class='warning'>\The [nick] explodes!</span>")
 	explosion(src.loc,-1,0,2,7,10)
 	icon_state = "pussywagon_destroyed"
+
+/obj/structure/stool/bed/chair/vehicle/Bump(var/atom/movable/obstacle)
+	if(istype(obstacle, /obj/structure))// || istype(obstacle, /mob/living)
+		if(!obstacle.anchored)
+			obstacle.Move(get_step(obstacle,src.dir))
+	..()

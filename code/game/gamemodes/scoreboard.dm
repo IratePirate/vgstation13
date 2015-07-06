@@ -1,9 +1,18 @@
-/datum/controller/gameticker/proc/scoreboard()
+/datum/controller/gameticker/proc/scoreboard(var/completions)
 
 	//calls auto_declare_completion_* for all modes
 	for(var/handler in typesof(/datum/game_mode/proc))
 		if (findtext("[handler]","auto_declare_completion_"))
-			call(mode, handler)()
+			completions += "[call(mode, handler)()]"
+
+	completions += "<br>[ert_declare_completion()]"
+	completions += "<br>[deathsquad_declare_completion()]"
+
+	if(bomberman_mode)
+		completions += "<br>[bomberman_declare_completion()]"
+
+	if(achievements.len)
+		completions += "<br>[achievement_declare_completion()]"
 
 	//Print a list of antagonists to the server log
 	var/list/total_antagonists = list()
@@ -60,11 +69,12 @@
 		var/turf/location = get_turf(E.loc)
 		var/area/escape_zone = locate(/area/shuttle/escape/centcom)
 		if(E.stat != 2 && location in escape_zone) // Escapee Scores
-			for (var/obj/item/weapon/card/id/C1 in E.contents) cashscore += C1.money
-			for (var/obj/item/weapon/spacecash/C2 in E.contents) cashscore += C2.worth
-			for (var/obj/item/weapon/storage/S in E.contents)
-				for (var/obj/item/weapon/card/id/C3 in S.contents) cashscore += C3.money
-				for (var/obj/item/weapon/spacecash/C4 in S.contents) cashscore += C4.worth
+			for (var/obj/item/weapon/card/id/C1 in get_contents_in_object(E, /obj/item/weapon/card/id))
+				cashscore += C1.money
+
+			for (var/obj/item/weapon/spacecash/C2 in get_contents_in_object(E, /obj/item/weapon/spacecash))
+				cashscore += C2.worth
+
 //			for(var/datum/data/record/Ba in data_core.bank)
 //				if(Ba.fields["name"] == E.real_name) cashscore += Ba.fields["current_money"]
 			if (cashscore > score["richestcash"])
@@ -125,14 +135,14 @@
 			if (istype(T.loc, /area/security/brig)) score["arrested"] += 1
 			else if (M.current.stat == 2) score["opkilled"]++
 		if(foecount == score["arrested"]) score["allarrested"] = 1
-		for(var/mob/living/carbon/human/player in world)
+		for(var/mob/living/carbon/human/player in mob_list)
 			if(player.mind)
 				var/role = player.mind.assigned_role
 				if(role in list("Captain", "Head of Security", "Head of Personnel", "Chief Engineer", "Research Director"))
 					if (player.stat == 2) score["deadcommand"]++
 
 	// Check station's power levels
-	for (var/obj/machinery/power/apc/A in machines)
+	for (var/obj/machinery/power/apc/A in power_machines)
 		if (A.z != 1) continue
 		for (var/obj/item/weapon/cell/C in A.contents)
 			if (C.charge < 2300) score["powerloss"] += 1 // 200 charge leeway
@@ -208,17 +218,32 @@
 	score["crewscore"] -= messpoints
 	score["crewscore"] -= plaguepoints
 
+	score["arenafights"] = arena_rounds
+
+	arena_top_score = 0
+	for(var/x in arena_leaderboard)
+		if(arena_leaderboard[x] > arena_top_score)
+			arena_top_score = arena_leaderboard[x]
+	for(var/x in arena_leaderboard)
+		if(arena_leaderboard[x] == arena_top_score)
+			score["arenabest"] += "[x] "
+
+
 	// Show the score - might add "ranks" later
 	world << "<b>The crew's final score is:</b>"
 	world << "<b><font size='4'>[score["crewscore"]]</font></b>"
+
 	for(var/mob/E in player_list)
-		if(E.client) E.scorestats()
+		if(E.client)
+			E.scorestats(completions)
+			winset(E.client, "rpane.round_end", "is-visible=true")
 	return
 
 
 
-/mob/proc/scorestats()
-	var/dat = {"<B>Round Statistics and Score</B><BR><HR>"}
+/mob/proc/scorestats(var/completions)
+	var/dat = completions
+	dat += {"<BR><h2>Round Statistics and Score</h2>"}
 	if (ticker.mode.name == "nuclear emergency")
 		var/foecount = 0
 		var/crewcount = 0
@@ -226,7 +251,7 @@
 		var/bombdat = null
 		for(var/datum/mind/M in ticker.mode:syndicates)
 			foecount++
-		for(var/mob/living/C in world)
+		for(var/mob/living/C in mob_list)
 			if (!istype(C,/mob/living/carbon/human) || !istype(C,/mob/living/silicon/robot) || !istype(C,/mob/living/silicon/ai)) continue
 			if (C.stat == 2) continue
 			if (!C.client) continue
@@ -246,7 +271,7 @@
 			diskdat += "in [disk_loc.loc]"
 			break // Should only need one go-round, probably
 		var/nukedpenalty = 0
-		for(var/obj/machinery/nuclearbomb/NUKE in world)
+		for(var/obj/machinery/nuclearbomb/NUKE in machines)
 			if (NUKE.r_code == "Nope") continue
 			var/turf/T = NUKE.loc
 			bombdat = T.loc
@@ -276,7 +301,7 @@
 			if (M.current && M.current.stat != 2) foecount++
 		for(var/datum/mind/M in ticker.mode:revolutionaries)
 			if (M.current && M.current.stat != 2) revcount++
-		for(var/mob/living/carbon/human/player in world)
+		for(var/mob/living/carbon/human/player in mob_list)
 			if(player.mind)
 				var/role = player.mind.assigned_role
 				if(role in list("Captain", "Head of Security", "Head of Personnel", "Chief Engineer", "Research Director"))
@@ -284,7 +309,7 @@
 				else
 					if(player.mind in ticker.mode:revolutionaries) continue
 					loycount++
-		for(var/mob/living/silicon/X in world)
+		for(var/mob/living/silicon/X in mob_list)
 			if (X.stat != 2) loycount++
 		var/revpenalty = 10000
 		dat += {"<B><U>MODE STATS</U></B><BR>
@@ -321,7 +346,10 @@
 	if (profit > 0) dat += "<B>Station Profit:</B> +[num2text(profit,50)]<BR>"
 	else if (profit < 0) dat += "<B>Station Deficit:</B> [num2text(profit,50)]<BR>"}*/
 	dat += {"<B>Food Eaten:</b> [score["foodeaten"]]<BR>
-	<B>Times a Clown was Abused:</B> [score["clownabuse"]]<BR><BR>"}
+	<B>Times a Clown was Abused:</B> [score["clownabuse"]]<BR>
+	<B>Number of Arena Rounds:</B> [score["arenafights"]]<BR>"}
+	if (arena_top_score)
+		dat += "<B>Best Arena Fighter (won [arena_top_score] rounds!):</B> [score["arenabest"]]<BR>"
 	if (score["escapees"])
 		dat += "<B>Most Battered Escapee:</B> [score["dmgestname"]], [score["dmgestjob"]]: [score["dmgestdamage"]] damage ([score["dmgestkey"]])<BR>"
 	else
@@ -349,5 +377,14 @@
 		if(10000 to 49999) score["rating"] = "The Pride of Science Itself"
 		if(50000 to INFINITY) score["rating"] = "NanoTrasen's Finest"
 	dat += "<B><U>RATING:</U></B> [score["rating"]]"
-	src << browse(dat, "window=roundstats;size=500x600")
+
+	for(var/i=1;i<=end_icons.len;i++)
+		src << browse_rsc(end_icons[i],"logo_[i].png")
+
+	if(!endgame_info_logged)//so the End Round info only gets logged on the first player.
+		endgame_info_logged = 1
+		round_end_info = dat
+		log_game(dat)
+
+	src << browse(dat, "window=roundstats;size=1000x600")
 	return

@@ -30,33 +30,31 @@
 	var/icon/img		//Big photo image
 	var/scribble		//Scribble on the back.
 	var/blueprints = 0	//Does it include the blueprints?
+	var/info 			//Info on the camera about mobs or some shit
 
 	autoignition_temperature = 530 // Kelvin
 	fire_fuel = 1
 
 
 /obj/item/weapon/photo/attack_self(mob/user)
-	examine()
+	show(user)
 
 
 /obj/item/weapon/photo/attackby(obj/item/weapon/P, mob/user)
 	if(istype(P, /obj/item/weapon/pen) || istype(P, /obj/item/toy/crayon))
 		var/txt = sanitize(input(user, "What would you like to write on the back?", "Photo Writing", null)  as text)
 		txt = copytext(txt, 1, 128)
-		if(loc == user && user.stat == 0)
+		if(Adjacent(user) && !user.stat)
 			scribble = txt
 	..()
 
 
-/obj/item/weapon/photo/examine()
-	set src in oview(1)
-	if(is_blind(usr))	return
-
-	if(in_range(usr, src))
-		show(usr)
-		usr << desc
+/obj/item/weapon/photo/examine(mob/user)
+	if(Adjacent(user))
+		show(user)
 	else
-		usr << "<span class='notice'>It is too far away.</span>"
+		..()
+		user << "<span class='notice'>You can't make out the picture from here.</span>"
 
 
 /obj/item/weapon/photo/proc/show(mob/user)
@@ -66,6 +64,8 @@
 		+ "<img src='tmp_photo.png' width='192' style='-ms-interpolation-mode:nearest-neighbor' />" \
 		+ "[scribble ? "<br>Written on the back:<br><i>[scribble]</i>" : ""]"\
 		+ "</body></html>", "window=book;size=192x[scribble ? 400 : 192]")
+	if(info) //Would rather not display a blank line of text
+		user << info
 	onclose(user, "[name]")
 
 
@@ -76,7 +76,7 @@
 
 	var/n_name = copytext(sanitize(input(usr, "What would you like to label the photo?", "Photo Labelling", null)  as text), 1, MAX_NAME_LEN)
 	//loc.loc check is for making possible renaming photos in clipboards
-	if((loc == usr || loc.loc && loc.loc == usr) && usr.stat == 0)
+	if((loc == usr || loc.loc && loc.loc == usr) && !usr.stat && !(usr.status_flags & FAKEDEATH))
 		name = "photo[(n_name ? text("- '[n_name]'") : null)]"
 	add_fingerprint(usr)
 
@@ -102,10 +102,13 @@
 	icon_state = "polaroid"
 	item_state = "polaroid"
 	w_class = 2.0
-	flags = FPRINT | CONDUCT | USEDELAY | TABLEPASS
+	flags = FPRINT
+	siemens_coefficient = 1
 	slot_flags = SLOT_BELT
-	m_amt = 2000
+	starting_materials = list(MAT_IRON = 2000)
 	w_type = RECYK_ELECTRONIC
+	min_harm_label = 3
+	harm_label_examine = list("<span class='info'>A tiny label is on the lens.</span>", "<span class='warning'>A label covers the lens!</span>")
 	var/pictures_max = 10
 	var/pictures_left = 10
 	var/on = 1
@@ -122,10 +125,9 @@
 	icon_on = "sepia-camera"
 	icon_off = "sepia-camera_off"
 
-/obj/item/device/camera/examine()
-	set src in view(1)
+/obj/item/device/camera/examine(mob/user)
 	..()
-	usr <<"<span class='notice'>It has [pictures_left] photos left.</span>"
+	user <<"<span class='info'>It has [pictures_left] photos left.</span>"
 
 
 /obj/item/device/camera/ai_camera //camera AI can take pictures with
@@ -158,8 +160,8 @@
 			user << "<span class='notice'>[src] still has some film in it!</span>"
 			return
 		user << "<span class='notice'>You insert [I] into [src].</span>"
-		user.drop_item()
-		del(I)
+		user.drop_item(I)
+		qdel(I)
 		pictures_left = pictures_max
 		icon_state = icon_on
 		on = 1
@@ -324,21 +326,23 @@
 
 
 /obj/item/device/camera/proc/captureimage(atom/target, mob/user, flag)  //Proc for both regular and AI-based camera to take the image
+	if(min_harm_label && harm_labeled >= min_harm_label)
+		printpicture(user, icon('icons/effects/96x96.dmi',"blocked"), "You can't see a thing.", flag)
+		return
 	var/mobs = ""
-	var/isAi = istype(user, /mob/living/silicon/ai)
 	var/list/seen
-	if(!isAi) //crappy check, but without it AI photos would be subject to line of sight from the AI Eye object. Made the best of it by moving the sec camera check inside
+	if(!isAI(user)) //crappy check, but without it AI photos would be subject to line of sight from the AI Eye object. Made the best of it by moving the sec camera check inside
 		if(user.client)		//To make shooting through security cameras possible
-			seen = hear(world.view, user.client.eye) //To make shooting through security cameras possible
+			seen = get_hear(world.view, user.client.eye) //To make shooting through security cameras possible
 		else
-			seen = hear(world.view, user)
+			seen = get_hear(world.view, user)
 	else
-		seen = hear(world.view, target)
+		seen = get_hear(world.view, target)
 
 	var/list/turfs = list()
 	for(var/turf/T in range(1, target))
 		if(T in seen)
-			if(isAi && !cameranet.checkTurfVis(T))
+			if(isAI(user) && !cameranet.checkTurfVis(T))
 				continue
 			else
 				turfs += T
@@ -348,7 +352,7 @@
 	temp.Blend("#000", ICON_OVERLAY)
 	temp.Blend(camera_get_icon(turfs, target), ICON_OVERLAY)
 
-	if(!isAi)
+	if(!isAI(user))
 		printpicture(user, temp, mobs, flag)
 	else
 		aipicture(user, temp, mobs, blueprints)
@@ -362,7 +366,7 @@
 	ic.Blend(small_img,ICON_OVERLAY, 10, 13)
 	P.icon = ic
 	P.img = temp
-	P.desc = mobs
+	P.info = mobs
 	P.pixel_x = rand(-10, 10)
 	P.pixel_y = rand(-10, 10)
 
@@ -379,7 +383,7 @@
 	ic.Blend(small_img,ICON_OVERLAY, 10, 13)
 	P.icon = ic
 	P.img = temp
-	P.desc = mobs
+	P.info = mobs
 	P.pixel_x = rand(-10, 10)
 	P.pixel_y = rand(-10, 10)
 
@@ -404,7 +408,7 @@
 	ic.Blend(small_img,ICON_OVERLAY, 10, 13)
 	var/icon = ic
 	var/img = temp
-	var/desc = mobs
+	var/info = mobs
 	var/pixel_x = rand(-10, 10)
 	var/pixel_y = rand(-10, 10)
 
@@ -413,7 +417,7 @@
 		injectblueprints = 1
 		blueprints = 0
 
-	injectaialbum(icon, img, desc, pixel_x, pixel_y, injectblueprints)
+	injectaialbum(icon, img, info, pixel_x, pixel_y, injectblueprints)
 
 
 /datum/picture
@@ -421,7 +425,7 @@
 	var/list/fields = list()
 
 
-/obj/item/device/camera/proc/injectaialbum(var/icon, var/img, var/desc, var/pixel_x, var/pixel_y, var/blueprintsinject) //stores image information to a list similar to that of the datacore
+/obj/item/device/camera/proc/injectaialbum(var/icon, var/img, var/info, var/pixel_x, var/pixel_y, var/blueprintsinject) //stores image information to a list similar to that of the datacore
 	var/numberer = 1
 	for(var/datum/picture in src.aipictures)
 		numberer++
@@ -429,13 +433,13 @@
 	P.fields["name"] = "Image [numberer]"
 	P.fields["icon"] = icon
 	P.fields["img"] = img
-	P.fields["desc"] = desc
+	P.fields["info"] = info
 	P.fields["pixel_x"] = pixel_x
 	P.fields["pixel_y"] = pixel_y
 	P.fields["blueprints"] = blueprintsinject
 
 	aipictures += P
-	usr << "<FONT COLOR=blue><B>Image recorded</B>"	//feedback to the AI player that the picture was taken
+	usr << "<font color=blue><B>Image recorded</B></font>"	//feedback to the AI player that the picture was taken
 
 
 /obj/item/device/camera/ai_camera/proc/viewpictures() //AI proc for viewing pictures they have taken
@@ -443,11 +447,11 @@
 	var/find
 	var/datum/picture/selection
 	if(src.aipictures.len == 0)
-		usr << "<FONT COLOR=red><B>No images saved</B>"
+		usr << "<font color=red><B>No images saved</B></font>"
 		return
 	for(var/datum/picture/t in src.aipictures)
 		nametemp += t.fields["name"]
-	find = input("Select image (numbered in order taken)") in nametemp
+	find = input("Select image (listed in order taken)") in nametemp
 	var/obj/item/weapon/photo/P = new/obj/item/weapon/photo()
 	for(var/datum/picture/q in src.aipictures)
 		if(q.fields["name"] == find)
@@ -455,12 +459,12 @@
 			break  	// just in case some AI decides to take 10 thousand pictures in a round
 	P.icon = selection.fields["icon"]
 	P.img = selection.fields["img"]
-	P.desc = selection.fields["desc"]
+	P.info = selection.fields["info"]
 	P.pixel_x = selection.fields["pixel_x"]
 	P.pixel_y = selection.fields["pixel_y"]
 
 	P.show(usr)
-	usr << P.desc
+	usr << P.info
 	del P    //so 10 thousdand pictures items are not left in memory should an AI take them and then view them all.
 
 /obj/item/device/camera/afterattack(atom/target, mob/user, flag)

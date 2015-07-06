@@ -7,15 +7,21 @@
 	density = 0
 	opacity = 0
 	anchored = 1
-	var/health = 30
+	var/health = 20
 	var/health_timestamp = 0
 	var/brute_resist = 4
 	var/fire_resist = 1
 
-	var/list/last_beamchecks=list()
+	// A note to the beam processing shit.
+	var/custom_process=0
 
 /obj/effect/blob/New(loc)
 	blobs += src
+	if(istype(ticker.mode,/datum/game_mode/blob))
+		var/datum/game_mode/blob/blobmode = ticker.mode
+		if((blobs.len >= blobmode.blobnukeposs) && prob(3) && !blobmode.nuclear)
+			blobmode.stage(2)
+			blobmode.nuclear = 1
 	src.dir = pick(1, 2, 4, 8)
 	src.update_icon()
 	..(loc)
@@ -35,19 +41,26 @@
 
 /obj/effect/blob/beam_connect(var/obj/effect/beam/B)
 	..()
-	last_beamchecks["\ref[B]"]=world.time
+	last_beamchecks["\ref[B]"]=world.time+1
+	apply_beam_damage(B) // Contact damage for larger beams (deals 1/10th second of damage)
+	if(!custom_process && !(src in processing_objects))
+		processing_objects.Add(src)
+
 
 /obj/effect/blob/beam_disconnect(var/obj/effect/beam/B)
 	..()
 	apply_beam_damage(B)
 	last_beamchecks.Remove("\ref[B]") // RIP
+	update_icon()
+	if(beams.len == 0)
+		if(!custom_process && src in processing_objects)
+			processing_objects.Remove(src)
 
-/obj/effect/blob/proc/apply_beam_damage(var/obj/effect/beam/B)
+/obj/effect/blob/apply_beam_damage(var/obj/effect/beam/B)
 	var/lastcheck=last_beamchecks["\ref[B]"]
 
-	// Figure out how much damage to deal.
-	// Formula: (deciseconds_since_connect/10 deciseconds)*B.get_damage()
-	var/damage = ((world.time - lastcheck)/10)  * B.get_damage()
+	// Standard damage formula / 2
+	var/damage = ((world.time - lastcheck)/10)  * (B.get_damage() / 2)
 
 	// Actually apply damage
 	health -= damage
@@ -55,13 +68,14 @@
 	// Update check time.
 	last_beamchecks["\ref[B]"]=world.time
 
-/obj/effect/blob/proc/process_beams()
+/obj/effect/blob/handle_beams()
 	// New beam damage code (per-tick)
 	for(var/obj/effect/beam/B in beams)
 		apply_beam_damage(B)
+	update_icon()
 
 /obj/effect/blob/process()
-	process_beams()
+	handle_beams()
 	Life()
 	return
 
@@ -87,7 +101,7 @@
 		return//Inf loop check
 
 	//Looking for another blob to pulse
-	var/list/dirs = list(1,2,4,8)
+	var/list/dirs = cardinal.Copy()
 	dirs.Remove(origin_dir)//Dont pulse the guy who pulsed us
 	for(var/i = 1 to 4)
 		if(!dirs.len)	break
@@ -108,10 +122,12 @@
 
 
 /obj/effect/blob/proc/expand(var/turf/T = null, var/prob = 1)
-	if(prob && !prob(health))	return
-	if(istype(T, /turf/space) && prob(75)) 	return
+	if(prob && !prob(health))
+		return
+	if(istype(T, /turf/space) && prob(75))
+		return
 	if(!T)
-		var/list/dirs = list(1,2,4,8)
+		var/list/dirs = cardinal
 		for(var/i = 1 to 4)
 			var/dirn = pick(dirs)
 			dirs.Remove(dirn)
@@ -153,9 +169,9 @@
 
 
 /obj/effect/blob/attackby(var/obj/item/weapon/W, var/mob/user)
-	user.changeNext_move(10)
+	user.delayNextAttack(10)
 	playsound(get_turf(src), 'sound/effects/attackblob.ogg', 50, 1)
-	src.visible_message("\red <B>The [src.name] has been attacked with \the [W][(user ? " by [user]." : ".")]")
+	src.visible_message("<span class='warning'><B>The [src.name] has been attacked with \the [W][(user ? " by [user]." : ".")]</span>")
 	var/damage = 0
 	switch(W.damtype)
 		if("fire")
@@ -180,7 +196,7 @@
 	return
 
 /obj/effect/blob/proc/Delete()
-	del(src)
+	qdel(src)
 
 /obj/effect/blob/normal
 	icon_state = "blob"
@@ -190,6 +206,7 @@
 /obj/effect/blob/normal/Delete()
 	src.loc = null
 	blobs -= src
+	..()
 
 /obj/effect/blob/normal/update_icon()
 	if(health <= 0)

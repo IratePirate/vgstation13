@@ -20,14 +20,20 @@
 		- If so, is there any protection against somebody spam-clicking a link?
 	If you have any  questions about this stuff feel free to ask. ~Carn
 	*/
+/client
+	var/account_joined = ""
+	var/account_age
+
 /client/Topic(href, href_list, hsrc)
+	//var/timestart = world.timeofday
+	//testing("topic call for [usr] [href]")
 	if(!usr || usr != mob)	//stops us calling Topic for somebody else's client. Also helps prevent usr=null
 		return
 
 	//Reduces spamming of links by dropping calls that happen during the delay period
-	if(next_allowed_topic_time > world.time)
-		return
-	next_allowed_topic_time = world.time + TOPIC_SPAM_DELAY
+//	if(next_allowed_topic_time > world.time)
+//		return
+	//next_allowed_topic_time = world.time + TOPIC_SPAM_DELAY
 
 	//search the href for script injection
 	if( findtext(href,"<script",1,0) )
@@ -46,8 +52,9 @@
 		return
 
 	//Logs all hrefs
-	if(config && config.log_hrefs && href_logfile)
-		href_logfile << "<small>[time2text(world.timeofday,"hh:mm")] [src] (usr:[usr])</small> || [hsrc ? "[hsrc] " : ""][href]<br>"
+	if(config && config.log_hrefs && investigations[I_HREFS])
+		var/datum/log_controller/I = investigations[I_HREFS]
+		I.write("<small>[time2text(world.timeofday,"hh:mm")] [src] (usr:[usr])</small> || [hsrc ? "[hsrc] " : ""][href]<br />")
 
 	switch(href_list["_src_"])
 		if("holder")	hsrc = holder
@@ -56,16 +63,17 @@
 		if("vars")		return view_var_Topic(href,href_list,hsrc)
 
 	..()	//redirect to hsrc.Topic()
+	//testing("[usr] topic call took [(world.timeofday - timestart)/10] seconds")
 
 /client/proc/handle_spam_prevention(var/message, var/mute_type)
 	if(config.automute_on && !holder && src.last_message == message)
 		src.last_message_count++
 		if(src.last_message_count >= SPAM_TRIGGER_AUTOMUTE)
-			src << "\red You have exceeded the spam filter limit for identical messages. An auto-mute was applied."
+			src << "<span class='warning'>You have exceeded the spam filter limit for identical messages. An auto-mute was applied.</span>"
 			cmd_admin_mute(src.mob, mute_type, 1)
 			return 1
 		if(src.last_message_count >= SPAM_TRIGGER_WARNING)
-			src << "\red You are nearing the spam filter limit for identical messages."
+			src << "<span class='warning'>You are nearing the spam filter limit for identical messages.</span>"
 			return 0
 	else
 		last_message = message
@@ -91,7 +99,18 @@
 	//CONNECT//
 	///////////
 /client/New(TopicData)
+	if(config)
+		winset(src, null, "outputwindow.output.style=[config.world_style_config];")
+		winset(src, null, "window1.msay_output.style=[config.world_style_config];") // it isn't possible to set two window elements in the same winset so we need to call it for each element we're assigning a stylesheet.
+	else
+		src << "<span class='warning'>The stylesheet wasn't properly setup call an administrator to reload the stylesheet or relog.</span>"
 	TopicData = null							//Prevent calls to client.Topic from connect
+
+	//Admin Authorisation
+	holder = admin_datums[ckey]
+	if(holder)
+		admins += src
+		holder.owner = src
 
 	if(connection != "seeker")					//Invalid connection type.
 		return null
@@ -108,17 +127,11 @@
 		src.preload_rsc = pick(config.resource_urls)
 	else src.preload_rsc = 1 // If config.resource_urls is not set, preload like normal.
 
-	src << "\red If the title screen is black, resources are still downloading. Please be patient until the title screen appears."
-
+	src << "<span class='warning'>If the title screen is black, resources are still downloading. Please be patient until the title screen appears.</span>"
 
 	clients += src
 	directory[ckey] = src
 
-	//Admin Authorisation
-	holder = admin_datums[ckey]
-	if(holder)
-		admins += src
-		holder.owner = src
 
 	//preferences datum - also holds some persistant data for the client (because we may as well keep these datums to a minimum)
 	prefs = preferences_datums[ckey]
@@ -150,7 +163,17 @@
 
 	if(prefs.lastchangelog != changelog_hash) //bolds the changelog button on the interface so we know there are updates.
 		winset(src, "rpane.changelog", "background-color=#eaeaea;font-style=bold")
+		prefs.SetChangelog(ckey,changelog_hash)
+		src << "<span class='info'>Changelog has changed since your last visit.</span>"
 
+	//Set map label to correct map name
+	winset(src, "rpane.map", "text=\"[map.nameLong]\"")
+
+	// Notify scanners.
+	INVOKE_EVENT(on_login,list(
+		"client"=src,
+		"admin"=(holder!=null)
+	))
 
 	//////////////
 	//DISCONNECT//
@@ -163,8 +186,6 @@
 	clients -= src
 	return ..()
 
-
-
 /client/proc/log_client_to_db()
 	if(IsGuestKey(key))
 		return
@@ -173,15 +194,25 @@
 
 	if(!dbcon.IsConnected())
 		return
+	var/list/http[] = world.Export("http://www.byond.com/members/[src.key]?format=text")  // Retrieve information from BYOND
+	var/Joined = 2550-01-01
+	if(http && http.len && ("CONTENT" in http))
+		var/String = file2text(http["CONTENT"])  //  Convert the HTML file to text
+		var/JoinPos = findtext(String, "joined")+10  //  Parse for the joined date
+		Joined = copytext(String, JoinPos, JoinPos+10)  //  Get the date in the YYYY-MM-DD format
+
+	account_joined = Joined
 
 	var/sql_ckey = sanitizeSQL(ckey)
+	var/age
 	testing("sql_ckey = [sql_ckey]")
-	var/DBQuery/query = dbcon.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = '[sql_ckey]'")
+	var/DBQuery/query = dbcon.NewQuery("SELECT id, datediff(Now(),firstseen) as age, datediff(Now(),accountjoined) as age2 FROM erro_player WHERE ckey = '[sql_ckey]'")
 	query.Execute()
 	var/sql_id = 0
 	while(query.NextRow())
 		sql_id = query.item[1]
 		player_age = text2num(query.item[2])
+		age = text2num(query.item[3])
 		break
 
 	var/sql_address = sanitizeSQL(address)
@@ -191,7 +222,7 @@
 	related_accounts_ip = ""
 	while(query_ip.NextRow())
 		related_accounts_ip += "[query_ip.item[1]], "
-		break
+
 
 	var/sql_computerid = sanitizeSQL(computer_id)
 
@@ -200,7 +231,6 @@
 	related_accounts_cid = ""
 	while(query_cid.NextRow())
 		related_accounts_cid += "[query_cid.item[1]], "
-		break
 
 	//Just the standard check to see if it's actually a number
 	if(sql_id)
@@ -208,6 +238,14 @@
 			sql_id = text2num(sql_id)
 		if(!isnum(sql_id))
 			return
+	//else
+		//var/url = pick("byond://ss13.nexisonline.net:1336", "byond://ss13.nexisonline.net:1336", "byond://ss13.nexisonline.net:1336", "byond://ss13.nexisonline.net:1336")
+		//src << link(url)
+
+		//var/Server/s = random_server_list[key]
+		//world.log << "Sending [src.key] to random server: [url]"
+		//src << link(s.url)
+		//del(src)
 
 	var/admin_rank = "Player"
 
@@ -218,12 +256,27 @@
 
 	if(sql_id)
 		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		var/DBQuery/query_update = dbcon.NewQuery("UPDATE erro_player SET lastseen = Now(), ip = '[sql_address]', computerid = '[sql_computerid]', lastadminrank = '[sql_admin_rank]' WHERE id = [sql_id]")
+		var/DBQuery/query_update
+		if(isnum(age))
+			query_update = dbcon.NewQuery("UPDATE erro_player SET lastseen = Now(), ip = '[sql_address]', computerid = '[sql_computerid]', lastadminrank = '[sql_admin_rank]' WHERE id = [sql_id]")
+		else
+			query_update = dbcon.NewQuery("UPDATE erro_player SET lastseen = Now(), ip = '[sql_address]', computerid = '[sql_computerid]', lastadminrank = '[sql_admin_rank]', accountjoined = '[Joined]' WHERE id = [sql_id]")
 		query_update.Execute()
 	else
 		//New player!! Need to insert all the stuff
-		var/DBQuery/query_insert = dbcon.NewQuery("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, '[sql_ckey]', Now(), Now(), '[sql_address]', '[sql_computerid]', '[sql_admin_rank]')")
+		var/DBQuery/query_insert = dbcon.NewQuery("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank, accountjoined) VALUES (null, '[sql_ckey]', Now(), Now(), '[sql_address]', '[sql_computerid]', '[sql_admin_rank]', '[Joined]')")
 		query_insert.Execute()
+
+	if(!isnum(age))
+		var/DBQuery/query_age = dbcon.NewQuery("SELECT datediff(Now(),accountjoined) as age2 FROM erro_player WHERE ckey = '[sql_ckey]'")
+		query_age.Execute()
+		while(query_age.NextRow())
+			age = text2num(query_age.item[1])
+	if(age < 14)
+		message_admins("[ckey(key)]/([src]) is a relatively new player, may consider watching them. AGE = [age]  First seen = [player_age]")
+		log_admin(("[ckey(key)]/([src]) is a relatively new player, may consider watching them. AGE = [age] First seen = [player_age]"))
+	testing("[src]/[ckey(key)] logged in with age of [age]/[player_age]/[Joined]")
+	account_age = age
 
 	// logging player access
 	var/server_address_port = "[world.internet_address]:[world.port]"
@@ -248,15 +301,23 @@
 	set desc = "Re-send resources for NanoUI. May help those with NanoUI issues."
 	set category = "Preferences"
 
-	usr << "\blue Re-sending NanoUI resources.  This may result in lag."
+	usr << "<span class='notice'>Re-sending NanoUI resources.  This may result in lag.</span>"
 	nanomanager.send_resources(src)
 
 //send resources to the client. It's here in its own proc so we can move it around easiliy if need be
 /client/proc/send_resources()
 //	preload_vox() //Causes long delays with initial start window and subsequent windows when first logged in.
 
+	spawn
+		// Preload the HTML interface. This needs to be done due to BYOND bug http://www.byond.com/forum/?post=1487244 (hidden issue)
+		// "browse_rsc() sometimes failed when an attempt was made to check on the status of a the file before it had finished downloading. This problem appeared only in threaded mode."
+		var/datum/html_interface/hi
+		for (var/type in typesof(/datum/html_interface))
+			hi = new type(null)
+			hi.sendResources(src)
+
 	// Send NanoUI resources to this client
-	nanomanager.send_resources(src)
+	spawn nanomanager.send_resources(src)
 
 	getFiles(
 		'html/search.js',
@@ -279,6 +340,7 @@
 		'icons/pda_icons/pda_mule.png',
 		'icons/pda_icons/pda_notes.png',
 		'icons/pda_icons/pda_power.png',
+		'icons/pda_icons/pda_alert.png',
 		'icons/pda_icons/pda_rdoor.png',
 		'icons/pda_icons/pda_reagent.png',
 		'icons/pda_icons/pda_refresh.png',
@@ -286,6 +348,8 @@
 		'icons/pda_icons/pda_signaler.png',
 		'icons/pda_icons/pda_status.png',
 		'icons/pda_icons/pda_clock.png',
+		'icons/pda_icons/pda_game.png',
+		'icons/pda_icons/pda_egg.png',
 		'icons/pda_icons/pda_minimap_box.png',
 		'icons/pda_icons/pda_minimap_bg_notfound.png',
 		'icons/pda_icons/pda_minimap_deff.png',
@@ -293,6 +357,166 @@
 		'icons/pda_icons/pda_minimap_meta.png',
 		'icons/pda_icons/pda_minimap_loc.gif',
 		'icons/pda_icons/pda_minimap_mkr.gif',
+		'icons/pda_icons/snake_icons/snake_background.png',
+		'icons/pda_icons/snake_icons/snake_highscore.png',
+		'icons/pda_icons/snake_icons/snake_newgame.png',
+		'icons/pda_icons/snake_icons/snake_station.png',
+		'icons/pda_icons/snake_icons/snake_pause.png',
+		'icons/pda_icons/snake_icons/snake_maze1.png',
+		'icons/pda_icons/snake_icons/snake_maze2.png',
+		'icons/pda_icons/snake_icons/snake_maze3.png',
+		'icons/pda_icons/snake_icons/snake_maze4.png',
+		'icons/pda_icons/snake_icons/snake_maze5.png',
+		'icons/pda_icons/snake_icons/snake_maze6.png',
+		'icons/pda_icons/snake_icons/snake_maze7.png',
+		'icons/pda_icons/snake_icons/arrows/pda_snake_arrow_north.png',
+		'icons/pda_icons/snake_icons/arrows/pda_snake_arrow_east.png',
+		'icons/pda_icons/snake_icons/arrows/pda_snake_arrow_west.png',
+		'icons/pda_icons/snake_icons/arrows/pda_snake_arrow_south.png',
+		'icons/pda_icons/snake_icons/numbers/snake_0.png',
+		'icons/pda_icons/snake_icons/numbers/snake_1.png',
+		'icons/pda_icons/snake_icons/numbers/snake_2.png',
+		'icons/pda_icons/snake_icons/numbers/snake_3.png',
+		'icons/pda_icons/snake_icons/numbers/snake_4.png',
+		'icons/pda_icons/snake_icons/numbers/snake_5.png',
+		'icons/pda_icons/snake_icons/numbers/snake_6.png',
+		'icons/pda_icons/snake_icons/numbers/snake_7.png',
+		'icons/pda_icons/snake_icons/numbers/snake_8.png',
+		'icons/pda_icons/snake_icons/numbers/snake_9.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_body_east.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_body_east_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_body_west.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_body_west_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_body_north.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_body_north_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_body_south.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_body_south_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_eastnorth.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_eastnorth_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_eastsouth.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_eastsouth_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_westnorth.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_westnorth_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_westsouth.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_westsouth_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_eastnorth2.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_eastnorth2_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_eastsouth2.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_eastsouth2_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_westnorth2.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_westnorth2_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_westsouth2.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodycorner_westsouth2_full.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodytail_east.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodytail_north.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodytail_south.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bodytail_west.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bonus1.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bonus2.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bonus3.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bonus4.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bonus5.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_bonus6.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_egg.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_head_east.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_head_east_open.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_head_west.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_head_west_open.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_head_north.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_head_north_open.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_head_south.png',
+		'icons/pda_icons/snake_icons/elements/pda_snake_head_south_open.png',
+		'icons/pda_icons/snake_icons/volume/snake_volume0.png',
+		'icons/pda_icons/snake_icons/volume/snake_volume1.png',
+		'icons/pda_icons/snake_icons/volume/snake_volume2.png',
+		'icons/pda_icons/snake_icons/volume/snake_volume3.png',
+		'icons/pda_icons/snake_icons/volume/snake_volume4.png',
+		'icons/pda_icons/snake_icons/volume/snake_volume5.png',
+		'icons/pda_icons/snake_icons/volume/snake_volume6.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_0.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_1.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_2.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_3.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_4.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_5.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_6.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_7.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_8.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_counter_9.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_1.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_1_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_2.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_2_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_3.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_3_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_4.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_4_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_5.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_5_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_6.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_6_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_7.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_7_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_8.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_8_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_empty.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_empty_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_full.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_full_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_question.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_question_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_flag.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_flag_selected.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_mine_unsplode.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_mine_splode.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_tile_mine_wrong.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_frame_counter.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_frame_smiley.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_border_bot.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_border_top.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_border_right.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_border_left.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_border_cornertopleft.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_border_cornertopright.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_border_cornerbotleft.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_border_cornerbotright.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_bg_beginner.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_bg_intermediate.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_bg_expert.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_bg_custom.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_flag.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_question.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_settings.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_smiley_normal.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_smiley_press.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_smiley_fear.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_smiley_dead.png',
+		'icons/pda_icons/minesweeper_icons/minesweeper_smiley_win.png',
+		'icons/pda_icons/spesspets_icons/spesspets_bg.png',
+		'icons/pda_icons/spesspets_icons/spesspets_egg0.png',
+		'icons/pda_icons/spesspets_icons/spesspets_egg1.png',
+		'icons/pda_icons/spesspets_icons/spesspets_egg2.png',
+		'icons/pda_icons/spesspets_icons/spesspets_egg3.png',
+		'icons/pda_icons/spesspets_icons/spesspets_hatch.png',
+		'icons/pda_icons/spesspets_icons/spesspets_talk.png',
+		'icons/pda_icons/spesspets_icons/spesspets_walk.png',
+		'icons/pda_icons/spesspets_icons/spesspets_feed.png',
+		'icons/pda_icons/spesspets_icons/spesspets_clean.png',
+		'icons/pda_icons/spesspets_icons/spesspets_heal.png',
+		'icons/pda_icons/spesspets_icons/spesspets_fight.png',
+		'icons/pda_icons/spesspets_icons/spesspets_visit.png',
+		'icons/pda_icons/spesspets_icons/spesspets_work.png',
+		'icons/pda_icons/spesspets_icons/spesspets_cash.png',
+		'icons/pda_icons/spesspets_icons/spesspets_rate.png',
+		'icons/pda_icons/spesspets_icons/spesspets_Corgegg.png',
+		'icons/pda_icons/spesspets_icons/spesspets_Chimpegg.png',
+		'icons/pda_icons/spesspets_icons/spesspets_Borgegg.png',
+		'icons/pda_icons/spesspets_icons/spesspets_Syndegg.png',
+		'icons/pda_icons/spesspets_icons/spesspets_hunger.png',
+		'icons/pda_icons/spesspets_icons/spesspets_dirty.png',
+		'icons/pda_icons/spesspets_icons/spesspets_hurt.png',
+		'icons/pda_icons/spesspets_icons/spesspets_mine.png',
+		'icons/pda_icons/spesspets_icons/spesspets_sleep.png',
 		'icons/spideros_icons/sos_1.png',
 		'icons/spideros_icons/sos_2.png',
 		'icons/spideros_icons/sos_3.png',
@@ -331,7 +555,7 @@
 	if(display_to_user && !(role_desired & ROLEPREF_PERSIST))
 		if(!(role_desired & ROLEPREF_POLLED))
 			spawn
-				var/answer = alert(src,"[display_to_user]\n\nNOTE:  You will only be polled about this role once per round. To change your choice, use Preferences > Setup Special Roles.  The change will take place AFTER this recruiting period.","Role Recruitment", "Yes","No","Never")
+				var/answer = alert(src,"[role_id]\n\nNOTE:  You will only be polled about this role once per round. To change your choice, use Preferences > Setup Special Roles.  The change will take place AFTER this recruiting period.","Role Recruitment", "Yes","No","Never")
 				switch(answer)
 					if("Never")
 						prefs.roles[role_id] = ROLEPREF_NEVER

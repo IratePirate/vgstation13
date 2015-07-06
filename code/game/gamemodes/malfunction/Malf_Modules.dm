@@ -48,7 +48,7 @@ rcd light flash thingy on matter drain
 	for(var/mob/living/silicon/ai/ai in player_list)
 		ai.fire_res_on_core = 1
 	src.verbs -= /mob/living/silicon/ai/proc/fireproof_core
-	src << "\red Core fireproofed."
+	src << "<span class='warning'>Core fireproofed.</span>"
 
 /datum/AI_Module/large/upgrade_turrets
 	module_name = "AI Turret upgrade"
@@ -97,7 +97,7 @@ rcd light flash thingy on matter drain
 
 	power_type = /mob/living/silicon/ai/proc/overload_machine
 
-/mob/living/silicon/ai/proc/overload_machine(obj/machinery/M as obj in world)
+/mob/living/silicon/ai/proc/overload_machine(obj/machinery/M as obj in machines)
 	set name = "Overload Machine"
 	set category = "Malfunction"
 	if (istype(M, /obj/machinery))
@@ -105,10 +105,10 @@ rcd light flash thingy on matter drain
 			if(overload.uses > 0)
 				overload.uses --
 				for(var/mob/V in hearers(M, null))
-					V.show_message("\blue You hear a loud electrical buzzing sound!", 2)
+					V.show_message("<span class='notice'>You hear a loud electrical buzzing sound!</span>", 2)
 				spawn(50)
 					explosion(get_turf(M), -1, 1, 2, 3) //C4 Radius + 1 Dest for the machine
-					del(M)
+					qdel(M)
 			else src << "Out of uses."
 	else src << "That's not a machine."
 
@@ -190,7 +190,7 @@ rcd light flash thingy on matter drain
 	for(var/datum/AI_Module/small/blackout/blackout in current_modules)
 		if(blackout.uses > 0)
 			blackout.uses --
-			for(var/obj/machinery/power/apc/apc in world)
+			for(var/obj/machinery/power/apc/apc in power_machines)
 				if(prob(30*apc.overload))
 					apc.overload_lighting()
 				else apc.overload++

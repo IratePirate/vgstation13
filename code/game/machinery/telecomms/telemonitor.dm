@@ -10,6 +10,7 @@
 /obj/machinery/computer/telecomms/monitor
 	name = "Telecommunications Monitor"
 	icon_state = "comm_monitor"
+	circuit = "/obj/item/weapon/circuitboard/comm_monitor"
 
 	var/screen = 0				// the screen number:
 	var/list/machinelist = list()	// the machines located by the computer
@@ -19,7 +20,7 @@
 
 	var/temp = ""				// temporary feedback messages
 
-	l_color = "#50AB00"
+	light_color = LIGHT_COLOR_GREEN
 
 /obj/machinery/computer/telecomms/monitor/attack_hand(mob/user as mob)
 	if(stat & (BROKEN|NOPOWER))
@@ -138,13 +139,14 @@
 	return
 
 /obj/machinery/computer/telecomms/monitor/attackby(var/obj/item/weapon/D as obj, var/mob/user as mob)
+	if(..())
+		return 1
 	src.updateUsrDialog()
-	return ..()
 
 /obj/machinery/computer/telecomms/monitor/emag(mob/user)
 	if(!emagged)
 		playsound(get_turf(src), 'sound/effects/sparks4.ogg', 75, 1)
 		emagged = 1
-		user << "\blue You you disable the security protocols"
+		user << "<span class='notice'>You you disable the security protocols</span>"
 		return 1
 	return

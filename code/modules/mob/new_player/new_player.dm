@@ -5,7 +5,8 @@
 	var/spawning = 0//Referenced when you want to delete the new_player later on in the code.
 	var/totalPlayers = 0		 //Player counts for the Lobby tab
 	var/totalPlayersReady = 0
-	universal_speak = 1
+
+	flags = NONE
 
 	invisibility = 101
 
@@ -69,19 +70,19 @@
 /mob/new_player/Stat()
 	..()
 
-	statpanel("Status")
-	if (client.statpanel == "Status" && ticker)
+
+	if(statpanel("Status") && ticker)
 		if (ticker.current_state != GAME_STATE_PREGAME)
 			stat(null, "Station Time: [worldtime2text()]")
 	statpanel("Lobby")
-	if(client.statpanel=="Lobby" && ticker)
+	if(statpanel("Lobby") && ticker)
 		if(ticker.hide_mode)
 			stat("Game Mode:", "Secret")
 		else
 			stat("Game Mode:", "[master_mode]")
 
 		if((ticker.current_state == GAME_STATE_PREGAME) && going)
-			stat("Time To Start:", ticker.pregame_timeleft)
+			stat("Time To Start:", (round(ticker.pregame_timeleft - world.timeofday) / 10)) //rounding because people freak out at decimals i guess
 		if((ticker.current_state == GAME_STATE_PREGAME) && !going)
 			stat("Time To Start:", "DELAYED")
 
@@ -95,6 +96,8 @@
 				if(player.ready)totalPlayersReady++
 
 /mob/new_player/Topic(href, href_list[])
+	//var/timestart = world.timeofday
+	//testing("topic call for [usr] [href]")
 	if(usr != src)
 		return 0
 
@@ -105,7 +108,15 @@
 		return 1
 
 	if(href_list["ready"])
-		ready = !ready
+		switch(text2num(href_list["ready"]))
+			if(1)
+				ready = 1
+			if(2)
+				ready = 0
+		usr << "<span class='recruit'>You [ready ? "have declared ready" : "have unreadied"].</span>"
+		new_player_panel_proc()
+		//testing("[usr] topic call took [(world.timeofday - timestart)/10] seconds")
+		return 1
 
 	if(href_list["refresh"])
 		src << browse(null, "window=playersetup") //closes the player setup window
@@ -123,7 +134,7 @@
 			observer.started_as_observer = 1
 			close_spawn_windows()
 			var/obj/O = locate("landmark*Observer-Start")
-			src << "\blue Now teleporting."
+			src << "<span class='notice'>Now teleporting.</span>"
 			observer.loc = O.loc
 			observer.timeofdeath = world.time // Set the time of death so that the respawn timer works correctly.
 
@@ -138,13 +149,14 @@
 			if(!client.holder && !config.antag_hud_allowed)           // For new ghosts we remove the verb from even showing up if it's not allowed.
 				observer.verbs -= /mob/dead/observer/verb/toggle_antagHUD        // Poor guys, don't know what they are missing!
 			observer.key = key
+			mob_list -= src
 			del(src)
 
 			return 1
 
 	if(href_list["late_join"])
 		if(!ticker || ticker.current_state != GAME_STATE_PLAYING)
-			usr << "\red The round is either not ready, or has already finished..."
+			usr << "<span class='warning'>The round is either not ready, or has already finished...</span>"
 			return
 
 		if(client.prefs.species != "Human")
@@ -161,7 +173,7 @@
 	if(href_list["SelectedJob"])
 
 		if(!enter_allowed)
-			usr << "\blue There is an administrative lock on entering the game!"
+			usr << "<span class='notice'>There is an administrative lock on entering the game!</span>"
 			return
 
 		if(!is_alien_whitelisted(src, client.prefs.species) && config.usealienwhitelist)
@@ -286,9 +298,15 @@
 			count += (officer.current_positions + warden.current_positions + hos.current_positions)
 			if(job.current_positions > (config.assistantratio * count))
 				if(count >= 5) // if theres more than 5 security on the station just let assistants join regardless, they should be able to handle the tide
-					return 1
-				return 0
-	return 1
+					. = 1
+				else
+					return 0
+	if(job.title == "Assistant" && job.current_positions > 5)
+		var/datum/job/officer = job_master.GetJob("Security Officer")
+		if(officer.current_positions >= officer.total_positions)
+			officer.total_positions++
+	. = 1
+	return
 
 /mob/new_player/proc/FuckUpGenes(var/mob/living/carbon/human/H)
 	// 20% of players have bad genetic mutations.
@@ -302,10 +320,10 @@
 	if (src != usr)
 		return 0
 	if(!ticker || ticker.current_state != GAME_STATE_PLAYING)
-		usr << "\red The round is either not ready, or has already finished..."
+		usr << "<span class='warning'>The round is either not ready, or has already finished...</span>"
 		return 0
 	if(!enter_allowed)
-		usr << "\blue There is an administrative lock on entering the game!"
+		usr << "<span class='notice'>There is an administrative lock on entering the game!</span>"
 		return 0
 	if(!IsJobAvailable(rank))
 		src << alert("[rank] is not available. Please try another.")
@@ -314,11 +332,37 @@
 	job_master.AssignRole(src, rank, 1)
 
 	var/mob/living/carbon/human/character = create_character()	//creates the human and transfers vars and mind
+	if(character.client.prefs.randomslot) character.client.prefs.random_character_sqlite(character, character.ckey)
 	job_master.EquipRank(character, rank, 1)					//equips the human
 	EquipCustomItems(character)
 	character.loc = pick(latejoin)
-	character.lastarea = get_area(loc)
+	//Give them their fucking wheelchair where they spawn instead of inside of the splash screen
+	var/datum/organ/external/left_leg = character.get_organ("l_foot")
+	var/datum/organ/external/right_leg = character.get_organ("r_foot")
+
+	if( (!left_leg || left_leg.status & ORGAN_DESTROYED) && (!right_leg || right_leg.status & ORGAN_DESTROYED) ) //If the character is missing both of his feet
+		var/obj/structure/stool/bed/chair/vehicle/wheelchair/W = new(character.loc)
+		W.buckle_mob(character,character)
 	character.store_position()
+
+	if(bomberman_mode)
+		character.client << sound('sound/bomberman/start.ogg')
+		if(character.wear_suit)
+			var/obj/item/O = character.wear_suit
+			character.u_equip(O,1)
+			O.loc = character.loc
+			//O.dropped(character)
+		if(character.head)
+			var/obj/item/O = character.head
+			character.u_equip(O,1)
+			O.loc = character.loc
+			//O.dropped(character)
+		character.equip_to_slot_or_del(new /obj/item/clothing/head/helmet/space/bomberman(character), slot_head)
+		character.equip_to_slot_or_del(new /obj/item/clothing/suit/space/bomberman(character), slot_wear_suit)
+		character.equip_to_slot_or_del(new /obj/item/weapon/bomberman/(character), slot_s_store)
+		character.update_icons()
+		character << "<span class='notice'>Tip: Use the BBD in your suit's pocket to place bombs.</span>"
+		character << "<span class='notice'>Try to keep your BBD and escape this hell hole alive!</span>"
 
 	ticker.mode.latespawn(character)
 
@@ -335,11 +379,12 @@
 
 /mob/new_player/proc/AnnounceArrival(var/mob/living/carbon/human/character, var/rank)
 	if (ticker.current_state == GAME_STATE_PLAYING)
-		var/obj/item/device/radio/intercom/a = new /obj/item/device/radio/intercom(null)// BS12 EDIT Arrivals Announcement Computer, rather than the AI.
 		if(character.mind.role_alt_title)
 			rank = character.mind.role_alt_title
-		a.autosay("[character.real_name],[rank ? " [rank]," : " visitor," ] has arrived on the station.", "Arrivals Announcement Computer")
-		del(a)
+		//say("[character.real_name],[rank ? " [rank]," : " visitor," ] has arrived on the station.", "Arrivals Announcement Computer")
+		//Broadcast_Message(speaker, vmask, radio, message, name, job, realname, data, compression, zlevels, frequency)
+		Broadcast_Message(announcement_intercom, all_languages[LANGUAGE_SOL_COMMON], null, announcement_intercom, "[character.real_name],[rank ? " [rank]," : " visitor," ] has arrived on the station.", "Arrivals Announcement Computer", "Automated Announcement", "Arrivals Announcement Computer", 0, 0, list(0,1), 1459)
+		//del(a)
 
 /mob/new_player/proc/LateChoices()
 	var/mills = world.time // 1/10 of a second, not real milliseconds but whatever
@@ -379,7 +424,6 @@ Round Duration: [round(hours)]h [round(mins)]m<br>"}
 	close_spawn_windows()
 
 	var/mob/living/carbon/human/new_character = new(loc)
-	new_character.lastarea = get_area(loc)
 
 	var/datum/species/chosen_species
 	if(client.prefs.species)
@@ -387,33 +431,29 @@ Round Duration: [round(hours)]h [round(mins)]m<br>"}
 	if(chosen_species)
 		if(is_alien_whitelisted(src, client.prefs.species) || !config.usealienwhitelist || !(chosen_species.flags & WHITELISTED) || (client.holder.rights & R_ADMIN) )// Have to recheck admin due to no usr at roundstart. Latejoins are fine though.
 			new_character.set_species(client.prefs.species)
-			if(chosen_species.language)
-				new_character.add_language(chosen_species.language)
+			//if(chosen_species.language)
+				//new_character.add_language(chosen_species.language)
 
 	var/datum/language/chosen_language
 	if(client.prefs.language)
-		chosen_language = all_languages[client.prefs.language]
+		chosen_language = all_languages["[client.prefs.language]"]
 	if(chosen_language)
-		if(is_alien_whitelisted(src, client.prefs.language) || !config.usealienwhitelist || !(chosen_language.flags & WHITELISTED))
-			new_character.add_language(client.prefs.language)
+		if(is_alien_whitelisted(src, client.prefs.language) || !config.usealienwhitelist || !(chosen_language.flags & WHITELISTED) )
+			new_character.add_language("[client.prefs.language]")
 	if(ticker.random_players || appearance_isbanned(src)) //disabling ident bans for now
-		new_character.gender = pick(MALE, FEMALE)
+		new_character.setGender(pick(MALE, FEMALE))
 		client.prefs.real_name = random_name(new_character.gender)
 		client.prefs.randomize_appearance_for(new_character)
+		client.prefs.flavor_text = ""
 	else
 		client.prefs.copy_to(new_character)
 
 	src << sound(null, repeat = 0, wait = 0, volume = 85, channel = 1) // MAD JAMS cant last forever yo
 
-	if(mind)
-		mind.active = 0					//we wish to transfer the key manually
-		if(mind.assigned_role == "Clown")				//give them a clownname if they are a clown
-			new_character.real_name = pick(clown_names)	//I hate this being here of all places but unfortunately dna is based on real_name!
-			new_character.rename_self("clown")
-		else if(mind.assigned_role == "Mime")
-			new_character.rename_self("mime")
+	if (mind)
+		mind.active = 0 // we wish to transfer the key manually
 		mind.original = new_character
-		mind.transfer_to(new_character)					//won't transfer key since the mind is not active
+		mind.transfer_to(new_character) // won't transfer key since the mind is not active
 
 	new_character.name = real_name
 	new_character.dna.ready_dna(new_character)
@@ -423,9 +463,11 @@ Round Duration: [round(hours)]h [round(mins)]m<br>"}
 		new_character.dna.SetSEState(GLASSESBLOCK,1,1)
 		new_character.disabilities |= NEARSIGHTED
 
-	if(client.prefs.disabilities & DISABILITY_FLAG_FAT)
+	chosen_species = all_species[client.prefs.species]
+	if( (client.prefs.disabilities & DISABILITY_FLAG_FAT) && (chosen_species.flags & CAN_BE_FAT) )
 		new_character.mutations += M_FAT
-		new_character.overeatduration = 600 // Max overeat
+		new_character.mutations += M_OBESITY
+		new_character.overeatduration = 600
 
 	if(client.prefs.disabilities & DISABILITY_FLAG_EPILEPTIC)
 		new_character.dna.SetSEState(EPILEPSYBLOCK,1,1)

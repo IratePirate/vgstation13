@@ -71,8 +71,7 @@
 	if(src.on)
 		user << "You have to turn off the [src] first!"
 		return
-	if(..())
-		return 1
+	..()
 	if(!anchored)
 		verbs += rotate_verbs
 		if(node)
@@ -114,7 +113,8 @@
 	onclose(user, "freezer")
 
 /obj/machinery/atmospherics/unary/cold_sink/freezer/Topic(href, href_list)
-	if ((usr.contents.Find(src) || ((get_dist(src, usr) <= 1) && istype(src.loc, /turf))) || (istype(usr, /mob/living/silicon/ai)))
+	if(..()) return 1
+	else
 		usr.set_machine(src)
 		if (href_list["start"])
 			if(isobserver(usr) && !canGhostWrite(usr,src,"turned [on?"off":"on"]"))
@@ -234,8 +234,7 @@
 	if(src.on)
 		user << "You have to turn off the [src] first!"
 		return
-	if(..())
-		return 1
+	..()
 	if(!anchored)
 		verbs += rotate_verbs
 		if(node)
@@ -274,7 +273,8 @@
 	onclose(user, "heater")
 
 /obj/machinery/atmospherics/unary/heat_reservoir/heater/Topic(href, href_list)
-	if ((usr.contents.Find(src) || ((get_dist(src, usr) <= 1) && istype(src.loc, /turf))) || (istype(usr, /mob/living/silicon/ai)))
+	if(..()) return 1
+	else
 		usr.set_machine(src)
 		if (href_list["start"])
 			if(isobserver(usr) && !canGhostWrite(usr,src,"turned [on?"off":"on"]"))

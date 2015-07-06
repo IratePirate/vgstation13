@@ -28,7 +28,7 @@ client
 
 
 		if(!usr.client || !usr.client.holder)
-			usr << "\red You need to be an administrator to access this."
+			usr << "<span class='warning'>You need to be an administrator to access this.</span>"
 			return
 
 
@@ -275,7 +275,6 @@ client
 				<option value='?_src_=vars;give_disease=\ref[D]'>Give Disease</option>
 				<option value='?_src_=vars;godmode=\ref[D]'>Toggle Godmode</option>
 				<option value='?_src_=vars;build_mode=\ref[D]'>Toggle Build Mode</option>
-				<option value='?_src_=vars;ninja=\ref[D]'>Make Space Ninja</option>
 				<option value='?_src_=vars;make_skeleton=\ref[D]'>Make 2spooky</option>
 				<option value='?_src_=vars;direct_control=\ref[D]'>Assume Direct Control</option>
 				<option value='?_src_=vars;drop_everything=\ref[D]'>Drop Everything</option>
@@ -560,17 +559,6 @@ client
 		src.give_disease(M)
 		href_list["datumrefresh"] = href_list["give_spell"]
 
-	else if(href_list["ninja"])
-		if(!check_rights(R_SPAWN))	return
-
-		var/mob/M = locate(href_list["ninja"])
-		if(!istype(M))
-			usr << "This can only be used on instances of type /mob"
-			return
-
-		src.cmd_admin_ninjafy(M)
-		href_list["datumrefresh"] = href_list["ninja"]
-
 	else if(href_list["godmode"])
 		if(!check_rights(R_REJUVINATE))	return
 
@@ -666,7 +654,7 @@ client
 					usr << "No objects of this type exist"
 					return
 				log_admin("[key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) ")
-				message_admins("\blue [key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) ")
+				message_admins("<span class='notice'>[key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) </span>")
 			if("Type and subtypes")
 				var/i = 0
 				for(var/obj/Obj in world)
@@ -677,7 +665,7 @@ client
 					usr << "No objects of this type exist"
 					return
 				log_admin("[key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) ")
-				message_admins("\blue [key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) ")
+				message_admins("<span class='notice'>[key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) </span>")
 
 	else if(href_list["explode"])
 		if(!check_rights(R_DEBUG|R_FUN))	return
@@ -846,6 +834,9 @@ client
 
 		var/new_language = input("Please choose a language to add.","Language",null) as null|anything in all_languages
 
+		if(!new_language)
+			return
+
 		if(!H)
 			usr << "Mob doesn't exist anymore"
 			return
@@ -868,6 +859,9 @@ client
 			return
 
 		var/datum/language/rem_language = input("Please choose a language to remove.","Language",null) as null|anything in H.languages
+
+		if(!rem_language)
+			return
 
 		if(!H)
 			usr << "Mob doesn't exist anymore"
@@ -914,7 +908,7 @@ client
 
 		if(amount != 0)
 			log_admin("[key_name(usr)] dealt [amount] amount of [Text] damage to [L] ")
-			message_admins("\blue [key_name(usr)] dealt [amount] amount of [Text] damage to [L] ")
+			message_admins("<span class='notice'>[key_name(usr)] dealt [amount] amount of [Text] damage to [L] </span>")
 			href_list["datumrefresh"] = href_list["mobToDamage"]
 
 	if(href_list["datumrefresh"])

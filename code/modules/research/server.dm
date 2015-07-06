@@ -57,7 +57,7 @@
 		if(0 to T0C)
 			health = min(100, health + 1)
 		if(T0C to (T20C + 20))
-			health = between(0, health, 100)
+			health = Clamp(health, 0, 100)
 		if((T20C + 20) to INFINITY)
 			health = max(0, health - 1)
 	if(health <= 0)
@@ -75,11 +75,6 @@
 	else
 		produce_heat(heat_gen)
 		delay = initial(delay)
-
-/obj/machinery/r_n_d/server/meteorhit(var/obj/O as obj)
-	griefProtection()
-	..()
-
 
 /obj/machinery/r_n_d/server/emp_act(severity)
 	griefProtection()
@@ -131,13 +126,6 @@
 		return
 	if (shocked)
 		shock(user,50)
-	if(ishuman(user))
-		if(istype(user:gloves, /obj/item/clothing/gloves/space_ninja)&&user:gloves:candrain&&!user:gloves:draining)
-			call(/obj/item/clothing/gloves/space_ninja/proc/drain)("RESEARCH",src,user:wear_suit)
-	return
-
-
-
 
 /obj/machinery/r_n_d/server/centcom
 	name = "Centcom Central R&D Database"
@@ -179,7 +167,7 @@
 	var/list/consoles = list()
 	var/badmin = 0
 
-	l_color = "#CD00CD"
+	light_color = LIGHT_COLOR_PINK
 
 /obj/machinery/computer/rdservercontrol/Topic(href, href_list)
 	if(..())
@@ -188,7 +176,7 @@
 	add_fingerprint(usr)
 	usr.set_machine(src)
 	if(!src.allowed(usr) && !emagged)
-		usr << "\red You do not have the required access level"
+		usr << "<span class='warning'>You do not have the required access level</span>"
 		return
 
 	if(href_list["main"])
@@ -340,9 +328,9 @@
 /obj/machinery/computer/rdservercontrol/attackby(var/obj/item/weapon/D as obj, var/mob/user as mob)
 	if(istype(D, /obj/item/weapon/screwdriver))
 		playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 50, 1)
-		if(do_after(user, 20))
+		if(do_after(user, src, 20))
 			if (src.stat & BROKEN)
-				user << "\blue The broken glass falls out."
+				user << "<span class='notice'>The broken glass falls out.</span>"
 				var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
 				getFromPool(/obj/item/weapon/shard, loc)
 				var/obj/item/weapon/circuitboard/rdservercontrol/M = new /obj/item/weapon/circuitboard/rdservercontrol( A )
@@ -354,7 +342,7 @@
 				A.anchored = 1
 				del(src)
 			else
-				user << "\blue You disconnect the monitor."
+				user << "<span class='notice'>You disconnect the monitor.</span>"
 				var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
 				var/obj/item/weapon/circuitboard/rdservercontrol/M = new /obj/item/weapon/circuitboard/rdservercontrol( A )
 				for (var/obj/C in src)
@@ -367,7 +355,7 @@
 	else if(istype(D, /obj/item/weapon/card/emag) && !emagged)
 		playsound(get_turf(src), 'sound/effects/sparks4.ogg', 75, 1)
 		emagged = 1
-		user << "\blue You you disable the security protocols"
+		user << "<span class='notice'>You you disable the security protocols</span>"
 	src.updateUsrDialog()
 	return
 
@@ -375,7 +363,7 @@
 /obj/machinery/r_n_d/server/robotics
 	name = "Robotics R&D Server"
 	id_with_upload_string = "1;2"
-	id_with_download_string = "1;2;3;4"
+	id_with_download_string = "1;2;3;4;5"
 	server_id = 2
 
 

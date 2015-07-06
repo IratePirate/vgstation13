@@ -1,3 +1,8 @@
+//Content of the Round End Information window
+var/round_end_info = ""
+
+//List of ckeys that have de-adminned themselves during this round
+var/global/list/deadmins = list()
 
 // List of types and how many instances of each type there are.
 var/global/list/type_instances[0]
@@ -5,28 +10,15 @@ var/global/list/type_instances[0]
 /var/global/datum/map/active/map = new() //Current loaded map
 //Defined in its .dm, see maps/_map.dm for more info.
 
-//FIXME: These are lists of things that get called every tick.
-// All of these badly need optimizing, half of them don't
-// actually need to be called every tick, many of them busy-wait
-// (come on people we're not writing assembly), and many should 
-// be using tickers instead (eg narsie, singulo). Major target
-// for cutting down on lag and boosting overall performance.
-var/global/list/machines = list()
-var/global/list/processing_objects = list()
-var/global/list/active_diseases = list()
-var/global/list/events = list()
-
 var/global/obj/effect/datacore/data_core = null
 var/global/obj/effect/overlay/plmaster = null
 var/global/obj/effect/overlay/slmaster = null
 
 var/global/list/account_DBs = list()
 
-var/global/defer_powernet_rebuild = 0		// true if net rebuild will be called manually after an event
-
 // Used only by space turfs. TODO: Remove.
 // The comment below is no longer accurate.
-var/global/list/global_map = null 
+var/global/list/global_map = null
 
 	//list/global_map = list(list(1,5),list(4,3))//an array of map Z levels.
 	//Resulting sector map looks like
@@ -60,7 +52,7 @@ var/GLASSESBLOCK = 0
 var/EPILEPSYBLOCK = 0
 var/TWITCHBLOCK = 0
 var/NERVOUSBLOCK = 0
-var/MONKEYBLOCK = 50 // Monkey block will always be the DNA_SE_LENGTH
+var/MONKEYBLOCK = 54 // Monkey block will always be the DNA_SE_LENGTH
 
 var/BLOCKADD = 0
 var/DIFFMUT = 0
@@ -98,7 +90,8 @@ var/ELVISBLOCK = 0
 // Powers
 var/SOBERBLOCK = 0
 var/PSYRESISTBLOCK = 0
-var/SHADOWBLOCK = 0
+//var/SHADOWBLOCK = 0
+var/FARSIGHTBLOCK = 0
 var/CHAMELEONBLOCK = 0
 var/CRYOBLOCK = 0
 var/EATBLOCK = 0
@@ -135,7 +128,7 @@ var/diaryofmeanpeople = null
 var/admin_diary = null
 var/href_logfile = null
 var/station_name = null
-var/game_version = "adsfasdfasdf"
+var/game_version = "veegee"
 var/changelog_hash = ""
 var/game_year = (text2num(time2text(world.realtime, "YYYY")) + 544)
 
@@ -168,8 +161,6 @@ var/list/shuttles = list(  )
 var/list/reg_dna = list(  )
 //	list/traitobj = list(  )
 
-var/mouse_respawn_time = 1 //Amount of time that must pass between a player dying as a mouse and repawning as a mouse. In minutes.
-
 var/CELLRATE = 0.002  // multiplier for watts per tick <> cell storage (eg: .002 means if there is a load of 1000 watts, 20 units will be taken from a cell per second)
 var/CHARGELEVEL = 0.001 // Cap for how fast cells charge, as a percentage-per-tick (.001 means cellcharge is capped to 1% per second)
 
@@ -177,8 +168,8 @@ var/CHARGELEVEL = 0.001 // Cap for how fast cells charge, as a percentage-per-ti
 // Used for telescience.  Only apply to GPSes and other things that display coordinates to players.
 // The idea is that coordinates given will be entirely different from those displayed on the map in DreamMaker,
 //  while still making it very simple to lock onto someone who is drifting in space.
-var/WORLD_X_OFFSET=0
-var/WORLD_Y_OFFSET=0
+var/list/WORLD_X_OFFSET = list()
+var/list/WORLD_Y_OFFSET = list()
 
 var/shuttle_z = 2	//default
 var/airtunnel_start = 68 // default
@@ -216,17 +207,18 @@ var/list/ninjastart = list()
 var/list/cardinal = list( NORTH, SOUTH, EAST, WEST )
 var/list/alldirs = list(NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST)
 
+
+var/global/universal_cult_chat = 0 //if set to 1, even human cultists can use cultchat
+
 var/datum/station_state/start_state = null
 var/datum/configuration/config = null
-var/datum/sun/sun = null
 
 var/list/combatlog = list()
 var/list/IClog = list()
 var/list/OOClog = list()
 var/list/adminlog = list()
 
-
-var/list/powernets = list()
+var/suspend_alert = 0
 
 var/Debug = 0	// global debug switch
 var/Debug2 = 0
@@ -347,5 +339,59 @@ var/list/score=list(
 	"dmgestname"    = null, // who had the most damage on the shuttle (but was still alive)
 	"dmgestjob"     = null,
 	"dmgestdamage"  = 0,
-	"dmgestkey"     = null
+	"dmgestkey"     = null,
+
+	"arenafights"   = 0,
+	"arenabest"		= null,
 )
+
+// Mostly used for ban systems.
+// Initialized on world/New()
+var/global/event/on_login
+var/global/event/on_ban
+var/global/event/on_unban
+
+// List of /plugins
+var/global/list/plugins = list()
+
+// Space get this to return for things i guess?
+var/global/datum/gas_mixture/space_gas = new
+
+//Announcement intercom
+var/global/obj/item/device/radio/intercom/universe/announcement_intercom = new
+
+//used by jump-to-area etc. Updated by area/updateName()
+var/list/sortedAreas = list()
+
+var/global/bomberman_mode = 0
+var/global/bomberman_hurt = 0
+var/global/bomberman_destroy = 0
+
+var/global/list/volunteer_gladiators = list()
+var/global/list/ready_gladiators = list()
+var/global/list/never_gladiators = list()
+
+var/global/list/achievements = list()
+
+//icons that appear on the Round End pop-up browser
+var/global/list/end_icons = list()
+
+var/global/list/arena_leaderboard = list()
+var/arena_rounds = 0
+var/arena_top_score = 0
+
+var/endgame_info_logged = 0
+
+var/explosion_newmethod = 1	// 1 = explosions take walls and obstacles into account; 0 = explosions pass through walls and obstacles without any impediments;
+
+//PDA games vars
+//Snake II leaderboard
+var/global/list/snake_station_highscores = list()
+var/global/list/snake_best_players = list()
+
+//Minesweeper leaderboard
+var/global/list/minesweeper_station_highscores = list()
+var/global/list/minesweeper_best_players = list()
+
+var/nanocoins_rates = 1
+var/nanocoins_lastchange = 0

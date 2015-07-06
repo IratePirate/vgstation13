@@ -4,20 +4,22 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "red"
 	item_state = "toolbox_red"
-	flags = FPRINT | TABLEPASS| CONDUCT
-	force = 5.0
+	flags = FPRINT
+	siemens_coefficient = 1
+	force = 8.0
+	hitsound = 'sound/weapons/toolbox.ogg'
 	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 7
-	m_amt = 5000
+	starting_materials = list(MAT_IRON = 5000)
 	w_type = RECYK_METAL
 	w_class = 4.0
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "combat=1"
-	attack_verb = list("robusted")
+	attack_verb = list("robusted", "battered", "staved in")
 
 	suicide_act(mob/user)
-		viewers(user) << "\red <b>[user] is [pick("stoving","robusting")] \his head in with the [src.name]! It looks like \he's  trying to commit suicide!</b>"
+		viewers(user) << "<span class='danger'>[user] is [pick("staving","robusting")] \his head in with the [src.name]! It looks like \he's  trying to commit suicide!</span>"
 		return (BRUTELOSS)
 
 
@@ -69,19 +71,19 @@
 		new /obj/item/weapon/wirecutters(src)
 		new /obj/item/device/t_scanner(src)
 		new /obj/item/weapon/crowbar(src)
-		new /obj/item/weapon/cable_coil(src,30,color)
-		new /obj/item/weapon/cable_coil(src,30,color)
+		new /obj/item/stack/cable_coil(src,30,color)
+		new /obj/item/stack/cable_coil(src,30,color)
 		if(prob(5))
 			new /obj/item/clothing/gloves/yellow(src)
 		else
-			new /obj/item/weapon/cable_coil(src,30,color)
+			new /obj/item/stack/cable_coil(src,30,color)
 
 /obj/item/weapon/storage/toolbox/syndicate
 	name = "suspicious looking toolbox"
 	icon_state = "syndicate"
 	item_state = "toolbox_syndi"
 	origin_tech = "combat=1;syndicate=1"
-	force = 7.0
+	force = 10.0
 
 	New()
 		..()
@@ -90,6 +92,6 @@
 		new /obj/item/weapon/wrench(src)
 		new /obj/item/weapon/weldingtool(src)
 		new /obj/item/weapon/crowbar(src)
-		new /obj/item/weapon/cable_coil(src,30,color)
+		new /obj/item/stack/cable_coil(src,30,color)
 		new /obj/item/weapon/wirecutters(src)
 		new /obj/item/device/multitool(src)

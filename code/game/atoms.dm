@@ -1,3 +1,6 @@
+var/global/list/del_profiling = list()
+var/global/list/gdel_profiling = list()
+var/global/list/ghdel_profiling = list()
 /atom
 	layer = 2
 
@@ -16,9 +19,14 @@
 	var/pass_flags = 0
 	var/throwpass = 0
 	var/germ_level = 0 // The higher the germ level, the more germ on the atom.
+	var/pressure_resistance = ONE_ATMOSPHERE
 
 	///Chemistry.
 	var/datum/reagents/reagents = null
+
+	//Material datums - the fun way of doing things in a laggy manner
+	var/datum/materials/materials = null
+	var/list/starting_materials //starting set of mats - used in New(), you can set this to an empty list to have the datum be generated but not filled
 
 	//var/chem_is_open_container = 0
 	// replaced by OPENCONTAINER flags and atom/proc/is_open_container()
@@ -27,12 +35,26 @@
 	//Detective Work, used for the duplicate data points kept in the scanners
 	var/list/original_atom
 
-	var/list/beams=list()
+	var/list/beams
 
 	// EVENTS
-	var/event/on_destroyed = new() // On Destroy()
+	/////////////////////////////
+	// On Destroy()
+	var/event/on_destroyed
+
+	// When this object moves. (args: loc)
+	var/event/on_moved
+
+	var/labeled //Stupid and ugly way to do it, but the alternative would probably require rewriting everywhere a name is read.
+	var/min_harm_label = 0 //Minimum langth of harm-label to be effective. 0 means it cannot be harm-labeled. If any label should work, set this to 1 or 2.
+	var/harm_labeled = 0 //Length of current harm-label. 0 if it doesn't have one.
+	var/list/harm_label_examine //Messages that appears when examining the item if it is harm-labeled. Message in position 1 is if it is harm-labeled but the label is too short to work, while message in position 2 is if the harm-label works.
+	//var/harm_label_icon_state //Makes sense to have this, but I can't sprite. May be added later.
+	var/list/last_beamchecks // timings for beam checks.
 
 /atom/proc/beam_connect(var/obj/effect/beam/B)
+	if(!last_beamchecks) last_beamchecks = list()
+	if(!beams) beams = list()
 	if(!(B in beams))
 		beams.Add(B)
 	return 1
@@ -40,12 +62,18 @@
 /atom/proc/beam_disconnect(var/obj/effect/beam/B)
 	beams.Remove(B)
 
-/atom/proc/throw_impact(atom/hit_atom, var/speed)
+/atom/proc/apply_beam_damage(var/obj/effect/beam/B)
+	return 1
+
+/atom/proc/handle_beams()
+	return 1
+
+/atom/proc/throw_impact(atom/hit_atom, var/speed, user)
 	if(istype(hit_atom,/mob/living))
 		var/mob/living/M = hit_atom
 		M.hitby(src)
 
-		log_attack("<font color='red'>[hit_atom] ([M.ckey]) was hit by [src] thrown by ([src.fingerprintslast])</font>")
+		log_attack("<font color='red'>[hit_atom] ([M ? M.ckey : "what"]) was hit by [src] thrown by ([src.fingerprintslast])</font>")
 
 	else if(isobj(hit_atom))
 		var/obj/O = hit_atom
@@ -77,21 +105,41 @@
 		type_instances[type] = 0
 		WARNING("Type [type] does not inherit /atom/New().  Please ensure ..() is called, or that the type calls AddToProfiler().")
 
-/atom/Destroy()
-	// Only call when we're actually deleted.
+/atom/Del()
 	DeleteFromProfiler()
+	..()
 
+/atom/Destroy()
 	if(reagents)
 		reagents.Destroy()
 		reagents = null
 
+	if(materials)
+		returnToDPool(materials)
+
 	// Idea by ChuckTheSheep to make the object even more unreferencable.
 	invisibility = 101
-
 	INVOKE_EVENT(on_destroyed, list()) // No args.
+	if(on_moved) on_moved.holder = null
+	if(on_destroyed) on_destroyed.holder = null
+	if(istype(beams, /list) && beams.len) beams.len = 0
+	/*if(istype(beams) && beams.len)
+		for(var/obj/effect/beam/B in beams)
+			if(B && B.target == src)
+				B.target = null
+			if(B.master && B.master.target == src)
+				B.master.target = null
+		beams.len = 0
+	*/
 
 /atom/New()
+	on_destroyed = new("owner"=src)
+	on_moved = new("owner"=src)
 	. = ..()
+	if(starting_materials)
+		materials = getFromDPool(/datum/materials, src)
+		for(var/matID in starting_materials)
+			materials.addAmount(matID, starting_materials[matID])
 	AddToProfiler()
 
 /atom/proc/assume_air(datum/gas_mixture/giver)
@@ -132,17 +180,13 @@
 		return flags & INSERT_CONTAINER
 */
 
-
-/atom/proc/meteorhit(obj/meteor as obj)
-	return
-
 /atom/proc/allow_drop()
 	return 1
 
 /atom/proc/CheckExit()
 	return 1
 
-/atom/proc/HasProximity(atom/movable/AM as mob|obj)
+/atom/proc/HasProximity(atom/movable/AM as mob|obj) //IF you want to use this, the atom must have the PROXMOVE flag, and the moving atom must also have the PROXMOVE flag currently to help with lag
 	return
 
 /atom/proc/emp_act(var/severity)
@@ -259,7 +303,7 @@ its easier to just keep the beam vertical.
 			X.pixel_y=Pixel_y
 			var/turf/TT = get_turf(X.loc)
 			if(TT.density)
-				del(X)
+				qdel(X)
 				break
 			for(var/obj/O in TT)
 				if(!O.CanPass(light))
@@ -269,30 +313,46 @@ its easier to just keep the beam vertical.
 					broken = 1
 					break
 			if(broken)
-				del(X)
+				qdel(X)
 				break
 		sleep(3)	//Changing this to a lower value will cause the beam to follow more smoothly with movement, but it will also be more laggy.
 					//I've found that 3 ticks provided a nice balance for my use.
-	for(var/obj/effect/overlay/beam/O in orange(10,src)) if(O.BeamSource==src) del O
+	for(var/obj/effect/overlay/beam/O in orange(10,src)) if(O.BeamSource==src) qdel(O)
 
-
+//Woo hoo. Overtime
 //All atoms
-/atom/verb/examine()
-	set name = "Examine"
-	set category = "IC"
-	set src in oview(12)	//make it work from farther away
+/atom/proc/examine(mob/user, var/size = "")
+	//This reformat names to get a/an properly working on item descriptions when they are bloody
+	var/f_name = "\a [src]."
+	if(src.blood_DNA)
+		if(gender == PLURAL)
+			f_name = "some "
+		else
+			f_name = "a "
+		f_name += "<span class='danger'>blood-stained</span> [name]!"
 
-	if (!( usr ))
-		return
+	user << "\icon[src] That's [f_name]" + size
+	if(desc)
+		user << desc
 
-	usr.face_atom(src)
-	usr << "That's \a [src]." //changed to "That's" from "This is" because "This is some metal sheets" sounds dumb compared to "That's some metal sheets" ~Carn
-	usr << desc
-
+	if(reagents && is_open_container() && !ismob(src)) //is_open_container() isn't really the right proc for this, but w/e
+		if(get_dist(user,src) > 3)
+			user << "<span class='info'>You can't make out the contents.</span>"
+		else
+			user << "It contains:"
+			if(reagents.reagent_list.len)
+				for(var/datum/reagent/R in reagents.reagent_list)
+					user << "<span class='info'>[R.volume] units of [R.name]</span>"
+			else
+				user << "<span class='info'>Nothing.</span>"
 	if(on_fire)
-		usr << "\red OH SHIT! IT'S ON FIRE!"
-	// *****RM
-	//usr << "[name]: Dn:[density] dir:[dir] cont:[contents] icon:[icon] is:[icon_state] loc:[loc]"
+		user << "<span class='danger'>OH SHIT! IT'S ON FIRE!</span>"
+
+	if(min_harm_label && harm_labeled)
+		if(harm_labeled < min_harm_label)
+			user << harm_label_examine[1]
+		else
+			user << harm_label_examine[2]
 	return
 
 // /atom/proc/MouseDrop_T()
@@ -309,6 +369,9 @@ its easier to just keep the beam vertical.
 // child is set to the child object that exploded, if available.
 /atom/proc/ex_act(var/severity, var/child=null)
 	return
+
+/atom/proc/mech_drill_act(var/severity, var/child=null)
+	return ex_act(severity, child)
 
 /atom/proc/blob_act()
 	return
@@ -379,6 +442,15 @@ its easier to just keep the beam vertical.
 	return
 */
 
+/atom/proc/singularity_act()
+	return
+
+/atom/proc/singularity_pull()
+	return
+
+/atom/proc/emag_act()
+	return
+
 /atom/proc/hitby(atom/movable/AM as mob|obj)
 	return
 
@@ -387,7 +459,7 @@ its easier to just keep the beam vertical.
 	if (!(istype(W, /obj/item/weapon/grab) ) && !(istype(W, /obj/item/weapon/plastique)) && !(istype(W, /obj/item/weapon/reagent_containers/spray)) && !(istype(W, /obj/item/weapon/packageWrap)) && !istype(W, /obj/item/device/detective_scanner))
 		for(var/mob/O in viewers(src, null))
 			if ((O.client && !( O.blinded )))
-				O << "\red <B>[src] has been hit by [user] with [W]</B>"
+				O << "<span class='danger'>[src] has been hit by [user] with [W]</span>"
 	return
 */
 /atom/proc/add_hiddenprint(mob/living/M as mob)
@@ -544,7 +616,8 @@ its easier to just keep the beam vertical.
 /atom/proc/clean_blood()
 	src.germ_level = 0
 	if(istype(blood_DNA, /list))
-		del(blood_DNA)
+		//del(blood_DNA)
+		blood_DNA.len = 0
 		return 1
 
 
@@ -566,3 +639,29 @@ its easier to just keep the beam vertical.
 
 /atom/proc/checkpass(passflag)
 	return pass_flags&passflag
+
+/datum/proc/setGender(gend = FEMALE)
+	if(!("gender" in vars))
+		CRASH("Oh shit you stupid nigger the [src] doesn't have a gender variable.")
+	if(ishuman(src))
+		ASSERT(gend != PLURAL && gend != NEUTER)
+	src:gender = gend
+
+/atom/setGender(gend = FEMALE)
+	gender = gend
+
+/mob/living/carbon/human/setGender(gend = FEMALE)
+	if(gend == PLURAL || gend == NEUTER || (gend != FEMALE && gend != MALE))
+		CRASH("SOMEBODY SET A BAD GENDER ON [src] [gend]")
+	var/old_gender = src.gender
+	src.gender = gend
+	testing("Set [src]'s gender to [gend], old gender [old_gender] previous gender [prev_gender]")
+
+/atom/proc/mop_act(obj/item/weapon/mop/M, mob/user)
+	return 0
+
+/atom/proc/change_area(var/area/oldarea, var/area/newarea)
+	if(istype(oldarea))
+		oldarea = "[oldarea.name]"
+	if(istype(newarea))
+		newarea = "[newarea.name]"

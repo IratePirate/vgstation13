@@ -80,6 +80,7 @@ var/global/list/paint_variants = list(
 
 		// Atmos lettering
 		new /datum/paint_info/decal(DIR_ORTHO, "oxygen"),
+		new /datum/paint_info/decal(DIR_ORTHO, "nitrogen"),
 		new /datum/paint_info/decal(DIR_ORTHO, "carbon_dioxide"),
 		new /datum/paint_info/decal(DIR_ORTHO, "nitrous_oxide"),
 		new /datum/paint_info/decal(DIR_ORTHO, "air"),
@@ -245,38 +246,38 @@ var/global/list/paint_variants = list(
 	"Chapel" = list(new /datum/paint_info(DIR_ALL,"chapel")),
 
 	"SS13 logo" = list(new /datum/paint_info(DIR_ONE,"L1"),
-	new /datum/paint_info(DIR_ONE,"L2"),
 	new /datum/paint_info(DIR_ONE,"L3"),
-	new /datum/paint_info(DIR_ONE,"L4"),
 	new /datum/paint_info(DIR_ONE,"L5"),
-	new /datum/paint_info(DIR_ONE,"L6"),
 	new /datum/paint_info(DIR_ONE,"L7"),
-	new /datum/paint_info(DIR_ONE,"L8"),
 	new /datum/paint_info(DIR_ONE,"L9"),
-	new /datum/paint_info(DIR_ONE,"L10"),
 	new /datum/paint_info(DIR_ONE,"L11"),
-	new /datum/paint_info(DIR_ONE,"L12"),
 	new /datum/paint_info(DIR_ONE,"L13"),
-	new /datum/paint_info(DIR_ONE,"L14"),
 	new /datum/paint_info(DIR_ONE,"L15"),
+	new /datum/paint_info(DIR_ONE,"L2"),
+	new /datum/paint_info(DIR_ONE,"L4"),
+	new /datum/paint_info(DIR_ONE,"L6"),
+	new /datum/paint_info(DIR_ONE,"L8"),
+	new /datum/paint_info(DIR_ONE,"L10"),
+	new /datum/paint_info(DIR_ONE,"L12"),
+	new /datum/paint_info(DIR_ONE,"L14"),
 	new /datum/paint_info(DIR_ONE,"L16")),
 
-	"Derelict logo" = list(new /datum/paint_info(DIR_ONE,"derelict1"),
-	new /datum/paint_info(DIR_ONE,"derelict2"),
-	new /datum/paint_info(DIR_ONE,"derelict3"),
-	new /datum/paint_info(DIR_ONE,"derelict4"),
-	new /datum/paint_info(DIR_ONE,"derelict5"),
-	new /datum/paint_info(DIR_ONE,"derelict6"),
-	new /datum/paint_info(DIR_ONE,"derelict7"),
-	new /datum/paint_info(DIR_ONE,"derelict8"),
-	new /datum/paint_info(DIR_ONE,"derelict9"),
+	"Derelict logo" = list(new /datum/paint_info(DIR_ONE,"derelict9"),
 	new /datum/paint_info(DIR_ONE,"derelict10"),
 	new /datum/paint_info(DIR_ONE,"derelict11"),
 	new /datum/paint_info(DIR_ONE,"derelict12"),
 	new /datum/paint_info(DIR_ONE,"derelict13"),
 	new /datum/paint_info(DIR_ONE,"derelict14"),
 	new /datum/paint_info(DIR_ONE,"derelict15"),
-	new /datum/paint_info(DIR_ONE,"derelict16")),
+	new /datum/paint_info(DIR_ONE,"derelict16"),
+	new /datum/paint_info(DIR_ONE,"derelict1"),
+	new /datum/paint_info(DIR_ONE,"derelict2"),
+	new /datum/paint_info(DIR_ONE,"derelict3"),
+	new /datum/paint_info(DIR_ONE,"derelict4"),
+	new /datum/paint_info(DIR_ONE,"derelict5"),
+	new /datum/paint_info(DIR_ONE,"derelict6"),
+	new /datum/paint_info(DIR_ONE,"derelict7"),
+	new /datum/paint_info(DIR_ONE,"derelict8")),
 
 	"Other" = list(new /datum/paint_info(DIR_ONE,"dark"),
 	new /datum/paint_info(DIR_ONE,"bar"),
@@ -300,14 +301,14 @@ var/global/list/paint_variants = list(
 	opacity = 0
 	density = 0
 	anchored = 0.0
-	flags = FPRINT | TABLEPASS| CONDUCT
+	flags = FPRINT
+	siemens_coefficient = 1
 	force = 10.0
 	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = 3.0
-	m_amt = 15000
-	g_amt = 7500
+	starting_materials = list(MAT_IRON = 15000, MAT_GLASS = 7500)
 	w_type = RECYK_ELECTRONIC
 	melt_temperature = MELTPOINT_STEEL
 	origin_tech = "engineering=2;materials=1"
@@ -321,6 +322,7 @@ var/global/list/paint_variants = list(
 
 /obj/item/weapon/tile_painter/Destroy() //do I even have to do that
 	selected = null
+	..() // FUCKING DUMB
 
 /obj/item/weapon/tile_painter/attack_self(mob/user as mob)
 	show_menu(user)
@@ -401,6 +403,8 @@ var/global/list/paint_variants = list(
 		data += "<p><b>[category]</b></p>"
 		data += "<p>"
 		for(var/i = 1; i <= tiles.len; i++)
+			if((category == "SS13 logo" || category == "Derelict logo") && i == 9)
+				data += "<br>"
 			var/datum/paint_info/I = tiles[i]
 			data += populate_selection(user, I)
 
@@ -447,8 +451,7 @@ var/global/list/paint_variants = list(
 		return 0
 	if(istype(A,/area/shuttle)||istype(A,/turf/space/transit))
 		return 0
-
-	if(!(istype(A, /turf/simulated/floor)) || istype(A, /turf/simulated/floor/plating/airless/catwalk)) //fuck catwalks
+	if(!(istype(A, /turf/simulated/floor)))
 		return 0
 
 	var/turf/simulated/floor/test = get_turf(A) //it should be the simulated floor type
@@ -470,13 +473,12 @@ var/global/list/paint_variants = list(
 
 	user << "Painting floor..."
 	playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
-	if(do_after(user, 20))
+	if(do_after(user,A, 20))
 		activate()
 		var/turf/simulated/floor/T = get_turf(A)
 		selected.apply(T,pname,pdesc)
 		return 1
 	return 0
-
 
 /obj/item/weapon/tile_painter/proc/activate()
 	playsound(get_turf(src), 'sound/effects/extinguish.ogg', 50, 1)	//pssshtt

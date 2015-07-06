@@ -79,11 +79,9 @@
 			message_admins("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range]) in area [epicenter.loc.name] ([epicenter.x],[epicenter.y],[epicenter.z]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[epicenter.x];Y=[epicenter.y];Z=[epicenter.z]'>JMP</A>)")
 			log_game("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range]) in area [epicenter.loc.name] ")
 
-		var/lighting_controller_was_processing = lighting_controller.processing	//Pause the lighting updates for a bit
-		lighting_controller.processing = 0
-		var/powernet_rebuild_was_deferred_already = defer_powernet_rebuild
-		if(defer_powernet_rebuild != 2)
-			defer_powernet_rebuild = 1
+		// Pause the lighting updates for a bit.
+		var/datum/controller/process/lighting = processScheduler.getProcess("lighting")
+		lighting.disable()
 
 		if(heavy_impact_range > 1)
 			var/datum/effect/system/explosion/E = new/datum/effect/system/explosion()
@@ -96,6 +94,17 @@
 
 		for (var/turf/T in trange(max_range, epicenter))
 			var/dist = cheap_pythag(T.x - x0, T.y - y0)
+
+			if(explosion_newmethod)	//realistic explosions that take obstacles into account
+				var/turf/Trajectory = T
+				while(Trajectory != epicenter)
+					Trajectory = get_step_towards(Trajectory,epicenter)
+					if(Trajectory.density && Trajectory.explosion_block)
+						dist += Trajectory.explosion_block
+
+					for (var/obj/machinery/door/D in Trajectory.contents)
+						if(D.density && D.explosion_block)
+							dist += D.explosion_block
 
 			if (dist < devastation_range)
 				dist = 1
@@ -118,15 +127,12 @@
 		//Machines which report explosions.
 		if(!squelch)
 			for(var/obj/machinery/computer/bhangmeter/bhangmeter in doppler_arrays)
-				if(bhangmeter)
+				if(bhangmeter && !bhangmeter.stat)
 					bhangmeter.sense_explosion(x0,y0,z0,devastation_range,heavy_impact_range,light_impact_range,took)
 
 		sleep(8)
 
-		if(!lighting_controller.processing)	lighting_controller.processing = lighting_controller_was_processing
-		if(!powernet_rebuild_was_deferred_already)
-			if(defer_powernet_rebuild != 2)
-				defer_powernet_rebuild = 0
+		lighting.enable()
 
 	return 1
 

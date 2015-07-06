@@ -1,13 +1,12 @@
 /mob/living/captive_brain
 	name = "host brain"
 	real_name = "host brain"
-	universal_understand=1
 
 /mob/living/captive_brain/say(var/message)
 
 	if (src.client)
 		if(client.prefs.muted & MUTE_IC)
-			src << "\red You cannot speak in IC (muted)."
+			src << "<span class='warning'>You cannot speak in IC (muted).</span>"
 			return
 		if (src.client.handle_spam_prevention(message,MUTE_IC))
 			return
@@ -17,7 +16,8 @@
 		src << "You whisper silently, \"[message]\""
 		B.host << "The captive mind of [src] whispers, \"[message]\""
 
-		log_say("THOUGHTSPEECH: [key_name(src)] -> [key_name(B)]: [message]")
+		var/turf/T = get_turf(src)
+		log_say("[key_name(src)] (@[T.x],[T.y],[T.z]) -> [key_name(B)] Host->Borer Speech: [message]")
 
 		for(var/mob/M in player_list)
 			if(istype(M, /mob/new_player))
@@ -81,7 +81,7 @@ var/global/borer_chem_types = typesof(/datum/borer_chem) - /datum/borer_chem
 	speed = 5
 	small = 1
 	density = 0
-	a_intent = "hurt"
+	a_intent = I_HURT
 	stop_automated_movement = 1
 	status_flags = CANPUSH
 	attacktext = "nips"
@@ -89,7 +89,6 @@ var/global/borer_chem_types = typesof(/datum/borer_chem) - /datum/borer_chem
 	wander = 0
 	pass_flags = PASSTABLE
 
-	universal_understand=1
 
 	var/chemicals = 10                      // Chemicals used for reproduction and spitting neurotoxin.
 	var/mob/living/carbon/human/host        // Human host for the brain worm.
@@ -202,7 +201,7 @@ var/global/borer_chem_types = typesof(/datum/borer_chem) - /datum/borer_chem
 
 	if (src.client)
 		if(client.prefs.muted & MUTE_IC)
-			src << "\red You cannot speak in IC (muted)."
+			src << "<span class='warning'>You cannot speak in IC (muted).</span>"
 			return
 		if (src.client.handle_spam_prevention(message,MUTE_IC))
 			return
@@ -219,8 +218,8 @@ var/global/borer_chem_types = typesof(/datum/borer_chem) - /datum/borer_chem
 
 	src << "You drop words into [host]'s mind: \"[message]\""
 	host << "Your own thoughts speak: \"[message]\""
-
-	log_say("THOUGHTSPEECH: [truename] ([key_name(src)]) -> [host] ([key_name(host)]): [message]")
+	var/turf/T = get_turf(src)
+	log_say("[truename] [key_name(src)] (@[T.x],[T.y],[T.z]) -> [host]([key_name(host)]) Borer->Host Speech: [message]")
 
 	for(var/mob/M in player_list)
 		if(istype(M, /mob/new_player))
@@ -240,15 +239,13 @@ var/global/borer_chem_types = typesof(/datum/borer_chem) - /datum/borer_chem
 
 /mob/living/simple_animal/borer/Stat()
 	..()
-	statpanel("Status")
+	if(statpanel("Status"))
+		if(emergency_shuttle)
+			if(emergency_shuttle.online && emergency_shuttle.location < 2)
+				var/timeleft = emergency_shuttle.timeleft()
+				if (timeleft)
+					stat(null, "ETA-[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]")
 
-	if(emergency_shuttle)
-		if(emergency_shuttle.online && emergency_shuttle.location < 2)
-			var/timeleft = emergency_shuttle.timeleft()
-			if (timeleft)
-				stat(null, "ETA-[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]")
-
-	if (client.statpanel == "Status")
 		stat("Chemicals", chemicals)
 
 // VERBS!
@@ -258,14 +255,15 @@ var/global/borer_chem_types = typesof(/datum/borer_chem) - /datum/borer_chem
 		return
 
 	message = copytext(message,2)
-	log_say("CORTICAL: [key_name(src)]: [message]")
+
+	var/turf/T = get_turf(src)
+	log_say("[truename] [key_name(src)] (@[T.x],[T.y],[T.z]) Borer Cortical Hivemind: [message]")
 
 	for(var/mob/M in mob_list)
 		if(istype(M, /mob/new_player))
 			continue
 
-		if( (istype(M,/mob/dead/observer) && M.client && !(M.client.prefs.toggles & CHAT_GHOSTEARS)) \
-			|| isborer(M))
+		if( isborer(M) || (istype(M,/mob/dead/observer) && M.client && M.client.prefs.toggles & CHAT_GHOSTEARS))
 			var/controls = ""
 			if(isobserver(M))
 				controls = " (<a href='byond://?src=\ref[M];follow2=\ref[M];follow=\ref[src]'>Follow</a>"
@@ -305,10 +303,11 @@ var/global/borer_chem_types = typesof(/datum/borer_chem) - /datum/borer_chem
 	if(!host || host.stat==DEAD || !src || controlling)
 		return
 
-	src << "\red <B>You plunge your probosci deep into the cortex of the host brain, interfacing directly with their nervous system.</B>"
-	host << "\red <B>You feel a strange shifting sensation behind your eyes as an alien consciousness displaces yours.</B>"
+	src << "<span class='danger'>You plunge your probosci deep into the cortex of the host brain, interfacing directly with their nervous system.</span>"
+	host << "<span class='danger'>You feel a strange shifting sensation behind your eyes as an alien consciousness displaces yours.</span>"
 
 	host_brain.ckey = host.ckey
+	host_brain.name = host.real_name
 	host.ckey = src.ckey
 	controlling = 1
 
@@ -525,13 +524,13 @@ mob/living/simple_animal/borer/proc/detach()
 
 	if(istype(M,/mob/living/carbon/human))
 		var/mob/living/carbon/human/H = M
-		if(H.check_head_coverage(HIDEEARS))
+		if(H.check_body_part_coverage(EARS))
 			src << "You cannot get through that host's protective gear."
 			return
 
 	src << "You slither up [M] and begin probing at their ear canal..."
 
-	if(!do_after(src,50))
+	if(!do_after(src,M,50))
 		src << "As [M] moves away, you are dislodged and fall to the ground."
 		return
 
@@ -580,7 +579,19 @@ mob/living/simple_animal/borer/proc/detach()
 	set desc = "Enter an air vent and crawl through the pipe system."
 	set category = "Alien"
 	if(src.canmove)
-		handle_ventcrawl()
+		var/atom/pipe
+		var/list/pipes = list()
+		for(var/obj/machinery/atmospherics/unary/U in range(1))
+			if((istype(U, /obj/machinery/atmospherics/unary/vent_pump) || istype(U,/obj/machinery/atmospherics/unary/vent_scrubber)) && Adjacent(U))
+				pipes |= U
+		if(!pipes || !pipes.len)
+			return
+		if(pipes.len == 1)
+			pipe = pipes[1]
+		else
+			pipe = input("Crawl Through Vent", "Pick a pipe") as null|anything in pipes
+		if(pipe && src.canmove)
+			handle_ventcrawl(pipe)
 
 //copy paste from alien/larva, if that func is updated please update this one alsoghost
 /mob/living/simple_animal/borer/proc/hide()
@@ -590,10 +601,10 @@ mob/living/simple_animal/borer/proc/detach()
 
 	if (layer != TURF_LAYER+0.2)
 		layer = TURF_LAYER+0.2
-		src << text("\blue You are now hiding.")
+		src << text("<span class='notice'>You are now hiding.</span>")
 	else
 		layer = MOB_LAYER
-		src << text("\blue You have stopped hiding.")
+		src << text("<span class='notice'>You have stopped hiding.</span>")
 
 //Procs for grabbing players.
 mob/living/simple_animal/borer/proc/request_player()

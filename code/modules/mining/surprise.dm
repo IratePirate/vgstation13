@@ -3,6 +3,7 @@
 
 #define TURF_FLOOR 0
 #define TURF_WALL 1
+
 var/global/list/mining_surprises = typesof(/mining_surprise)-/mining_surprise
 
 /surprise_turf_info
@@ -324,6 +325,8 @@ var/global/list/mining_surprises = typesof(/mining_surprise)-/mining_surprise
 
 				if(clean)
 					for(var/O in cur_loc)
+						if(islightingoverlay(O)) //Don't want lighting overlays to be deleted.
+							continue
 						qdel(O)
 
 				if(x == 0 || x==x_size-1 || y==0 || y==y_size-1)

@@ -9,13 +9,8 @@
 	var/list/tracked = list(  )
 	var/track_special_role
 
-	l_color = "#0000FF"
-	power_change()
-		..()
-		if(!(stat & (BROKEN|NOPOWER)))
-			SetLuminosity(2)
-		else
-			SetLuminosity(0)
+	light_color = LIGHT_COLOR_BLUE
+	light_range_on = 2
 
 
 /obj/machinery/computer/crew/New()
@@ -51,13 +46,10 @@
 /obj/machinery/computer/crew/Topic(href, href_list)
 	if(..()) return
 	if (src.z > 6)
-		usr << "\red <b>Unable to establish a connection</b>: \black You're too far away from the station!"
+		usr << "<span class='danger'>Unable to establish a connection: </span>You're too far away from the station!"
 		return 0
 	if( href_list["close"] )
-		var/mob/user = usr
-		var/datum/nanoui/ui = nanomanager.get_open_ui(user, src, "main")
-		usr.unset_machine()
-		ui.close()
+		if(usr.machine == src) usr.unset_machine()
 		return 0
 	if(href_list["update"])
 		src.updateDialog()
@@ -75,12 +67,36 @@
 	var/data[0]
 	var/list/crewmembers = list()
 
-	for(var/obj/item/clothing/under/C in src.tracked)
+	for(var/mob/living/carbon/brain/B in mob_list)
+		var/turf/pos = get_turf(B)
+		if(!pos) continue
+		var/obj/item/device/mmi/M = B.loc
+		if(istype(M) && M.brainmob == B)
+			if(isrobot(M.loc))
+				continue
+			var/list/crewmemberData = list()
+			crewmemberData["sensor_type"] = 3
+			crewmemberData["dead"] = 0
+			crewmemberData["oxy"] = 0
+			crewmemberData["tox"] = 0
+			crewmemberData["fire"] = 0
+			crewmemberData["brute"] = 0
+			crewmemberData["name"] = M.name
+			crewmemberData["rank"] = "Unknown"
+			crewmemberData["area"] = get_area(M)
+			crewmemberData["x"] = pos.x
+			crewmemberData["y"] = pos.y
+			crewmemberData["z"] = pos.z
+			crewmemberData["xoffset"] = pos.x-WORLD_X_OFFSET[pos.z]
+			crewmemberData["yoffset"] = pos.y-WORLD_Y_OFFSET[pos.z]
+			crewmembers += list(crewmemberData)
 
+
+	for(var/obj/item/clothing/under/C in src.tracked)
 
 		var/turf/pos = get_turf(C)
 
-		if((C) && (C.has_sensor) && (pos) && (pos.z == src.z) && C.sensor_mode)
+		if((C) && (C.has_sensor) && (pos) && (pos.z != CENTCOMM_Z) && C.sensor_mode)
 			if(istype(C.loc, /mob/living/carbon/human))
 
 				var/mob/living/carbon/human/H = C.loc
@@ -109,15 +125,15 @@
 				crewmemberData["x"] = pos.x
 				crewmemberData["y"] = pos.y
 				crewmemberData["z"] = pos.z
-				crewmemberData["xoffset"] = pos.x-WORLD_X_OFFSET
-				crewmemberData["yoffset"] = pos.y-WORLD_Y_OFFSET
+				crewmemberData["xoffset"] = pos.x-WORLD_X_OFFSET[pos.z]
+				crewmemberData["yoffset"] = pos.y-WORLD_Y_OFFSET[pos.z]
 
 				crewmembers += list(crewmemberData)
 				// Works around list += list2 merging lists; it's not pretty but it works
 				//crewmembers += "temporary item"
 				//crewmembers[crewmembers.len] = crewmemberData
 
-	crewmembers = sortByKey(crewmembers, "name")
+	crewmembers = sortList(crewmembers)
 
 	data["crewmembers"] = crewmembers
 
@@ -146,13 +162,13 @@
 		return
 
 /obj/machinery/computer/crew/proc/is_scannable(const/obj/item/clothing/under/C, const/mob/living/carbon/human/H)
-	if(!istype(H))
+	if(!istype(H) || H.iscorpse)
 		return 0
 
 	if(isnull(track_special_role))
 		return C.has_sensor
 
-	return H.mind.special_role == track_special_role
+	return (H.mind ? H.mind.special_role == track_special_role : 1)
 
 /obj/machinery/computer/crew/proc/scan()
 	for(var/mob/living/carbon/human/H in mob_list)

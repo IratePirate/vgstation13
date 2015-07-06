@@ -99,7 +99,7 @@ var/global/list/obj/machinery/message_server/message_servers = list()
 /obj/machinery/message_server/attack_hand(user as mob)
 	if(isobserver(user) && !isAdminGhost(user))
 		return 0
-//	user << "\blue There seem to be some parts missing from this server. They should arrive on the station in a few days, give or take a few CentCom delays."
+//	user << "<span class='notice'>There seem to be some parts missing from this server. They should arrive on the station in a few days, give or take a few CentCom delays.</span>"
 	user << "You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]"
 	active = !active
 	update_icon()
@@ -194,6 +194,7 @@ var/obj/machinery/blackbox_recorder/blackbox
 	var/list/msg_engineering = list()
 	var/list/msg_security = list()
 	var/list/msg_deathsquad = list()
+	var/list/msg_ert = list()
 	var/list/msg_syndicate = list()
 	var/list/msg_service = list()
 	var/list/msg_cargo = list()
@@ -219,6 +220,7 @@ var/obj/machinery/blackbox_recorder/blackbox
 		BR.msg_engineering = msg_engineering
 		BR.msg_security = msg_security
 		BR.msg_deathsquad = msg_deathsquad
+		BR.msg_ert = msg_ert
 		BR.msg_syndicate = msg_syndicate
 		BR.msg_service = msg_service
 		BR.msg_cargo = msg_cargo
@@ -260,6 +262,7 @@ var/obj/machinery/blackbox_recorder/blackbox
 	feedback_add_details("radio_usage","ENG-[msg_engineering.len]")
 	feedback_add_details("radio_usage","SEC-[msg_security.len]")
 	feedback_add_details("radio_usage","DTH-[msg_deathsquad.len]")
+	feedback_add_details("radio_usage","ERT-[msg_ert.len]")
 	feedback_add_details("radio_usage","SYN-[msg_syndicate.len]")
 	feedback_add_details("radio_usage","SER-[msg_service.len]")
 	feedback_add_details("radio_usage","CAR-[msg_cargo.len]")

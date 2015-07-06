@@ -25,11 +25,13 @@
 		new /obj/item/weapon/cartridge/ce(src)
 		new /obj/item/device/radio/headset/heads/ce(src)
 		new /obj/item/weapon/storage/toolbox/mechanical(src)
+		new /obj/item/device/device_analyser/advanced(src)
 		new /obj/item/clothing/suit/storage/hazardvest(src)
 		new /obj/item/clothing/mask/gas(src)
 		new /obj/item/device/multitool(src)
 		new /obj/item/device/flash(src)
 		new /obj/item/device/gps/engineering(src)
+		new /obj/item/weapon/storage/belt/utility/chief(src)
 		return
 
 
@@ -53,12 +55,13 @@
 		new /obj/item/weapon/storage/toolbox/electrical(src)
 		new /obj/item/weapon/storage/toolbox/electrical(src)
 		new /obj/item/weapon/storage/toolbox/electrical(src)
-		new /obj/item/weapon/module/power_control(src)
-		new /obj/item/weapon/module/power_control(src)
-		new /obj/item/weapon/module/power_control(src)
+		new /obj/item/weapon/circuitboard/power_control(src)
+		new /obj/item/weapon/circuitboard/power_control(src)
+		new /obj/item/weapon/circuitboard/power_control(src)
 		new /obj/item/device/multitool(src)
 		new /obj/item/device/multitool(src)
 		new /obj/item/device/multitool(src)
+		new /obj/item/weapon/rcl(src)
 		return
 
 
@@ -171,6 +174,7 @@
 		new /obj/item/clothing/under/rank/mechanic(src)
 		new /obj/item/clothing/shoes/white(src)
 		new /obj/item/weapon/storage/toolbox/mechanical(src)
+		//new /obj/item/device/component_exchanger(src)
 		new /obj/item/device/radio/headset/headset_engsci(src)
 		new /obj/item/clothing/suit/storage/hazardvest(src)
 		new /obj/item/device/device_analyser(src)

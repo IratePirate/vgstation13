@@ -28,3 +28,7 @@ info.json
 /bot/config.yml
 /bot/data
 /analysis
+/code-fixed
+
+# Player preferences
+players2.sqlite

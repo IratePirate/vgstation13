@@ -104,7 +104,7 @@
 		src << "You will now hear any sounds uploaded by admins."
 	else
 		var/sound/break_sound = sound(null, repeat = 0, wait = 0, channel = 777)
-		break_sound.priority = 250
+		break_sound.priority = 255
 		src << break_sound	//breaks the client's sound output on channel 777
 		src << "You will no longer hear sounds uploaded by admins; any currently playing midis have been disabled."
 	feedback_add_details("admin_verb","TMidi") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -166,18 +166,17 @@
 	var/list/icons = usr.hud_used.adding + usr.hud_used.other +usr.hud_used.hotkeybuttons
 	icons.Add(usr.zone_sel)
 
-	for(var/obj/screen/I in icons)
-		if(I.color && I.alpha)
-			I.icon = ui_style2icon(UI_style_new)
-			I.color = UI_style_color_new
-			I.alpha = UI_style_alpha_new
-
 	if(alert("Like it? Save changes?",,"Yes", "No") == "Yes")
 		prefs.UI_style = UI_style_new
 		prefs.UI_style_alpha = UI_style_alpha_new
 		prefs.UI_style_color = UI_style_color_new
 		prefs.save_preferences_sqlite(src, ckey)
 		usr << "UI was saved"
+		for(var/obj/screen/I in icons)
+			if(I.color && I.alpha)
+				I.icon = ui_style2icon(UI_style_new)
+				I.color = UI_style_color_new
+				I.alpha = UI_style_alpha_new
 
 /client/verb/toggle_media()
 	set name = "Hear/Silence Streaming"
@@ -187,10 +186,26 @@
 	prefs.toggles ^= SOUND_STREAMING
 	prefs.save_preferences_sqlite(src, ckey)
 	usr << "You will [(prefs.toggles & SOUND_STREAMING) ? "now" : "no longer"] hear streamed media."
+	if(!media) return
 	if(prefs.toggles & SOUND_STREAMING)
 		media.update_music()
 	else
 		media.stop_music()
+
+/client/verb/toggle_wmp()
+	set name = "Change Streaming Program"
+	set category = "Preferences"
+	set desc = "Toggle between using VLC and WMP to stream jukebox media"
+
+	prefs.usewmp = !prefs.usewmp
+	prefs.save_preferences_sqlite(src, ckey)
+	usr << "You will use [(prefs.usewmp) ? "WMP" : "VLC"] to hear streamed media."
+	if(!media) return
+	media.stop_music()
+	media.playerstyle = (prefs.usewmp ? PLAYER_OLD_HTML : PLAYER_HTML)
+	if(prefs.toggles & SOUND_STREAMING)
+		media.open()
+		media.update_music()
 
 /client/verb/setup_special_roles()
 	set name = "Setup Special Roles"
@@ -198,3 +213,29 @@
 	set desc = "Toggle hearing streaming media (radios, jukeboxes, etc)"
 
 	prefs.configure_special_roles(usr)
+
+/client/verb/toggle_nanoui()
+	set name = "Toggle nanoUI"
+	set category = "Preferences"
+	set desc = "Toggle using nanoUI or retro style UIs for objects that support both."
+	prefs.usenanoui = !prefs.usenanoui
+
+	prefs.save_preferences_sqlite(src, ckey)
+
+	if(!prefs.usenanoui)
+		usr << "You will no longer use nanoUI on cross compatible UIs."
+	else
+		usr << "You will now use nanoUI on cross compatible UIs."
+
+/client/verb/toggle_progress_bars()
+	set name = "Toggle Progress Bars"
+	set category = "Preferences"
+	set desc = "Toggle the display of a progress bar above the target of action."
+	prefs.progress_bars = !prefs.progress_bars
+
+	prefs.save_preferences_sqlite(src,ckey)
+
+	if(!prefs.progress_bars)
+		usr << "You will no longer see progress bars when doing delayed actions."
+	else
+		usr << "You will now see progress bars when doing delayed actions"

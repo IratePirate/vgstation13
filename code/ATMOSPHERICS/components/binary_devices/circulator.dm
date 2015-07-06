@@ -53,7 +53,7 @@
 		return removed
 
 /obj/machinery/atmospherics/binary/circulator/process()
-	..()
+	. = ..()
 
 	if(last_worldtime_transfer < world.time - 50)
 		recent_moles_transferred = 0
@@ -91,10 +91,12 @@
 	else
 		if(node1)
 			node1.disconnect(src)
-			del(network1)
+			if(network1)
+				returnToDPool(network1)
 		if(node2)
 			node2.disconnect(src)
-			del(network2)
+			if(network2)
+				returnToDPool(network2)
 
 		node1 = null
 		node2 = null
@@ -104,7 +106,7 @@
 	set name = "Rotate Circulator (Clockwise)"
 	set src in view(1)
 
-	if (usr.stat || usr.restrained() || anchored)
+	if (usr.stat || usr.restrained() || anchored || (usr.status_flags & FAKEDEATH))
 		return
 
 	src.dir = turn(src.dir, 90)
@@ -116,7 +118,7 @@
 	set name = "Rotate Circulator (Counterclockwise)"
 	set src in view(1)
 
-	if (usr.stat || usr.restrained() || anchored)
+	if (usr.stat || usr.restrained() || anchored || (usr.status_flags & FAKEDEATH))
 		return
 
 	src.dir = turn(src.dir, -90)

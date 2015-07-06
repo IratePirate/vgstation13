@@ -18,7 +18,7 @@
 		access_ce,
 		access_virology
 	)
-	var/datum/materials/materials = new
+	starting_materials = list() //makes the new datum
 	var/stack_amt = 50 //amount to stack before releasing
 	var/obj/item/weapon/card/id/inserted_id
 	var/credits = 0
@@ -35,21 +35,20 @@
 	if(istype(W,/obj/item/weapon/card/id))
 		// N3X - Fixes people's IDs getting eaten when a new card is inserted
 		if(istype(inserted_id))
-			user << "\red There is already an ID card within the machine."
+			user << "<span class='warning'>There is already an ID card within the machine.</span>"
 			return
 		var/obj/item/weapon/card/id/I = usr.get_active_hand()
 		if(istype(I))
-			usr.drop_item()
-			I.loc = src
+			usr.drop_item(I, src)
 			inserted_id = I
 
 /obj/machinery/mineral/ore_redemption/proc/process_sheet(var/obj/item/weapon/ore/O)
 	var/obj/item/stack/sheet/processed_sheet = SmeltMineral(O)
 	if(processed_sheet)
 		var/datum/material/mat = materials.getMaterial(O.material)
-		mat.stored += processed_sheet.amount //Stack the sheets
+		materials.addAmount(O.material, processed_sheet.amount) //Stack the sheets
 		credits += mat.value * processed_sheet.amount // Gimme my fucking credits
-	qdel(O)
+	returnToPool(O)
 
 /obj/machinery/mineral/ore_redemption/process()
 	var/turf/T = get_turf(input)
@@ -62,6 +61,7 @@
 					continue // Skip slag for now.
 				if(O)
 					process_sheet(O)
+					score["oremined"] += 1
 				else
 					break
 		else
@@ -69,14 +69,16 @@
 			if(B)
 				for(var/mat_id in B.materials.storage)
 					var/datum/material/mat = B.materials.getMaterial(mat_id)
-					materials.addAmount(mat_id,mat.stored)
-					credits += mat.value * mat.stored // Gimme my fucking credits
-					mat.stored=0
+					materials.addAmount(mat_id, B.materials.storage[mat_id])
+					score["oremined"] += B.materials.storage[mat_id]
+					credits += mat.value * B.materials.storage[mat_id] // Gimme my fucking credits
+					B.materials.removeAmount(mat_id, B.materials.storage[mat_id])
 
 /obj/machinery/mineral/ore_redemption/proc/SmeltMineral(var/obj/item/weapon/ore/O)
 	if(O.material)
 		var/datum/material/mat = materials.getMaterial(O.material)
-		var/obj/item/stack/sheet/M = new mat.sheettype(src)
+		var/obj/item/stack/sheet/M = getFromPool(mat.sheettype, (src))
+		M.redeemed = 1
 		//credits += mat.value // Old behavior
 		return M
 	return
@@ -100,9 +102,9 @@
 		dat += text("No ID inserted.  <A href='?src=\ref[src];choice=insert'>Insert ID.</A><br>")
 
 	for(var/O in materials.storage)
-		var/datum/material/mat = materials.getMaterial(O)
-		if(mat.stored > 0)
-			dat += text("[capitalize(mat.processed_name)]: [mat.stored] <A href='?src=\ref[src];release=[mat.id]'>Release</A><br>")
+		if(materials.storage[O] > 0)
+			var/datum/material/mat = materials.getMaterial(O)
+			dat += text("[capitalize(mat.processed_name)]: [materials.storage[O]] <A href='?src=\ref[src];release=[mat.id]'>Release</A><br>")
 
 	dat += text("<br>This unit can hold stacks of [stack_amt] sheets of each mineral type.<br><br>")
 
@@ -132,33 +134,33 @@
 				inserted_id = null
 			if(href_list["choice"] == "claim")
 				var/datum/money_account/acct = get_card_account(inserted_id)
-				if(acct.charge(-credits,null,"Claimed mining credits.",dest_name = "Ore Redemption"))
+				if(acct && acct.charge(-credits,null,"Claimed mining credits.",dest_name = "Ore Redemption"))
 					credits = 0
-					usr << "\blue Credits transferred."
+					usr << "<span class='notice'>Credits transferred.</span>"
 				else
-					usr << "\red Failed to claim credits."
+					usr << "<span class='warning'>Failed to claim credits.</span>"
 		else if(href_list["choice"] == "insert")
 			var/obj/item/weapon/card/id/I = usr.get_active_hand()
 			if(istype(I))
-				usr.drop_item()
-				I.loc = src
+				usr.drop_item(I, src)
 				inserted_id = I
 			else
-				usr << "\red No valid ID."
+				usr << "<span class='warning'>No valid ID.</span>"
 				return 1
 	else if(href_list["release"] && istype(inserted_id))
 		if(check_access(inserted_id))
 			var/release=href_list["release"]
 			var/datum/material/mat = materials.getMaterial(release)
 			if(!mat)
-				usr << "\red Unable to find material [release]!"
+				usr << "<span class='warning'>Unable to find material [release]!</span>"
 				return 1
-			var/desired = input("How much?","How much [mat.processed_name] to eject?",mat.stored) as num
+			var/desired = input("How much?","How much [mat.processed_name] to eject?", materials.storage[release]) as num
 			if(desired==0)
 				return 1
 			var/obj/item/stack/sheet/out = new mat.sheettype(output.loc)
-			out.amount = between(0,desired,min(mat.stored,out.max_amount))
-			mat.stored -= out.amount
+			out.redeemed = 1 //Central command will not pay for this mineral stack.
+			out.amount = Clamp(desired, 0, min(materials.storage[release], out.max_amount))
+			materials.removeAmount(release, out.amount)
 	updateUsrDialog()
 	return
 
@@ -200,7 +202,17 @@
 		new /datum/data/mining_equipment("Kinetic accelerator", /obj/item/weapon/gun/energy/kinetic_accelerator,                  1000),
 		new /datum/data/mining_equipment("Jetpack",             /obj/item/weapon/tank/jetpack/carbondioxide,                      2000),
 	)
-	var/datum/money_account/linked_account // Department account.
+
+	machine_flags = PURCHASER
+
+/obj/machinery/mineral/equipment_locker/New()
+	..()
+	if(ticker)
+		initialize()
+
+/obj/machinery/mineral/equipment_locker/initialize()
+	..()
+	linked_account = department_accounts["Cargo"]
 
 /datum/data/mining_equipment/
 	var/equipment_name = "generic"
@@ -259,10 +271,9 @@
 		else if(href_list["choice"] == "insert")
 			var/obj/item/weapon/card/id/I = usr.get_active_hand()
 			if(istype(I))
-				usr.drop_item()
-				I.loc = src
+				usr.drop_item(I, src)
 				inserted_id = I
-			else usr << "\red No valid ID."
+			else usr << "<span class='warning'>No valid ID.</span>"
 	if(href_list["purchase"])
 		if(istype(inserted_id))
 			var/datum/data/mining_equipment/prize = locate(href_list["purchase"])
@@ -292,8 +303,7 @@
 	if(istype(W,/obj/item/weapon/card/id))
 		var/obj/item/weapon/card/id/I = usr.get_active_hand()
 		if(istype(I))
-			usr.drop_item()
-			I.loc = src
+			usr.drop_item(I, src)
 			inserted_id = I
 		return
 	..()
@@ -350,9 +360,9 @@
 			user << "<span class='info'>There's no points left on [src].</span>"
 	..()
 
-/obj/item/weapon/card/mining_point_card/examine()
+/obj/item/weapon/card/mining_point_card/examine(mob/user)
 	..()
-	usr << "There's [points] credits on the card."
+	user << "<span class='info'>There's [points] credits on the card.</span>"
 
 /**********************Jaunter**********************/
 
@@ -483,6 +493,7 @@
 	var/creator = null
 
 /obj/effect/resonance/New()
+	..()
 	var/turf/proj_turf = get_turf(src)
 	if(!istype(proj_turf))
 		return
@@ -519,10 +530,6 @@
 	sterile = 1
 	//tint = 3 //Makes it feel more authentic when it latches on
 
-/obj/item/clothing/mask/facehugger/toy/examine()//So that giant red text about probisci doesn't show up.
-	if(desc)
-		usr << desc
-
 /obj/item/clothing/mask/facehugger/toy/Die()
 	return
 
@@ -537,7 +544,7 @@
 	status_flags = CANSTUN|CANWEAKEN|CANPUSH
 	mouse_opacity = 1
 	faction = "neutral"
-	a_intent = "hurt"
+	a_intent = I_HURT
 	min_oxy = 0
 	max_oxy = 0
 	min_tox = 0
@@ -598,7 +605,7 @@
 	SetCollectBehavior()
 
 /mob/living/simple_animal/hostile/mining_drone/attack_hand(mob/living/carbon/human/M)
-	if(M.a_intent == "help")
+	if(M.a_intent == I_HELP)
 		switch(search_objects)
 			if(0)
 				SetCollectBehavior()
@@ -697,10 +704,10 @@
 			user << "<span class='info'>[src] is only effective on lesser beings.</span>"
 			return
 
-/obj/item/weapon/lazarus_injector/examine()
+/obj/item/weapon/lazarus_injector/examine(mob/user)
 	..()
 	if(!loaded)
-		usr << "<span class='info'>[src] is empty.</span>"
+		user << "<span class='info'>[src] is empty.</span>"
 
 
 /*********************Mob Capsule*************************/
@@ -805,6 +812,7 @@
 		if(istype(AM))
 			var/mob/living/simple_animal/M = AM
 			var/mob/living/simple_animal/hostile/H = M
+			if(!istype(H)) continue
 			for(var/things in H.friends)
 				if(capsuleowner in H.friends)
 					if(insert(AM, user) == -1) // limit reached
@@ -819,7 +827,8 @@
 	icon_state = "mining"
 	item_state = "analyzer"
 	w_class = 2.0
-	flags = CONDUCT
+	flags = 0
+	siemens_coefficient = 1
 	slot_flags = SLOT_BELT
 	var/cooldown = 0
 

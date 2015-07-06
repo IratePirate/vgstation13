@@ -18,7 +18,7 @@
 	var/list/access_log = list()
 	var/process = 0
 
-	l_color = "#50AB00"
+	light_color = LIGHT_COLOR_GREEN
 
 	req_access = list(access_tcomsat)
 
@@ -55,6 +55,8 @@
 		return
 
 	// For the typer, the input is enabled. Buffer the typed text
+	if(!istype(editingcode))
+		return
 	storedcode = "[winget(editingcode, "tcscode", "text")]"
 	winset(editingcode, "tcscode", "is-disabled=false")
 
@@ -183,8 +185,7 @@
 				var/obj/item/weapon/card/id/I = C.get_active_hand()
 				if(istype(I))
 					if(check_access(I))
-						C.drop_item()
-						I.loc = src
+						C.drop_item(I, src)
 						auth = I
 						create_log("has logged in.", usr)
 			else
@@ -200,7 +201,7 @@
 		return
 
 	if(!auth && !issilicon(usr) && !emagged)
-		usr << "\red ACCESS DENIED."
+		usr << "<span class='warning'>ACCESS DENIED.</span>"
 		return
 
 	if(href_list["viewserver"])
@@ -284,15 +285,15 @@
 	return
 
 /obj/machinery/computer/telecomms/traffic/attackby(var/obj/item/weapon/D as obj, var/mob/user as mob)
-	..()
+	return ..()
 
 /obj/machinery/computer/telecomms/emag(mob/user)
 	if(!emagged)
 		playsound(get_turf(src), 'sound/effects/sparks4.ogg', 75, 1)
 		emagged = 1
-		user << "\blue You you disable the security protocols"
+		user << "<span class='notice'>You you disable the security protocols</span>"
 	src.updateUsrDialog()
-	return
+	return 1
 /obj/machinery/computer/telecomms/traffic/proc/canAccess(var/mob/user)
 	if(issilicon(user) || in_range(user, src))
 		return 1

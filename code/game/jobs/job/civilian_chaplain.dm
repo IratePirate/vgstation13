@@ -16,7 +16,8 @@
 
 	equip(var/mob/living/carbon/human/H)
 		if(!H)	return 0
-
+		//H.languages |= SPOOKY
+		H.add_language("Spooky")
 		var/obj/item/weapon/storage/bible/B = new /obj/item/weapon/storage/bible(H) //BS12 EDIT
 		H.equip_or_collect(B, slot_l_hand)
 		H.equip_or_collect(new /obj/item/clothing/under/rank/chaplain(H), slot_w_uniform)
@@ -154,6 +155,8 @@
 					B.name = "The Poky Little Puppy"
 				if("adminism", "admintology")
 					B.name = "Breaking Through the Fourth Wall"
+				if("42")
+					B.name = "The Hitchhiker's Guide to the Galaxy"
 				else
 					B.name = "The Holy Book of [new_religion]"
 
@@ -190,12 +193,12 @@
 
 			while(!accepted)
 				if(!B) break // prevents possible runtime errors
-				new_book_style = input(H,"Which bible style would you like?") in list("Bible", "Koran", "Scrapbook", "Creeper", "White Bible", "Holy Light", "Athiest", "Tome", "The King in Yellow", "Ithaqua", "Scientology", "the bible melts", "Unaussprechlichen Kulten", "Necronomicon", "Book of Shadows", "Torah", "Burning", "Honk", "Ianism")
+				new_book_style = input(H,"Which bible style would you like?") in list("Bible", "Koran", "Scrapbook", "Creeper", "White Bible", "Holy Light", "Athiest", "Tome", "The King in Yellow", "Ithaqua", "Scientology", "the bible melts", "Unaussprechlichen Kulten", "Necronomicon", "Book of Shadows", "Torah", "Burning", "Honk", "Ianism", "The Guide")
 				switch(new_book_style)
 					if("Koran")
 						B.icon_state = "koran"
 						B.item_state = "koran"
-						for(var/area/chapel/main/A in world)
+						for(var/area/chapel/main/A in areas)
 							for(var/turf/T in A.contents)
 								if(T.icon_state == "carpetsymbol")
 									T.dir = 4
@@ -214,7 +217,7 @@
 					if("Athiest")
 						B.icon_state = "athiest"
 						B.item_state = "syringe_kit"
-						for(var/area/chapel/main/A in world)
+						for(var/area/chapel/main/A in areas)
 							for(var/turf/T in A.contents)
 								if(T.icon_state == "carpetsymbol")
 									T.dir = 10
@@ -227,14 +230,14 @@
 					if("Ithaqua")
 						B.icon_state = "ithaqua"
 						B.item_state = "ithaqua"
-						for(var/area/chapel/main/A in world)
+						for(var/area/chapel/main/A in areas)
 							for(var/turf/T in A.contents)
 								if(T.icon_state == "carpetsymbol")
 									T.dir = 5
 					if("Scientology")
 						B.icon_state = "scientology"
 						B.item_state = "scientology"
-						for(var/area/chapel/main/A in world)
+						for(var/area/chapel/main/A in areas)
 							for(var/turf/T in A.contents)
 								if(T.icon_state == "carpetsymbol")
 									T.dir = 8
@@ -250,14 +253,14 @@
 					if("Book of Shadows")
 						B.icon_state = "shadows"
 						B.item_state = "shadows"
-						for(var/area/chapel/main/A in world)
+						for(var/area/chapel/main/A in areas)
 							for(var/turf/T in A.contents)
 								if(T.icon_state == "carpetsymbol")
 									T.dir = 6
 					if("Torah")
 						B.icon_state = "torah"
 						B.item_state = "torah"
-						for(var/area/chapel/main/A in world)
+						for(var/area/chapel/main/A in areas)
 							for(var/turf/T in A.contents)
 								if(T.icon_state == "carpetsymbol")
 									T.dir = 1
@@ -270,15 +273,18 @@
 					if("Ianism")
 						B.icon_state = "ianism"
 						B.item_state = "ianism"
-						for(var/area/chapel/main/A in world)
+						for(var/area/chapel/main/A in areas)
 							for(var/turf/T in A.contents)
 								if(T.icon_state == "carpetsymbol")
 									T.dir = 9
+					if("The Guide")
+						B.icon_state = "guide"
+						B.item_state = "guide"
 					else
 						// if christian bible, revert to default
 						B.icon_state = "bible"
 						B.item_state = "bible"
-						for(var/area/chapel/main/A in world)
+						for(var/area/chapel/main/A in areas)
 							for(var/turf/T in A.contents)
 								if(T.icon_state == "carpetsymbol")
 									T.dir = 2

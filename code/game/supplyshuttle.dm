@@ -1,10 +1,10 @@
 //Config stuff
 #define SUPPLY_DOCKZ 2          //Z-level of the Dock.
 #define SUPPLY_STATIONZ 1       //Z-level of the Station.
-#define SUPPLY_STATION_AREATYPE "/area/supply/station" //Type of the supply shuttle area for station
-#define SUPPLY_DOCK_AREATYPE "/area/supply/dock"	//Type of the supply shuttle area for dock
+#define SUPPLY_STATION_AREATYPE /area/supply/station //Type of the supply shuttle area for station
+#define SUPPLY_DOCK_AREATYPE /area/supply/dock	//Type of the supply shuttle area for dock
 #define SUPPLY_TAX 10 // Credits to charge per order.
-var/datum/controller/supply_shuttle/supply_shuttle = new()
+var/datum/controller/supply_shuttle/supply_shuttle = new
 
 var/list/mechtoys = list(
 	/obj/item/toy/prize/ripley,
@@ -19,20 +19,18 @@ var/list/mechtoys = list(
 	/obj/item/toy/prize/odysseus,
 	/obj/item/toy/prize/phazon
 )
-
-/area/supply/station //DO NOT TURN THE lighting_use_dynamic STUFF ON FOR SHUTTLES. IT BREAKS THINGS.
+//Lighting STILL disabled, even with the new bay engine, because lighting doesn't play nice with our shuttles, might just be our shuttle code, or the small changes in the lighting engine we have from bay.
+/area/supply/station
 	name = "supply shuttle"
 	icon_state = "shuttle3"
-	luminosity = 1
-	lighting_use_dynamic = 0
 	requires_power = 0
+	lighting_use_dynamic = 0
 
-/area/supply/dock //DO NOT TURN THE lighting_use_dynamic STUFF ON FOR SHUTTLES. IT BREAKS THINGS.
+/area/supply/dock
 	name = "supply shuttle"
 	icon_state = "shuttle3"
-	luminosity = 1
-	lighting_use_dynamic = 0
 	requires_power = 0
+	lighting_use_dynamic = 0
 
 //SUPPLY PACKS MOVED TO /code/defines/obj/supplypacks.dm
 
@@ -45,6 +43,38 @@ var/list/mechtoys = list(
 	anchored = 1
 	layer = 4
 	explosion_resistance = 5
+	var/airtight = 0
+
+/obj/structure/plasticflaps/attackby(obj/item/I as obj, mob/user as mob)
+	if(istype(I, /obj/item/weapon/crowbar) && anchored == 1)
+		if(airtight == 0)
+			playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
+		else
+			playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
+		user.visible_message("[user] [airtight? "loosen the [src] from" : "tighten the [src] into"] an airtight position.", "You [airtight? "loosen the [src] from" : "tighten the [src] into"] an airtight position.")
+		airtight = !airtight
+		name = "\improper [airtight? "Airtight p" : "P"]lastic flaps"
+		desc = "[airtight? "Heavy duty, airtight, plastic flaps." : "I definitely can't get past those. No way."]"
+		return 1
+	if(istype(I, /obj/item/weapon/wrench) && airtight != 1)
+		if(anchored == 0)
+			playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
+		else
+			playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
+		user.visible_message("[user] [anchored? "loosens" : "tightens"] the flap from its anchoring.", "You [anchored? "loosen" : "tighten"] the flap from its anchoring.")
+		anchored = !anchored
+		return 1
+	else if (iswelder(I) && anchored == 0)
+		var/obj/item/weapon/weldingtool/WT = I
+		if(WT.remove_fuel(0, user))
+			new /obj/item/stack/sheet/mineral/plastic (src.loc,10)
+			qdel(src)
+			return
+	return ..()
+
+/obj/structure/plasticflaps/examine(mob/user as mob)
+	..()
+	user << "It appears to be [anchored? "anchored to" : "unachored from"] the floor, [airtight? "and it seems to be airtight as well." : "but it does not seem to be airtight."]"
 
 /obj/structure/plasticflaps/CanPass(atom/movable/mover, turf/target, height=1.5, air_group = 0)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -58,7 +88,7 @@ var/list/mechtoys = list(
 		var/mob/living/M = mover
 		if(!M.lying && !istype(M, /mob/living/carbon/monkey) && !istype(M, /mob/living/carbon/slime) && !istype(M, /mob/living/simple_animal/mouse))  //If your not laying down, or a small creature, no pass.
 			return 0
-	return ..()
+	return !(airtight && air_group)
 
 /obj/structure/plasticflaps/ex_act(severity)
 	switch(severity)
@@ -71,22 +101,12 @@ var/list/mechtoys = list(
 			if (prob(5))
 				qdel(src)
 
-/obj/structure/plasticflaps/mining //A specific type for mining that doesn't allow airflow because of them damn crates
+/obj/structure/plasticflaps/mining
 	name = "\improper Airtight plastic flaps"
 	desc = "Heavy duty, airtight, plastic flaps."
+	airtight = 1
 
-	New() //set the turf below the flaps to block air
-		var/turf/T = get_turf(loc)
-		if(T)
-			T.blocks_air = 1
-		..()
 
-	Destroy() //lazy hack to set the turf to allow air to pass if it's a simulated floor
-		var/turf/T = get_turf(loc)
-		if(T)
-			if(istype(T, /turf/simulated/floor))
-				T.blocks_air = 0
-		..()
 
 /obj/machinery/computer/supplycomp
 	name = "Supply shuttle console"
@@ -101,7 +121,7 @@ var/list/mechtoys = list(
 	var/last_viewed_group = "categories"
 	var/datum/money_account/current_acct
 
-	l_color = "#87421F"
+	light_color = LIGHT_COLOR_BROWN
 
 /obj/machinery/computer/ordercomp
 	name = "Supply ordering console"
@@ -113,7 +133,7 @@ var/list/mechtoys = list(
 	var/last_viewed_group = "categories"
 	var/datum/money_account/current_acct
 
-	l_color = "#87421F"
+	light_color = LIGHT_COLOR_BROWN
 
 /*
 /obj/effect/marker/supplymarker
@@ -138,7 +158,7 @@ var/list/mechtoys = list(
 	//supply points have been replaced with MONEY MONEY MONEY - N3X
 	var/credits_per_slip = 2
 	var/credits_per_crate = 5
-	var/credits_per_plasma = 0.5 // 2 plasma for 1 point
+	//var/credits_per_plasma = 0.5 // 2 plasma for 1 point
 	//control
 	var/ordernum
 	var/list/centcomm_orders = list()
@@ -151,7 +171,7 @@ var/list/mechtoys = list(
 	var/moving = 0
 	var/eta_timeofday
 	var/eta
-
+	var/datum/materials/materials_list = new
 	New()
 		ordernum = rand(1,9000)
 
@@ -221,22 +241,6 @@ var/list/mechtoys = list(
 
 		return 1
 
-	//To stop things being sent to centcomm which should not be sent to centcomm. Recursively checks for these types.
-	proc/forbidden_atoms_check(atom/A)
-		if(istype(A,/mob/living))
-			return 1
-		if(istype(A,/obj/item/weapon/disk/nuclear))
-			return 1
-		if(istype(A,/obj/machinery/nuclearbomb))
-			return 1
-		if(istype(A,/obj/item/device/radio/beacon))
-			return 1
-
-		for(var/i=1, i<=A.contents.len, i++)
-			var/atom/B = A.contents[i]
-			if(.(B))
-				return 1
-
 	proc/SellObjToOrders(var/atom/A,var/in_crate)
 
 		// Per-unit orders run last so they don't steal shit.
@@ -266,12 +270,24 @@ var/list/mechtoys = list(
 		for(var/atom/movable/MA in shuttle)
 			if(MA.anchored)	continue
 
+			if(istype(MA, /obj/item/stack/sheet/mineral/plasma))
+				var/obj/item/stack/sheet/mineral/plasma/P = MA
+				if(P.redeemed) continue
+				var/datum/material/mat = materials_list.getMaterial(P.sheettype)
+				cargo_acct.money += (mat.value * 2) * P.amount // Central Command pays double for plasma they receive that hasn't been redeemed already.
+
 			// Must be in a crate!
-			if(istype(MA,/obj/structure/closet/crate))
+			else if(istype(MA,/obj/structure/closet/crate))
 				cargo_acct.money += credits_per_crate
 				var/find_slip = 1
 
 				for(var/atom/A in MA)
+					if(istype(A, /obj/item/stack/sheet/mineral/plasma))
+						var/obj/item/stack/sheet/mineral/plasma/P = A
+						if(P.redeemed) continue
+						var/datum/material/mat = materials_list.getMaterial(P.sheettype)
+						cargo_acct.money += (mat.value * 2) * P.amount // Central Command pays double for plasma they receive that hasn't been redeemed already.
+						continue
 					if(find_slip && istype(A,/obj/item/weapon/paper/manifest))
 						var/obj/item/weapon/paper/slip = A
 						if(slip.stamped && slip.stamped.len) //yes, the clown stamp will work. clown is the highest authority on the station, it makes sense
@@ -308,7 +324,14 @@ var/list/mechtoys = list(
 		var/list/clear_turfs = list()
 
 		for(var/turf/T in shuttle)
-			if(T.density || T.contents.len)	continue
+			if(T.density)	continue
+			var/contcount
+			for(var/atom/A in T.contents)
+				if(islightingoverlay(A))
+					continue
+				contcount++
+			if(contcount)
+				continue
 			clear_turfs += T
 
 		for(var/S in shoppinglist)
@@ -365,8 +388,22 @@ var/list/mechtoys = list(
 			// END AUTOFIX
 			if (SP.contraband) slip.loc = null	//we are out of blanks for Form #44-D Ordering Illicit Drugs.
 
-		supply_shuttle.shoppinglist.Cut()
+		supply_shuttle.shoppinglist.len = 0
 		return
+
+/datum/controller/supply_shuttle/proc/forbidden_atoms_check(atom/A)
+	var/contents = get_contents_in_object(A)
+
+	if (locate(/mob/living) in contents)
+		. = TRUE
+	else if (locate(/obj/item/weapon/disk/nuclear) in contents)
+		. = TRUE
+	else if (locate(/obj/machinery/nuclearbomb) in contents)
+		. = TRUE
+	else if (locate(/obj/item/device/radio/beacon) in contents)
+		. = TRUE
+	else
+		. = FALSE
 
 /obj/item/weapon/paper/manifest
 	name = "Supply Manifest"
@@ -397,7 +434,7 @@ var/list/mechtoys = list(
 	else
 		dat += {"<BR><B>Supply shuttle</B><HR>
 		Location: [supply_shuttle.moving ? "Moving to station ([supply_shuttle.eta] Mins.)":supply_shuttle.at_station ? "Station":"Dock"]<BR>
-		<HR>Supply points: [current_acct.fmtBalance()]<BR>
+		<HR>Supply points: [current_acct ? current_acct.fmtBalance() : "PANIC"]<BR>
 		<BR>\n<A href='?src=\ref[src];order=categories'>Request items</A><BR><BR>
 		<A href='?src=\ref[src];vieworders=1'>View approved orders</A><BR><BR>
 		<A href='?src=\ref[src];viewrequests=1'>View requests</A><BR><BR>
@@ -422,7 +459,7 @@ var/list/mechtoys = list(
 
 			// AUTOFIXED BY fix_string_idiocy.py
 			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:383: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
-			temp = {"<b>Supply points: [current_acct.fmtBalance()]</b><BR>
+			temp = {"<b>Supply points: [current_acct ? current_acct.fmtBalance() : "PANIC"]</b><BR>
 				<A href='?src=\ref[src];mainmenu=1'>Main Menu</A><HR><BR><BR>
 				<b>Select a category</b><BR><BR>"}
 			// END AUTOFIX
@@ -433,7 +470,7 @@ var/list/mechtoys = list(
 
 			// AUTOFIXED BY fix_string_idiocy.py
 			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:390: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
-			temp = {"<b>Supply points: [current_acct.fmtBalance()]</b><BR>
+			temp = {"<b>Supply points: [current_acct ? current_acct.fmtBalance() : "PANIC"]</b><BR>
 				<A href='?src=\ref[src];order=categories'>Back to all categories</A><HR><BR><BR>
 				<b>Request from: [last_viewed_group]</b><BR><BR>"}
 			// END AUTOFIX
@@ -461,14 +498,13 @@ var/list/mechtoys = list(
 		var/idrank = "*None Provided*"
 		var/datum/money_account/account
 		if(ishuman(usr))
-			var/mob/living/carbon/human/H = usr
-			idname = H.get_authentification_name()
-			idrank = H.get_assignment()
-			var/obj/item/weapon/card/id/I=H.get_idcard()
+			var/obj/item/weapon/card/id/I = usr.get_id_card()
 			if(I)
+				idname = I.registered_name
+				idrank = I.GetJobName()
 				account = get_card_account(I)
 			else
-				usr << "\red Please wear an ID with an associated bank account."
+				usr << "<span class='warning'>Please wear an ID with an associated bank account.</span>"
 				return
 		else if(issilicon(usr))
 			idname = usr.real_name
@@ -536,7 +572,7 @@ var/list/mechtoys = list(
 
 /obj/machinery/computer/supplycomp/attack_hand(var/mob/user as mob)
 	if(!allowed(user))
-		user << "\red Access Denied."
+		user << "<span class='warning'>Access Denied.</span>"
 		return
 
 	if(..())
@@ -566,14 +602,14 @@ var/list/mechtoys = list(
 
 /obj/machinery/computer/supplycomp/attackby(I as obj, user as mob)
 	if(istype(I,/obj/item/weapon/card/emag) && !hacked)
-		user << "\blue Special supplies unlocked."
+		user << "<span class='notice'>Special supplies unlocked.</span>"
 		hacked = 1
 		return
 	if(istype(I, /obj/item/weapon/screwdriver))
 		playsound(loc, 'sound/items/Screwdriver.ogg', 50, 1)
-		if(do_after(user, 20))
+		if(do_after(user, src, 20))
 			if (stat & BROKEN)
-				user << "\blue The broken glass falls out."
+				user << "<span class='notice'>The broken glass falls out.</span>"
 				var/obj/structure/computerframe/A = new /obj/structure/computerframe( loc )
 				getFromPool(/obj/item/weapon/shard, loc)
 				var/obj/item/weapon/circuitboard/supplycomp/M = new /obj/item/weapon/circuitboard/supplycomp( A )
@@ -585,7 +621,7 @@ var/list/mechtoys = list(
 				A.anchored = 1
 				del(src)
 			else
-				user << "\blue You disconnect the monitor."
+				user << "<span class='notice'>You disconnect the monitor.</span>"
 				var/obj/structure/computerframe/A = new /obj/structure/computerframe( loc )
 				var/obj/item/weapon/circuitboard/supplycomp/M = new /obj/item/weapon/circuitboard/supplycomp( A )
 				if(can_order_contraband)
@@ -607,10 +643,7 @@ var/list/mechtoys = list(
 		world.log << "## ERROR: Eek. The supply_shuttle controller datum is missing somehow."
 		return
 	if(..())
-		return
-
-	if(isturf(loc) && ( in_range(src, usr) || istype(usr, /mob/living/silicon) ) )
-		usr.set_machine(src)
+		return 1
 
 	//Calling the shuttle
 	if(href_list["send"])
@@ -638,7 +671,7 @@ var/list/mechtoys = list(
 
 			// AUTOFIXED BY fix_string_idiocy.py
 			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:567: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
-			temp = {"<b>Available credits: [current_acct.fmtBalance()]</b><BR>
+			temp = {"<b>Available credits: [current_acct ? current_acct.fmtBalance() : "PANIC"]</b><BR>
 				<A href='?src=\ref[src];mainmenu=1'>Main Menu</A><HR><BR><BR>
 				<b>Select a category</b><BR><BR>"}
 			// END AUTOFIX
@@ -649,7 +682,7 @@ var/list/mechtoys = list(
 
 			// AUTOFIXED BY fix_string_idiocy.py
 			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:574: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
-			temp = {"<b>Available credits: [current_acct.fmtBalance()]</b><BR>
+			temp = {"<b>Available credits: [current_acct ? current_acct.fmtBalance() : "PANIC"]</b><BR>
 				<A href='?src=\ref[src];order=categories'>Back to all categories</A><HR><BR><BR>
 				<b>Request from: [last_viewed_group]</b><BR><BR>"}
 			// END AUTOFIX
@@ -686,14 +719,13 @@ var/list/mechtoys = list(
 		var/idrank = "*None Provided*"
 		var/datum/money_account/account
 		if(ishuman(usr))
-			var/mob/living/carbon/human/H = usr
-			idname = H.get_authentification_name()
-			idrank = H.get_assignment()
-			var/obj/item/weapon/card/id/I=H.get_idcard()
+			var/obj/item/weapon/card/id/I = usr.get_id_card()
 			if(I)
+				idname = I.registered_name
+				idrank = I.GetJobName()
 				account = get_card_account(I)
 			else
-				usr << "\red Please wear an ID with an associated bank account."
+				usr << "<span class='warning'>Please wear an ID with an associated bank account.</span>"
 				return
 		else if(issilicon(usr))
 			idname = usr.real_name
@@ -814,7 +846,7 @@ var/list/mechtoys = list(
 		temp += "<BR><A href='?src=\ref[src];viewrequests=1'>Back</A> <A href='?src=\ref[src];mainmenu=1'>Main Menu</A>"
 
 	else if (href_list["clearreq"])
-		supply_shuttle.requestlist.Cut()
+		supply_shuttle.requestlist.len = 0
 
 		// AUTOFIXED BY fix_string_idiocy.py
 		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:705: temp = "List cleared.<BR>"

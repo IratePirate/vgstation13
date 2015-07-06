@@ -128,8 +128,8 @@
 					break
 				del(H)
 
-			for(var/T in typesof(/obj/item/weapon/cable_coil))
-				var/obj/item/weapon/cable_coil/test = new T
+			for(var/T in typesof(/obj/item/stack/cable_coil))
+				var/obj/item/stack/cable_coil/test = new T
 				if(test._color == color)
 					//world << "Found the right cable coil, _color: [test._color]"
 					ccoil_test = 1
@@ -181,7 +181,7 @@
 					H.desc = new_desc
 
 			if(ccoil_test)
-				for(var/obj/item/weapon/cable_coil/H in contents)
+				for(var/obj/item/stack/cable_coil/H in contents)
 					//world << "DEBUG: YUP! FOUND IT!"
 					H._color = color
 					H.icon_state = "coil_[color]"
@@ -216,9 +216,8 @@
 	else if(istype(W,/obj/item/toy/crayon) ||istype(W,/obj/item/weapon/stamp))
 		if( wash_state in list(	1, 3, 6 ) )
 			if(!crayon)
-				user.drop_item()
+				user.drop_item(W, src)
 				crayon = W
-				crayon.loc = src
 	else if(istype(W,/obj/item/weapon/grab))
 		if( (wash_state == 1) && hacked)
 			var/obj/item/weapon/grab/G = W
@@ -233,7 +232,7 @@
 		istype(W,/obj/item/clothing/gloves) || \
 		istype(W,/obj/item/clothing/shoes) || \
 		istype(W,/obj/item/clothing/suit) || \
-		istype(W,/obj/item/weapon/cable_coil) || \
+		istype(W,/obj/item/stack/cable_coil) || \
 		istype(W,/obj/item/weapon/bedsheet))
 
 		//YES, it's hardcoded... saves a var/can_be_washed for every single clothing item.
@@ -276,13 +275,12 @@
 
 		if(contents.len < 5)
 			if ( wash_state in list(1, 3) )
-				user.drop_item()
-				W.loc = src
+				user.drop_item(W, src)
 				wash_state = 3
 			else
-				user << "\blue You can't put the item in right now."
+				user << "<span class='notice'>You can't put the item in right now.</span>"
 		else
-			user << "\blue The washing machine is full."
+			user << "<span class='notice'>The washing machine is full.</span>"
 	update_icon()
 
 /obj/machinery/washing_machine/attack_hand(mob/user as mob)
@@ -302,7 +300,7 @@
 			crayon = null
 			wash_state = 1
 		if(5)
-			user << "\red The [src] is busy."
+			user << "<span class='warning'>The [src] is busy.</span>"
 		if(6)
 			wash_state = 7
 		if(7)

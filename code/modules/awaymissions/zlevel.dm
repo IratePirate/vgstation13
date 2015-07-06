@@ -1,9 +1,13 @@
-proc/createRandomZlevel()
-	if(awaydestinations.len)	//crude, but it saves another var!
+/datum/zLevel/away
+	name = "awaymission"
+	movementJammed = 1 //no drifting here
+
+/proc/createRandomZlevel(override = 0)
+	if(awaydestinations.len && !override)	//crude, but it saves another var!
 		return
 
 	var/list/potentialRandomZlevels = list()
-	world << "\red \b Searching for away missions..."
+	world << "<span class='danger'>Searching for away missions...</span>"
 	var/list/Lines = file2list("maps/RandomZLevels/fileList.txt")
 	if(!Lines.len)	return
 	for (var/t in Lines)
@@ -35,7 +39,7 @@ proc/createRandomZlevel()
 
 
 	if(potentialRandomZlevels.len)
-		world << "\red \b Loading away mission..."
+		world << "<span class='danger'>Loading away mission...</span>"
 
 		var/map = pick(potentialRandomZlevels)
 		var/file = file(map)
@@ -47,8 +51,8 @@ proc/createRandomZlevel()
 				continue
 			awaydestinations.Add(L)
 
-		world << "\red \b Away mission loaded."
+		world << "<span class='danger'>Away mission loaded.</span>"
 
 	else
-		world << "\red \b No away missions found."
+		world << "<span class='danger'>No away missions found.</span>"
 		return
