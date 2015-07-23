@@ -21,9 +21,9 @@ The client is optional and may be a /mob, /client or /html_interface_client obje
 	src.head = src.head + "<link rel=\"stylesheet\" type=\"text/css\" href=\"nanotrasen.css\" />"
 	src.updateLayout("")
 
-/datum/html_interface/updateLayout(layout)
+/datum/html_interface/nanotrasen/updateLayout(nlayout)
 	// Wrap the layout in our custom HTML
-	return ..("<div id=\"ntbgcenter\"></div><div id=\"content\">[layout]</div>")
+	return ..("<div id=\"ntbgcenter\"></div><div id=\"content\">[nlayout]</div>")
 
 /datum/html_interface/specificRenderTitle(datum/html_interface_client/hclient, ignore_cache = FALSE)
 	// Update the title in our custom header (in addition to default functionality)
@@ -157,6 +157,7 @@ The client is optional and may be a /mob, /client or /html_interface_client obje
 	src.setEyeColor("red", hclient)
 
 /datum/html_interface/nanotrasen/proc/setEyeColor(color, datum/html_interface_client/hclient)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/datum/html_interface/nanotrasen/proc/setEyeColor() called tick#: [world.time]")
 	hclient = getClient(hclient)
 
 	if (istype(hclient))

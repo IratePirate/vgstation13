@@ -1,8 +1,7 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
 
 /obj/machinery/power/emitter
-
-	name = "Emitter"
+	name = "emitter"
 	desc = "A heavy duty industrial laser"
 	icon = 'icons/obj/singularity.dmi'
 	icon_state = "emitter"
@@ -33,6 +32,8 @@
 	//Radio remote control
 /obj/machinery/power/emitter/proc/set_frequency(new_frequency)
 
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/power/emitter/proc/set_frequency() called tick#: [world.time]")
+
 	radio_controller.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
@@ -40,10 +41,10 @@
 
 
 /obj/machinery/power/emitter/verb/rotate_cw()
-
 	set name = "Rotate (Clockwise)"
 	set category = "Object"
 	set src in oview(1)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""]) \\/obj/machinery/power/emitter/verb/rotate_cw()  called tick#: [world.time]")
 
 	if(src.anchored || usr:stat)
 		usr << "<span class='warning'>It is fastened to the floor!</span>"
@@ -52,10 +53,10 @@
 	return 1
 
 /obj/machinery/power/emitter/verb/rotate_ccw()
-
 	set name = "Rotate (Counter-Clockwise)"
 	set category = "Object"
 	set src in oview(1)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""]) \\/obj/machinery/power/emitter/verb/rotate_ccw()  called tick#: [world.time]")
 
 	if(src.anchored || usr:stat)
 		usr << "<span class='warning'>It is fastened to the floor!</span>"
@@ -84,6 +85,8 @@
 	"}
 
 /obj/machinery/power/emitter/proc/update_beam()
+
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/power/emitter/proc/update_beam() called tick#: [world.time]")
 
 	if(active && powered)
 		if(!beam)
@@ -173,6 +176,7 @@
 
 //Important note, those procs not log the emitter being turned on or off, so please use the logs in attack_hand above
 /obj/machinery/power/emitter/proc/turn_on()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/power/emitter/proc/turn_on() called tick#: [world.time]")
 	active = 1
 	shot_number = 0
 	fire_delay = 100
@@ -180,6 +184,7 @@
 	update_beam()
 
 /obj/machinery/power/emitter/proc/turn_off()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/power/emitter/proc/turn_off() called tick#: [world.time]")
 	active = 0
 	update_icon()
 	update_beam()
@@ -305,6 +310,7 @@
 	var/event/power_change = new
 
 /obj/effect/beam/emitter/proc/set_power(var/newpower = 1)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/effect/beam/emitter/proc/set_power() called tick#: [world.time]")
 	power = newpower
 	if(next)
 		var/obj/effect/beam/emitter/next_beam=next

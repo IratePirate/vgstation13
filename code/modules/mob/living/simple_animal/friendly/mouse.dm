@@ -65,6 +65,7 @@
 
 
 /mob/living/simple_animal/mouse/proc/splat()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/simple_animal/mouse/proc/splat() called tick#: [world.time]")
 	src.health = 0
 	src.stat = DEAD
 	src.icon_dead = "mouse_[_color]_splat"
@@ -77,6 +78,7 @@
 	set name = "Crawl through Vent"
 	set desc = "Enter an air vent and crawl through the pipe system."
 	set category = "Object"
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""]) \\/mob/living/simple_animal/mouse/verb/ventcrawl()  called tick#: [world.time]")
 	var/atom/pipe
 	var/list/pipes = list()
 	for(var/obj/machinery/atmospherics/unary/U in range(1))
@@ -96,6 +98,7 @@
 	set name = "Hide"
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
 	set category = "Object"
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""]) \\/mob/living/simple_animal/mouse/verb/hide()  called tick#: [world.time]")
 
 	if (layer != TURF_LAYER+0.2)
 		layer = TURF_LAYER+0.2
@@ -170,6 +173,10 @@
 	_color = "brown"
 	icon_state = "mouse_brown"
 
+/mob/living/simple_animal/mouse/black
+	_color = "black"
+	icon_state = "mouse_black"
+
 //TOM IS ALIVE! SQUEEEEEEEE~K :)
 /mob/living/simple_animal/mouse/brown/Tom
 	name = "Tom"
@@ -177,6 +184,13 @@
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"
 	response_harm   = "splats"
+
+/mob/living/simple_animal/mouse/black/dessert
+	name = "Dessert"
+	desc = "Crunchy!"
+	response_help  = "pets"
+	response_disarm = "gently pushes aside"
+	response_harm   = "tenderizes"
 
 /mob/living/simple_animal/mouse/say_quote(text)
 	if(!text)

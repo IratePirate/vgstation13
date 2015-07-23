@@ -66,15 +66,16 @@
 				shuttletarget = pick(escape_list) //Pick a shuttle target
 			enroute = 1
 			stop_automated_movement = 1
-			spawn()
+/*			spawn()
 				if(!src.stat)
-					horde()
+					horde()*/
 
 		if(get_dist(src, shuttletarget) <= 2)		//The monster reached the escape hallway
 			enroute = 0
 			stop_automated_movement = 0
 
 /mob/living/simple_animal/hostile/faithless/cult/proc/horde()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/simple_animal/hostile/faithless/cult/proc/horde() called tick#: [world.time]")
 	var/turf/T = get_step_to(src, shuttletarget)
 	for(var/atom/A in T)
 		if(istype(A,/obj/machinery/door/airlock))

@@ -1,7 +1,7 @@
 /obj/machinery/rust/gyrotron
 	icon = 'code/WorkInProgress/Cael_Aislinn/Rust/rust.dmi'
 	icon_state = "emitter-off"
-	name = "Gyrotron"
+	name = "gyrotron"
 	anchored = 0
 	state = 0
 	density = 1
@@ -34,11 +34,13 @@
 		initialize()
 
 /obj/machinery/rust/gyrotron/proc/stop_emitting()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/rust/gyrotron/proc/stop_emitting() called tick#: [world.time]")
 	emitting = 0
 	use_power = 1
 	update_icon()
 
 /obj/machinery/rust/gyrotron/proc/start_emitting()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/rust/gyrotron/proc/start_emitting() called tick#: [world.time]")
 	if(stat & (NOPOWER | BROKEN) || emitting && state == 2) //Sanity.
 		return
 
@@ -53,6 +55,7 @@
 			sleep(rate)
 
 /obj/machinery/rust/gyrotron/proc/emit()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/rust/gyrotron/proc/emit() called tick#: [world.time]")
 	var/obj/item/projectile/beam/emitter/A = getFromPool(/obj/item/projectile/beam/emitter, loc)
 	A.frequency = frequency
 	A.damage = mega_energy * 1500
@@ -90,3 +93,33 @@
 		user << "<span class='warning'>Turn \the [src] off first!</span>"
 		return -1
 	. = ..()
+
+/obj/machinery/rust/gyrotron/verb/rotate_cw()
+	set name = "Rotate (Clockwise)"
+	set src in oview(1)
+	set category = "Object"
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""]) \\/obj/machinery/rust/gyrotron/verb/rotate_cw()  called tick#: [world.time]")
+
+	if(usr.restrained() || usr.stat || usr.weakened || usr.stunned || usr.paralysis || usr.resting || !Adjacent(usr))
+		return
+
+	if(anchored)
+		usr << "<span class='notify'>\the [src] is anchored to the floor!</span>"
+		return
+
+	dir = turn(dir, -90)
+
+/obj/machinery/rust/gyrotron/verb/rotate_ccw()
+	set name = "Rotate (Counter-Clockwise)"
+	set src in oview(1)
+	set category = "Object"
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""]) \\/obj/machinery/rust/gyrotron/verb/rotate_ccw()  called tick#: [world.time]")
+
+	if(usr.restrained() || usr.stat || usr.weakened || usr.stunned || usr.paralysis || usr.resting || !Adjacent(usr))
+		return
+
+	if(anchored)
+		usr << "<span class='notify'>\the [src] is anchored to the floor!</span>"
+		return
+
+	dir = turn(dir, 90)

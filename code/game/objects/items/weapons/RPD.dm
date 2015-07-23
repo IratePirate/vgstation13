@@ -25,6 +25,7 @@ RPD
 	src.dirtype=dt
 
 /datum/pipe_info/proc/Render(var/dispenser,var/label)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/datum/pipe_info/proc/Render() called tick#: [world.time]")
 	return "<li><a href='?src=\ref[dispenser];makepipe=[id];dir=[dir];type=[dirtype]'>[label]</a></li>"
 
 /datum/pipe_info/meter
@@ -56,6 +57,8 @@ var/global/list/disposalpipeID2State=list(
 	"disposal",
 	"outlet",
 	"intake",
+	"pipe-j1s",
+	"pipe-j1s",
 )
 
 /datum/pipe_info/disposal
@@ -73,7 +76,7 @@ var/global/list/disposalpipeID2State=list(
 /datum/pipe_info/disposal/Render(var/dispenser,var/label)
 	return "<li><a href='?src=\ref[dispenser];dmake=[id];type=[PIPE_UNARY]'>[label]</a></li>" //avoid hardcoding.
 
-//find these defines in code\ATMOSPHERICS\pipe\consruction.dm
+//find these defines in code\ATMOSPHERICS\\\pipe\consruction.dm
 var/global/list/RPD_recipes=list(
 	"Regular Pipes" = list(
 		"Pipe"           = new /datum/pipe_info(PIPE_SIMPLE_STRAIGHT,	1, PIPE_BINARY),
@@ -115,14 +118,16 @@ var/global/list/RPD_recipes=list(
 		"4-Way Manifold" = new /datum/pipe_info(PIPE_INSUL_MANIFOLD4W,	1, PIPE_BINARY),
 	),
 	"Disposal Pipes" = list(
-		"Pipe"       = new /datum/pipe_info/disposal(DISP_PIPE_STRAIGHT,	PIPE_UNARY),
-		"Bent Pipe"  = new /datum/pipe_info/disposal(DISP_PIPE_BENT,		PIPE_BENT),
-		"Junction"   = new /datum/pipe_info/disposal(DISP_JUNCTION,			PIPE_TRINARY),
-		"Y-Junction" = new /datum/pipe_info/disposal(DISP_YJUNCTION,		PIPE_TRINARY),
-		"Trunk"      = new /datum/pipe_info/disposal(DISP_END_TRUNK,		PIPE_UNARY),
-		"Bin"        = new /datum/pipe_info/disposal(DISP_END_BIN,			PIPE_BINARY),
-		"Outlet"     = new /datum/pipe_info/disposal(DISP_END_OUTLET,		PIPE_UNARY),
-		"Chute"      = new /datum/pipe_info/disposal(DISP_END_CHUTE,		PIPE_UNARY),
+		"Pipe"						= new /datum/pipe_info/disposal(DISP_PIPE_STRAIGHT,			PIPE_UNARY),
+		"Bent Pipe"					= new /datum/pipe_info/disposal(DISP_PIPE_BENT,				PIPE_BENT),
+		"Junction"					= new /datum/pipe_info/disposal(DISP_JUNCTION,				PIPE_TRINARY),
+		"Y-Junction"				= new /datum/pipe_info/disposal(DISP_YJUNCTION,				PIPE_TRINARY),
+		"Trunk"						= new /datum/pipe_info/disposal(DISP_END_TRUNK,				PIPE_UNARY),
+		"Bin"						= new /datum/pipe_info/disposal(DISP_END_BIN,				PIPE_BINARY),
+		"Outlet"					= new /datum/pipe_info/disposal(DISP_END_OUTLET,			PIPE_UNARY),
+		"Chute"						= new /datum/pipe_info/disposal(DISP_END_CHUTE,				PIPE_UNARY),
+		"Sorting Junction"			= new /datum/pipe_info/disposal(DISP_SORT_JUNCTION,			PIPE_TRINARY),
+		"Wrapped Sorting Junction"	= new /datum/pipe_info/disposal(DISP_SORT_WRAP_JUNCTION,	PIPE_TRINARY),
 	)
 )
 /obj/item/weapon/pipe_dispenser
@@ -172,12 +177,14 @@ var/global/list/RPD_recipes=list(
 	show_menu(user)
 
 /obj/item/weapon/pipe_dispenser/proc/render_dir_img(var/_dir,var/pic,var/title)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/item/weapon/pipe_dispenser/proc/render_dir_img() called tick#: [world.time]")
 	var/selected=""
 	if(_dir == p_dir)
 		selected=" class=\"selected\""
 	return "<a href=\"?src=\ref[src];setdir=[_dir]\" title=\"[title]\"[selected]><img src=\"[pic]\" /></a>"
 
 /obj/item/weapon/pipe_dispenser/proc/show_menu(mob/user as mob)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/item/weapon/pipe_dispenser/proc/show_menu() called tick#: [world.time]")
 	if(!user || !src)	return 0
 	var/dat = {"<h2>Type</h2>
 <b>Utilities:</b>
@@ -572,6 +579,10 @@ var/global/list/RPD_recipes=list(
 					if(7)
 						C.ptype = 8
 						C.density = 1
+					if(8)
+						C.ptype = 9
+					if(9)
+						C.ptype = 11
 				C.add_fingerprint(usr)
 				C.update()
 				return 1
@@ -593,5 +604,6 @@ var/global/list/RPD_recipes=list(
 
 
 /obj/item/weapon/pipe_dispenser/proc/activate()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/item/weapon/pipe_dispenser/proc/activate() called tick#: [world.time]")
 	playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
 

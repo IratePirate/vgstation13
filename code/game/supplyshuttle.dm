@@ -24,13 +24,12 @@ var/list/mechtoys = list(
 	name = "supply shuttle"
 	icon_state = "shuttle3"
 	requires_power = 0
-	lighting_use_dynamic = 0
+
 
 /area/supply/dock
 	name = "supply shuttle"
 	icon_state = "shuttle3"
 	requires_power = 0
-	lighting_use_dynamic = 0
 
 //SUPPLY PACKS MOVED TO /code/defines/obj/supplypacks.dm
 
@@ -88,7 +87,9 @@ var/list/mechtoys = list(
 		var/mob/living/M = mover
 		if(!M.lying && !istype(M, /mob/living/carbon/monkey) && !istype(M, /mob/living/carbon/slime) && !istype(M, /mob/living/simple_animal/mouse))  //If your not laying down, or a small creature, no pass.
 			return 0
-	return !(airtight && air_group)
+	if(!istype(mover)) // Aircheck!
+		return !airtight
+	return 1
 
 /obj/structure/plasticflaps/ex_act(severity)
 	switch(severity)
@@ -177,6 +178,7 @@ var/list/mechtoys = list(
 
 	//Supply shuttle ticker - handles supply point regenertion and shuttle travelling between centcomm and the station
 	proc/process()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/process() called tick#: [world.time]")
 		for(var/typepath in (typesof(/datum/supply_packs) - /datum/supply_packs))
 			var/datum/supply_packs/P = new typepath()
 			supply_packs[P.name] = P
@@ -199,6 +201,7 @@ var/list/mechtoys = list(
 				sleep(processing_interval)
 
 	proc/send()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/send() called tick#: [world.time]")
 		var/area/from
 		var/area/dest
 		var/area/the_shuttles_way
@@ -231,6 +234,7 @@ var/list/mechtoys = list(
 
 	//Check whether the shuttle is allowed to move
 	proc/can_move()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/can_move() called tick#: [world.time]")
 		if(moving) return 0
 
 		var/area/shuttle = locate(/area/supply/station)
@@ -242,6 +246,8 @@ var/list/mechtoys = list(
 		return 1
 
 	proc/SellObjToOrders(var/atom/A,var/in_crate)
+
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/SellObjToOrders() called tick#: [world.time]")
 
 		// Per-unit orders run last so they don't steal shit.
 		var/list/deferred_order_checks=list()
@@ -258,6 +264,7 @@ var/list/mechtoys = list(
 				return
 	//Sellin
 	proc/sell()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/sell() called tick#: [world.time]")
 		var/shuttle_at
 		if(at_station)	shuttle_at = SUPPLY_STATION_AREATYPE
 		else			shuttle_at = SUPPLY_DOCK_AREATYPE
@@ -312,6 +319,7 @@ var/list/mechtoys = list(
 
 	//Buyin
 	proc/buy()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/buy() called tick#: [world.time]")
 		if(!shoppinglist.len) return
 
 		var/shuttle_at
@@ -351,7 +359,7 @@ var/list/mechtoys = list(
 			var/obj/item/weapon/paper/manifest/slip = new /obj/item/weapon/paper/manifest(A)
 
 			// AUTOFIXED BY fix_string_idiocy.py
-			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:298: slip.info = "<h3>[command_name()] Shipping Manifest</h3><hr><br>"
+			// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:298: slip.info = "<h3>[command_name()] Shipping Manifest</h3><hr><br>"
 			slip.info = {"<h3>[command_name()] Shipping Manifest</h3><hr><br>
 				Order #[SO.ordernum]<br>
 				Destination: [station_name]<br>
@@ -382,7 +390,7 @@ var/list/mechtoys = list(
 			//manifest finalisation
 
 			// AUTOFIXED BY fix_string_idiocy.py
-			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:326: slip.info += "</ul><br>"
+			// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:326: slip.info += "</ul><br>"
 			slip.info += {"</ul><br>
 				CHECK CONTENTS AND STAMP BELOW THE LINE TO CONFIRM RECEIPT OF GOODS<hr>"}
 			// END AUTOFIX
@@ -392,6 +400,7 @@ var/list/mechtoys = list(
 		return
 
 /datum/controller/supply_shuttle/proc/forbidden_atoms_check(atom/A)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/datum/controller/supply_shuttle/proc/forbidden_atoms_check() called tick#: [world.time]")
 	var/contents = get_contents_in_object(A)
 
 	if (locate(/mob/living) in contents)
@@ -400,7 +409,7 @@ var/list/mechtoys = list(
 		. = TRUE
 	else if (locate(/obj/machinery/nuclearbomb) in contents)
 		. = TRUE
-	else if (locate(/obj/item/device/radio/beacon) in contents)
+	else if (locate(/obj/item/beacon) in contents)
 		. = TRUE
 	else
 		. = FALSE
@@ -458,7 +467,7 @@ var/list/mechtoys = list(
 			last_viewed_group = "categories"
 
 			// AUTOFIXED BY fix_string_idiocy.py
-			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:383: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
+			// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:383: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
 			temp = {"<b>Supply points: [current_acct ? current_acct.fmtBalance() : "PANIC"]</b><BR>
 				<A href='?src=\ref[src];mainmenu=1'>Main Menu</A><HR><BR><BR>
 				<b>Select a category</b><BR><BR>"}
@@ -469,7 +478,7 @@ var/list/mechtoys = list(
 			last_viewed_group = href_list["order"]
 
 			// AUTOFIXED BY fix_string_idiocy.py
-			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:390: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
+			// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:390: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
 			temp = {"<b>Supply points: [current_acct ? current_acct.fmtBalance() : "PANIC"]</b><BR>
 				<A href='?src=\ref[src];order=categories'>Back to all categories</A><HR><BR><BR>
 				<b>Request from: [last_viewed_group]</b><BR><BR>"}
@@ -515,7 +524,7 @@ var/list/mechtoys = list(
 		reqform.name = "Requisition Form - [P.name]"
 
 		// AUTOFIXED BY fix_string_idiocy.py
-		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:425: reqform.info += "<h3>[station_name] Supply Requisition Form</h3><hr>"
+		// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:425: reqform.info += "<h3>[station_name] Supply Requisition Form</h3><hr>"
 		reqform.info += {"<h3>[station_name] Supply Requisition Form</h3><hr>
 			INDEX: #[supply_shuttle.ordernum]<br>
 			REQUESTED BY: [idname]<br>
@@ -528,7 +537,7 @@ var/list/mechtoys = list(
 		reqform.info += P.manifest
 
 		// AUTOFIXED BY fix_string_idiocy.py
-		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:434: reqform.info += "<hr>"
+		// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:434: reqform.info += "<hr>"
 		reqform.info += {"<hr>
 			STAMP BELOW TO APPROVE THIS REQUISITION:<br>"}
 		// END AUTOFIX
@@ -545,7 +554,7 @@ var/list/mechtoys = list(
 
 
 		// AUTOFIXED BY fix_string_idiocy.py
-		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:447: temp = "Thanks for your request. The cargo team will process it as soon as possible.<BR>"
+		// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:447: temp = "Thanks for your request. The cargo team will process it as soon as possible.<BR>"
 		temp = {"Thanks for your request. The cargo team will process it as soon as possible.<BR>
 			<BR><A href='?src=\ref[src];order=[last_viewed_group]'>Back</A> <A href='?src=\ref[src];mainmenu=1'>Main Menu</A>"}
 		// END AUTOFIX
@@ -670,7 +679,7 @@ var/list/mechtoys = list(
 			last_viewed_group = "categories"
 
 			// AUTOFIXED BY fix_string_idiocy.py
-			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:567: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
+			// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:567: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
 			temp = {"<b>Available credits: [current_acct ? current_acct.fmtBalance() : "PANIC"]</b><BR>
 				<A href='?src=\ref[src];mainmenu=1'>Main Menu</A><HR><BR><BR>
 				<b>Select a category</b><BR><BR>"}
@@ -681,7 +690,7 @@ var/list/mechtoys = list(
 			last_viewed_group = href_list["order"]
 
 			// AUTOFIXED BY fix_string_idiocy.py
-			// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:574: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
+			// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:574: temp = "<b>Supply points: [supply_shuttle.points]</b><BR>"
 			temp = {"<b>Available credits: [current_acct ? current_acct.fmtBalance() : "PANIC"]</b><BR>
 				<A href='?src=\ref[src];order=categories'>Back to all categories</A><HR><BR><BR>
 				<b>Request from: [last_viewed_group]</b><BR><BR>"}
@@ -736,7 +745,7 @@ var/list/mechtoys = list(
 		reqform.name = "Requisition Form - [P.name]"
 
 		// AUTOFIXED BY fix_string_idiocy.py
-		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:618: reqform.info += "<h3>[station_name] Supply Requisition Form</h3><hr>"
+		// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:618: reqform.info += "<h3>[station_name] Supply Requisition Form</h3><hr>"
 		reqform.info += {"<h3>[station_name] Supply Requisition Form</h3><hr>
 			INDEX: #[supply_shuttle.ordernum]<br>
 			REQUESTED BY: [idname]<br>
@@ -749,7 +758,7 @@ var/list/mechtoys = list(
 		reqform.info += P.manifest
 
 		// AUTOFIXED BY fix_string_idiocy.py
-		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:627: reqform.info += "<hr>"
+		// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:627: reqform.info += "<hr>"
 		reqform.info += {"<hr>
 			STAMP BELOW TO APPROVE THIS REQUISITION:<br>"}
 		// END AUTOFIX
@@ -766,7 +775,7 @@ var/list/mechtoys = list(
 
 
 		// AUTOFIXED BY fix_string_idiocy.py
-		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:640: temp = "Order request placed.<BR>"
+		// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:640: temp = "Order request placed.<BR>"
 		temp = {"Order request placed.<BR>
 			<BR><A href='?src=\ref[src];order=[last_viewed_group]'>Back</A> | <A href='?src=\ref[src];mainmenu=1'>Main Menu</A> | <A href='?src=\ref[src];confirmorder=[O.ordernum]'>Authorize Order</A>"}
 		// END AUTOFIX
@@ -791,14 +800,14 @@ var/list/mechtoys = list(
 					supply_shuttle.shoppinglist += O
 
 					// AUTOFIXED BY fix_string_idiocy.py
-					// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:658: temp = "Thanks for your order.<BR>"
+					// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:658: temp = "Thanks for your order.<BR>"
 					temp = {"Thanks for your order.<BR>
 						<BR><A href='?src=\ref[src];viewrequests=1'>Back</A> <A href='?src=\ref[src];mainmenu=1'>Main Menu</A>"}
 					// END AUTOFIX
 				else
 
 					// AUTOFIXED BY fix_string_idiocy.py
-					// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:661: temp = "Not enough supply points.<BR>"
+					// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:661: temp = "Not enough supply points.<BR>"
 					temp = {"Not enough credit.<BR>
 						<BR><A href='?src=\ref[src];viewrequests=1'>Back</A> <A href='?src=\ref[src];mainmenu=1'>Main Menu</A>"}
 					// END AUTOFIX
@@ -830,7 +839,7 @@ var/list/mechtoys = list(
 
 
 		// AUTOFIXED BY fix_string_idiocy.py
-		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:689: temp += "<BR><A href='?src=\ref[src];clearreq=1'>Clear list</A>"
+		// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:689: temp += "<BR><A href='?src=\ref[src];clearreq=1'>Clear list</A>"
 		temp += {"<BR><A href='?src=\ref[src];clearreq=1'>Clear list</A>
 			<BR><A href='?src=\ref[src];mainmenu=1'>OK</A>"}
 		// END AUTOFIX
@@ -849,7 +858,7 @@ var/list/mechtoys = list(
 		supply_shuttle.requestlist.len = 0
 
 		// AUTOFIXED BY fix_string_idiocy.py
-		// C:\Users\Rob\Documents\Projects\vgstation13\code\game\supplyshuttle.dm:705: temp = "List cleared.<BR>"
+		// C:\Users\Rob\\documents\\\projects\vgstation13\code\game\supplyshuttle.dm:705: temp = "List cleared.<BR>"
 		temp = {"List cleared.<BR>
 			<BR><A href='?src=\ref[src];mainmenu=1'>OK</A>"}
 		// END AUTOFIX
@@ -861,6 +870,8 @@ var/list/mechtoys = list(
 	return
 
 /obj/machinery/computer/supplycomp/proc/post_signal(var/command)
+
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/computer/supplycomp/proc/post_signal() called tick#: [world.time]")
 
 	var/datum/radio_frequency/frequency = radio_controller.return_frequency(1435)
 

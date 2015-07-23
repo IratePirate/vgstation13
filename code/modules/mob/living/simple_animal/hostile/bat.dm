@@ -82,15 +82,16 @@
 				shuttletarget = pick(escape_list) //Pick a shuttle target
 			enroute = 1
 			stop_automated_movement = 1
-			spawn()
+/*			spawn()
 				if(!src.stat)
-					horde()
+					horde()*/
 
 		if(get_dist(src, shuttletarget) <= 2)		//The monster reached the escape hallway
 			enroute = 0
 			stop_automated_movement = 0
 
 /mob/living/simple_animal/hostile/scarybat/cult/proc/horde()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/simple_animal/hostile/scarybat/cult/proc/horde() called tick#: [world.time]")
 	var/turf/T = get_step_to(src, shuttletarget)
 	for(var/atom/A in T)
 		if(istype(A,/obj/machinery/door/airlock))
@@ -146,3 +147,16 @@ mob/living/simple_animal/hostile/scarybat/book/New()
 	icon_state = "bookbat_[book_cover]"
 	icon_living = "bookbat_[book_cover]"
 	icon_dead = "bookbat_[book_cover]_dead"
+
+/mob/living/simple_animal/hostile/scarybat/book/woody
+	name = "Woody"
+	desc = "A close friend to many librarians."
+	icon_state = "bookbat_woody"
+	icon_living = "bookbat_woody"
+	icon_dead = "bookbat_woody_dead"
+	icon_gib = "bookbat_woody_dead"
+	book_cover = "woody"
+	environment_smash = 0
+	harm_intent_damage = 0
+	melee_damage_lower = 0
+	melee_damage_upper = 0

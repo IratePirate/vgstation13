@@ -77,6 +77,14 @@
 /mob/living/simple_animal/cat/Proc
 	name = "Proc"
 
+/mob/living/simple_animal/cat/salem
+	name = "Salem"
+	desc = "Meow."
+	icon_state = "salem"
+	icon_living= "salem"
+	icon_dead= "salem_dead"
+	gender = FEMALE
+
 /mob/living/simple_animal/cat/kitten
 	name = "kitten"
 	desc = "D'aaawwww"
@@ -84,3 +92,18 @@
 	icon_living = "kitten"
 	icon_dead = "kitten_dead"
 	gender = NEUTER
+
+/mob/living/simple_animal/cat/snek
+	name = "snake"
+	desc = "sssSSSSsss"
+	icon_state = "snek"
+	icon_living = "snek"
+	icon_dead = "snek_dead"
+	gender = NEUTER
+	speak = list("SssssSSSS.", "Slirp.","HSSSSS")
+	speak_emote = list("hisses")
+	emote_hear = list("hisses")
+	emote_see = list("slithers")
+
+/mob/living/simple_animal/cat/snek/corpus
+	name = "Corpus"

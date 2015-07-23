@@ -105,6 +105,7 @@ Please contact me on #coderbus IRC. ~Carn x
 
 
 /mob/living/carbon/human/proc/QueueUpdateDamageIcon(var/forced = 0)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/QueueUpdateDamageIcon() called tick#: [world.time]")
 	if(forced)
 		UpdateDamageIcon(1)
 		update_overlays = 0
@@ -120,12 +121,14 @@ Please contact me on #coderbus IRC. ~Carn x
 	update_transform()
 
 /mob/living/carbon/human/proc/update_overlays_standing()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/update_overlays_standing() called tick#: [world.time]")
 	if(species && species.override_icon)
 		species_override_icon()
 	else
 		generate_overlays_icon()
 
 /mob/living/carbon/human/proc/species_override_icon()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/species_override_icon() called tick#: [world.time]")
 	//overlays.len = 0
 	icon = species.override_icon
 	icon_state = "[lowertext(species.name)]_[gender][ (species.flags & CAN_BE_FAT ? (mutations & M_FAT) ? "_fat" : "" : "") ]"
@@ -134,11 +137,13 @@ Please contact me on #coderbus IRC. ~Carn x
 
 
 /mob/living/carbon/human/proc/generate_overlays_icon()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/generate_overlays_icon() called tick#: [world.time]")
 	icon = stand_icon
 
 var/global/list/damage_icon_parts = list()
 
 /mob/living/carbon/human/proc/get_damage_icon_part(damage_state, body_part,species_blood = "")
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/get_damage_icon_part() called tick#: [world.time]")
 	var/icon/I = damage_icon_parts["[damage_state]/[body_part]/[species_blood]"]
 	if(!I)
 		var/icon/DI = icon('icons/mob/dam_human.dmi', damage_state)			// the damage icon for whole human
@@ -194,6 +199,8 @@ var/global/list/damage_icon_parts = list()
 
 //BASE MOB SPRITE
 /mob/living/carbon/human/proc/update_body(var/update_icons=1)
+
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/update_body() called tick#: [world.time]")
 
 	var/husk_color_mod = rgb(96,88,80)
 	var/hulk_color_mod = rgb(48,224,40)
@@ -299,6 +306,7 @@ var/global/list/damage_icon_parts = list()
 
 //HAIR OVERLAY
 /mob/living/carbon/human/proc/update_hair(var/update_icons=1)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/update_hair() called tick#: [world.time]")
 	//Reset our hair
 
 	overlays -= obj_overlays[HAIR_LAYER]
@@ -419,6 +427,8 @@ var/global/list/damage_icon_parts = list()
 
 
 /mob/living/carbon/human/proc/update_mutantrace(var/update_icons=1)
+
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/update_mutantrace() called tick#: [world.time]")
 
 	var/fat
 	if( M_FAT in mutations )
@@ -545,7 +555,7 @@ var/global/list/damage_icon_parts = list()
 		if(w_uniform.icon_override)
 			standing.icon	= w_uniform.icon_override
 
-		if(w_uniform.blood_DNA)
+		if(w_uniform.blood_DNA && w_uniform.blood_DNA.len)
 			var/image/bloodsies	= image("icon" = 'icons/effects/blood.dmi', "icon_state" = "uniformblood")
 			bloodsies.color		= w_uniform.blood_color
 			//standing.overlays	+= bloodsies
@@ -617,7 +627,7 @@ var/global/list/damage_icon_parts = list()
 			if(species.gloves_icons)
 				standing.icon = species.gloves_icons
 
-		if(gloves.blood_DNA)
+		if(gloves.blood_DNA && gloves.blood_DNA.len)
 			var/image/bloodsies	= image("icon" = 'icons/effects/blood.dmi', "icon_state" = "bloodyhands")
 			bloodsies.color = gloves.blood_color
 			standing.overlays	+= bloodsies
@@ -630,7 +640,7 @@ var/global/list/damage_icon_parts = list()
 		obj_overlays[GLOVES_LAYER] = O
 		//overlays_standing[GLOVES_LAYER]	= standing
 	else
-		if(blood_DNA)
+		if(blood_DNA && blood_DNA.len)
 			O.icon = 'icons/effects/blood.dmi'
 			O.icon_state = "bloodyhands"
 			O.color = hand_blood_color
@@ -712,7 +722,7 @@ var/global/list/damage_icon_parts = list()
 				//standing.icon = species.shoes_icons
 
 		O.overlays.len = 0
-		if(shoes.blood_DNA)
+		if(shoes.blood_DNA && shoes.blood_DNA.len)
 			var/image/bloodsies = image("icon" = 'icons/effects/blood.dmi', "icon_state" = "shoeblood")
 			bloodsies.color = shoes.blood_color
 			//standing.overlays	+= bloodsies
@@ -758,7 +768,7 @@ var/global/list/damage_icon_parts = list()
 			if(species.head_icons)
 				standing.icon = species.head_icons
 
-		if(head.blood_DNA)
+		if(head.blood_DNA && head.blood_DNA.len)
 			var/image/bloodsies = image("icon" = 'icons/effects/blood.dmi', "icon_state" = "helmetblood")
 			bloodsies.color = head.blood_color
 			//standing.overlays	+= bloodsies
@@ -813,7 +823,7 @@ var/global/list/damage_icon_parts = list()
 			if(species.wear_suit_icons)
 				standing.icon = species.wear_suit_icons
 
-		if(wear_suit.blood_DNA)
+		if(wear_suit.blood_DNA && wear_suit.blood_DNA.len)
 			var/obj/item/clothing/suit/S = wear_suit
 			var/image/bloodsies = image("icon" = 'icons/effects/blood.dmi', "icon_state" = "[S.blood_overlay_type]blood")
 			bloodsies.color = wear_suit.blood_color
@@ -852,7 +862,7 @@ var/global/list/damage_icon_parts = list()
 			if(species.wear_mask_icons)   //This REQUIRES the species to be listed in species_fit and also to have an appropriate dmi allocated in their species datum
 				standing.icon = species.wear_mask_icons
 
-		if( !istype(wear_mask, /obj/item/clothing/mask/cigarette) && wear_mask.blood_DNA )
+		if( !istype(wear_mask, /obj/item/clothing/mask/cigarette) && wear_mask.blood_DNA && wear_mask.blood_DNA.len )
 			var/image/bloodsies = image("icon" = 'icons/effects/blood.dmi', "icon_state" = "maskblood")
 			bloodsies.color = wear_mask.blood_color
 			//standing.overlays	+= bloodsies
@@ -973,6 +983,7 @@ var/global/list/damage_icon_parts = list()
 	if(update_icons)   update_icons()
 
 /mob/living/carbon/human/proc/update_tail_showing(var/update_icons=1)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/update_tail_showing() called tick#: [world.time]")
 	//overlays_standing[TAIL_LAYER] = null
 	overlays -= obj_overlays[TAIL_LAYER]
 	if(species.tail && species.flags & HAS_TAIL)
@@ -994,6 +1005,7 @@ var/global/list/damage_icon_parts = list()
 
 // Used mostly for creating head items
 /mob/living/carbon/human/proc/generate_head_icon()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/generate_head_icon() called tick#: [world.time]")
 //gender no longer matters for the mouth, although there should probably be seperate base head icons.
 //	var/g = "m"
 //	if (gender == FEMALE)	g = "f"
@@ -1029,6 +1041,7 @@ var/global/list/damage_icon_parts = list()
 
 //lower cost way of updating the necessary human icons on equip and unequip
 /mob/living/carbon/human/proc/update_hidden_item_icons(var/obj/item/W)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/mob/living/carbon/human/proc/update_hidden_item_icons() called tick#: [world.time]")
 	if(!W)
 		return
 

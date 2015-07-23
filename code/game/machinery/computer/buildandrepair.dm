@@ -260,6 +260,15 @@
 	build_path = "/obj/machinery/computer/pda_terminal"
 	origin_tech = "programming=2"
 
+/obj/item/weapon/circuitboard/smeltcomp
+	name = "Circuit board (Ore Processing Console)"
+	build_path = "/obj/machinery/computer/smelting"
+	origin_tech = "programming=2;materials=2"
+
+/obj/item/weapon/circuitboard/stacking_machine_console
+	name = "Circuit board (Stacking Machine Console)"
+	build_path = "/obj/machinery/computer/stacking_unit"
+	origin_tech = "programming=2;materials=2"
 
 /obj/item/weapon/circuitboard/attackby(obj/item/I as obj, mob/user as mob)
 	if(issolder(I))
@@ -278,6 +287,7 @@
 	return
 
 /obj/item/weapon/circuitboard/proc/solder_improve(mob/user as mob)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/item/weapon/circuitboard/proc/solder_improve() called tick#: [world.time]")
 	user << "<span class='warning'>You fiddle with a few random fuses but can't find a routing that doesn't short the board.</span>"
 	return
 

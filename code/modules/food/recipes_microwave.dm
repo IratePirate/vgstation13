@@ -351,6 +351,7 @@
 	result = /obj/item/weapon/reagent_containers/food/snacks/donkpocket //SPECIAL
 
 /datum/recipe/donkpocket/proc/warm_up(var/obj/item/weapon/reagent_containers/food/snacks/donkpocket/being_cooked)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/datum/recipe/donkpocket/proc/warm_up() called tick#: [world.time]")
 	being_cooked.warm = 1
 	being_cooked.reagents.add_reagent("tricordrazine", 5)
 	being_cooked.bitesize = 6
@@ -1555,6 +1556,16 @@
 		/obj/item/weapon/reagent_containers/food/snacks/meat/egg,
 		)
 	result = /obj/item/weapon/reagent_containers/food/snacks/potatosalad
+
+/datum/recipe/potentham
+	reagents = list("plasma" = 10)
+	items = list(
+		/obj/item/weapon/aiModule/core/asimov,
+		/obj/item/robot_parts/head,
+		/obj/item/weapon/handcuffs
+
+		)
+	result = /obj/item/weapon/reagent_containers/food/snacks/potentham
 
 // Currently Disabled //////////////////////////////////////////
 

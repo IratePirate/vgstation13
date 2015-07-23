@@ -387,6 +387,7 @@
 	style = new style_type
 
 /obj/item/toy/crayon/proc/Format(var/mob/user,var/text,var/obj/item/weapon/paper/P)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/item/toy/crayon/proc/Format() called tick#: [world.time]")
 	return style.Format(text,src,user,P)
 
 /obj/item/toy/crayon/suicide_act(mob/user)
@@ -930,3 +931,10 @@
 	name = "fingerbox"
 	desc = "A high quality fingerbox."
 	icon_state = "fingerbox"
+
+	//I couldn't think of anywhere else to put this
+/obj/item/toy/canary
+	name = "canary"
+	desc = "Small mechanical canary in a cage, does absolutely nothing of any importance!"
+	icon = 'icons/mob/animal.dmi'
+	icon_state = "canary"

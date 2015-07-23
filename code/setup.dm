@@ -622,35 +622,6 @@ var/list/liftable_structures = list(\
 //some arbitrary defines to be used by self-pruning global lists. (see master_controller)
 #define PROCESS_KILL 26	//Used to trigger removal from a processing list
 
-// Reference list for disposal sort junctions. Set the sortType variable on disposal sort junctions to
-// the index of the sort department that you want. For example, sortType set to 2 will reroute all packages
-// tagged for the Cargo Bay.
-var/list/TAGGERLOCATIONS = list(
-	"Disposals",     // 1
-	"Cargo Bay",     // 2
-	"QM Office",     // 3
-	"Engineering",   // 4
-	"CE Office",     // 5
-	"Atmospherics",  // 6
-	"Security",      // 7
-	"HoS Office",    // 8
-	"Medbay",        // 9
-	"CMO Office",    // 10
-	"Chemistry",     // 11
-	"Research",      // 12
-	"RD Office",     // 13
-	"Robotics",      // 14
-	"HoP Office",    // 15
-	"Library",       // 16
-	"Chapel",        // 17
-	"Theatre",       // 18
-	"Bar",           // 19
-	"Kitchen",       // 20
-	"Hydroponics",   // 21
-	"Janitor Closet",// 22
-	"Genetics",      // 23
-	"Telecomms")     // 24
-
 #define HOSTILE_STANCE_IDLE 1
 #define HOSTILE_STANCE_ALERT 2
 #define HOSTILE_STANCE_ATTACK 3
@@ -1079,7 +1050,7 @@ var/list/RESTRICTED_CAMERA_NETWORKS = list( //Those networks can only be accesse
 
 
 //COMMENT IF YOUR DREAMDAEMON VERSION IS BELOW 507.1248
-#define BORDER_USE_TURF_EXIT 1
+//#define BORDER_USE_TURF_EXIT 1
 
 ////////////////////////
 ////PDA APPS DEFINES////
@@ -1169,7 +1140,7 @@ var/list/RESTRICTED_CAMERA_NETWORKS = list( //Those networks can only be accesse
 #define LANGUAGE_VOX "Vox-pidgin"
 #define LANGUAGE_CULT "Cult"
 
-//#define SAY_DEBUG 0
+/*#define SAY_DEBUG 0
 #ifdef SAY_DEBUG
 	#warning SOME ASSHOLE FORGOT TO COMMENT SAY_DEBUG BEFORE COMMITTING
 	#define say_testing(a,x) a << ("([__FILE__]L[__LINE__] SAYDEBUG) [x]")
@@ -1177,11 +1148,26 @@ var/list/RESTRICTED_CAMERA_NETWORKS = list( //Those networks can only be accesse
 	#define say_testing(a,x) null << "[x][a]"
 #endif
 
+#define JUSTFUCKMYSHITUP 1
+#ifdef JUSTFUCKMYSHITUP
+#define writepanic(a) if(ticker && ticker.current_state >= 3 && world.cpu > 100) write_panic(a)
+#warning IMA FUCK YOUR SHIT UP
+var/proccalls = 1
+//keep a list of last 10 proccalls maybe?
+/proc/write_panic(a)
+	set background = 1
+	panicfile["[proccalls]"] << a
+	if(++proccalls > 200) proccalls = 1
+
+#else
+	#define writepanic(a) null << a
+#endif*/
+
 //Bay lighting engine shit, not in /code/modules/lighting because BYOND is being shit about it
 #define LIGHTING_INTERVAL 5 // frequency, in 1/10ths of a second, of the lighting process
 
 #define LIGHTING_FALLOFF 1 // type of falloff to use for lighting; 1 for circular, 2 for square
-#define LIGHTING_LAMBERTIAN 1 // use lambertian shading for light sources
+#define LIGHTING_LAMBERTIAN 0 // use lambertian shading for light sources
 #define LIGHTING_HEIGHT 1 // height off the ground of light sources on the pseudo-z-axis, you should probably leave this alone
 #define LIGHTING_TRANSITIONS 0 // smooth, animated transitions, similar to TG station
 #ifdef LIGHTING_TRANSITIONS
@@ -1210,3 +1196,12 @@ var/list/RESTRICTED_CAMERA_NETWORKS = list( //Those networks can only be accesse
 #define LIGHT_COLOR_SLIME_LAMP "#AFC84B" //Weird color, between yellow and green, very slimy. rgb(175, 200, 75)
 #define LIGHT_COLOR_TUNGSTEN "#FAE1AF" //Extremely diluted yellow, close to skin color (for some reason). rgb(250, 225, 175)
 #define LIGHT_COLOR_HALOGEN "#F0FAFA" //Barely visible cyan-ish hue, as the doctor prescribed. rgb(240, 250, 250)
+
+//Default frequencies of signal based RC stuff, because comic and his magic numbers.
+#define FREQ_DISPOSAL 1367
+
+
+//Ore processing types for the ore processor
+#define ORE_PROCESSING_GENERAL 1
+#define ORE_PROCESSING_ALLOY 2
+

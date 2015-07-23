@@ -143,6 +143,7 @@
 		return
 
 	proc/vend_prize()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/vend_prize() called tick#: [world.time]")
 		var/obj/item/prize
 		var/prizeselect = rand(1,4)
 		var/turf/prize_location = null
@@ -158,7 +159,7 @@
 				prize.name = "space ticket"
 				prize.desc = "It's almost like actual currency!"
 			if(2)
-				prize = new /obj/item/device/radio/beacon( prize_location )
+				prize = new /obj/item/beacon( prize_location )
 				prize.name = "electronic blink toy game"
 				prize.desc = "Blink.  Blink.  Blink."
 			if(3)

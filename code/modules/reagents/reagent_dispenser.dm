@@ -32,6 +32,7 @@
 	set name = "Set transfer amount"
 	set category = "Object"
 	set src in view(1)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""]) \\/obj/structure/reagent_dispensers/verb/set_APTFT()  called tick#: [world.time]")
 	var/N = input("Amount per transfer from this:","[src]") as null|anything in possible_transfer_amounts
 	if (N)
 		amount_per_transfer_from_this = N
@@ -67,6 +68,7 @@
 		verbs -= /obj/structure/reagent_dispensers/verb/set_APTFT
 
 /obj/structure/reagent_dispensers/proc/is_empty()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/structure/reagent_dispensers/proc/is_empty() called tick#: [world.time]")
 	return reagents.total_volume <= 0
 
 //Dispensers
@@ -179,6 +181,7 @@
 	return ..()
 
 /obj/structure/reagent_dispensers/fueltank/proc/explode()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/structure/reagent_dispensers/fueltank/proc/explode() called tick#: [world.time]")
 	if (reagents.total_volume > 500)
 		explosion(src.loc,1,2,4)
 	else if (reagents.total_volume > 100)
@@ -230,6 +233,16 @@
 
 /obj/structure/reagent_dispensers/water_cooler/attack_paw(mob/user as mob)
 	return attack_hand(user)
+
+/obj/structure/reagent_dispensers/water_cooler/attackby(obj/item/I as obj, mob/user as mob)
+	if (iswelder(I))
+		var/obj/item/weapon/weldingtool/WT = I
+		if(WT.remove_fuel(0, user))
+			new /obj/item/stack/sheet/mineral/plastic (src.loc,4)
+			qdel(src)
+			return
+	else
+		..()
 
 /obj/structure/reagent_dispensers/beerkeg
 	name = "beer keg"

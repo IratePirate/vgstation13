@@ -5,7 +5,7 @@
 
 //Returns the world time in english
 proc/worldtime2text(timestamp = world.time)
-	return "[round(timestamp / 36000) + 12]:[(timestamp / 600 % 60) < 10 ? add_zero(timestamp / 600 % 60, 1) : timestamp / 600 % 60]"
+	return "[(round(timestamp / 36000) + 12) % 24]:[(timestamp / 600 % 60) < 10 ? add_zero(timestamp / 600 % 60, 1) : timestamp / 600 % 60]"
 
 proc/time_stamp()
 	return time2text(world.timeofday, "hh:mm:ss")
@@ -26,6 +26,7 @@ proc/time_stamp()
 
 /* Returns 1 if it is the selected month and day */
 proc/isDay(var/month, var/day)
+	//writepanic("[__FILE__].[__LINE__] \\/proc/isDay() called tick#: [world.time]")
 	if(isnum(month) && isnum(day))
 		var/MM = text2num(time2text(world.timeofday, "MM")) // get the current month
 		var/DD = text2num(time2text(world.timeofday, "DD")) // get the current day

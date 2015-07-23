@@ -10,6 +10,7 @@
 
 
 /obj/item/weapon/storage/belt/proc/can_use()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/item/weapon/storage/belt/proc/can_use() called tick#: [world.time]")
 	if(!ismob(loc)) return 0
 	var/mob/M = loc
 	if(src in M.get_equipped_items())
@@ -169,7 +170,8 @@
 		"/obj/item/weapon/gun/energy/taser",
 		"/obj/item/weapon/legcuffs/bolas",
 		"/obj/item/device/hailer",
-		"obj/item/weapon/melee/telebaton"
+		"obj/item/weapon/melee/telebaton",
+		"/obj/item/device/gps/secure"
 		)
 /obj/item/weapon/storage/belt/security/batmanbelt
 	name = "batbelt"
@@ -234,7 +236,7 @@
 		"/obj/item/weapon/storage/box/samplebags",
 		"/obj/item/device/core_sampler",
 		"/obj/item/device/beacon_locator",
-		"/obj/item/device/radio/beacon",
+		"/obj/item/beacon",
 		"/obj/item/device/gps",
 		"/obj/item/device/measuring_tape",
 		"/obj/item/device/flashlight",

@@ -18,6 +18,7 @@ datum
 
 		// /vg/: Send admin alerts with standardized code.
 		proc/send_admin_alert(var/datum/reagents/holder, var/reaction_name=src.name)
+			//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/send_admin_alert() called tick#: [world.time]")
 			var/message_prefix = "\A [reaction_name] reaction has occured"
 			var/message="[message_prefix]"
 			var/atom/A = holder.my_atom
@@ -38,6 +39,7 @@ datum
 			message_admins(message, 0, 1)
 
 		proc/on_reaction(var/datum/reagents/holder, var/created_volume)
+			//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/on_reaction() called tick#: [world.time]")
 			return
 
 		//I recommend you set the result amount to the total volume of all components.
@@ -874,9 +876,10 @@ datum
 			on_reaction(var/datum/reagents/holder, var/created_volume)
 
 				// Calculate new position (searches through beacons in world)
-				var/obj/item/device/radio/beacon/chosen
+				var
+				/chosen
 				var/list/possible = list()
-				for(var/obj/item/device/radio/beacon/W in world)
+				for(var/obj/item/beacon/W in beacons)
 					possible += W
 
 				if(possible.len > 0)
@@ -899,7 +902,7 @@ datum
 					var/y_distance = TO.y - FROM.y
 					var/x_distance = TO.x - FROM.x
 					for (var/atom/movable/A in range(2, FROM )) // iterate thru list of mobs in the area
-						if(istype(A, /obj/item/device/radio/beacon)) continue // don't teleport beacons because that's just insanely stupid
+						if(istype(A, /obj/item/beacon)) continue // don't teleport beacons because that's just insanely stupid
 						if( A.anchored && !istype(A, /mob/dead/observer) ) continue // don't teleport anchored things (computers, tables, windows, grilles, etc) because this causes problems!
 						// do teleport ghosts however because hell why not
 
@@ -1648,9 +1651,9 @@ datum
 				else
 					send_admin_alert(holder, reaction_name="bluespace slime + plasma (Mass Teleport) in a grenade")
 				// Calculate new position (searches through beacons in world)
-				var/obj/item/device/radio/beacon/chosen
+				var/obj/item/beacon/chosen
 				var/list/possible = list()
-				for(var/obj/item/device/radio/beacon/W in world)
+				for(var/obj/item/beacon/W in beacons)
 					possible += W
 
 				if(possible.len > 0)
@@ -1673,7 +1676,7 @@ datum
 					var/y_distance = TO.y - FROM.y
 					var/x_distance = TO.x - FROM.x
 					for (var/atom/movable/A in range(4, FROM )) // iterate thru list of mobs in the area
-						if(istype(A, /obj/item/device/radio/beacon)) continue // don't teleport beacons because that's just insanely stupid
+						if(istype(A, /obj/item/beacon)) continue // don't teleport beacons because that's just insanely stupid
 						if(A.anchored) continue
 						if(istype(A, /obj/structure/cable )) continue
 
@@ -1724,7 +1727,7 @@ datum
 				var/obj/item/weapon/slimesteroid2/P = new /obj/item/weapon/slimesteroid2
 				P.loc = get_turf(holder.my_atom)
 
-//Sepia
+//sepia
 		slimecamera
 			name = "Slime Camera"
 			id = "m_camera"

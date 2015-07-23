@@ -70,6 +70,7 @@ k
 //A proc to calculate the reliability of a design based on tech levels and innate modifiers.
 //Input: A list of /datum/tech; Output: The new reliabilty.
 /datum/design/proc/CalcReliability(var/list/temp_techs)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/datum/design/proc/CalcReliability() called tick#: [world.time]")
 	var/new_reliability = reliability_mod + reliability_base
 	for(var/datum/tech/T in temp_techs)
 		if(T.id in req_tech)
@@ -84,6 +85,7 @@ k
 //material_strict will check the atom's materials against the design's materials if set to 1, but won't for machines
 //If you want to check machine materials strictly as well, set material_strict to 2
 proc/FindDesign(var/atom/part, material_strict = 0)
+	//writepanic("[__FILE__].[__LINE__] \\/proc/FindDesign() called tick#: [world.time]")
 	if(ispath(part))
 		return FindTypeDesign(part)
 
@@ -105,6 +107,7 @@ proc/FindDesign(var/atom/part, material_strict = 0)
 				return D
 
 proc/FindTypeDesign(var/part_path)
+	//writepanic("[__FILE__].[__LINE__] \\/proc/FindTypeDesign() called tick#: [world.time]")
 	for(var/datum/design/D in design_list)
 		if(D.build_path == part_path)
 			return D
@@ -112,7 +115,12 @@ proc/FindTypeDesign(var/part_path)
 //Acts as FindDesign, but makes a new design if it doesn't find one
 //Doesn't take types for the design creation, so don't rely on it for that
 proc/getScanDesign(var/obj/O)
-	var/datum/design/D = FindDesign(O, 1) //The 1 means we check strict materials - if we don't have materials, we just check the type
+	//writepanic("[__FILE__].[__LINE__] \\/proc/getScanDesign() called tick#: [world.time]")
+	var/datum/design/D
+	if(O.materials)
+		D = FindDesign(O, 1) //The 1 means we check strict materials - if we don't have materials, we just check the type
+	else
+		D = FindDesign(O)
 	if(D)
 		return D
 
@@ -121,6 +129,7 @@ proc/getScanDesign(var/obj/O)
 
 //sum of the required tech of a design
 /datum/design/proc/TechTotal()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/datum/design/proc/TechTotal() called tick#: [world.time]")
 	var/total = 0
 	for(var/tech in src.req_tech)
 		total += src.req_tech[tech]
@@ -129,6 +138,7 @@ proc/getScanDesign(var/obj/O)
 //sum of the required materials of a design
 //do not confuse this with Total_Materials. That gets the machine's materials, this gets design materials
 /datum/design/proc/MatTotal()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/datum/design/proc/MatTotal() called tick#: [world.time]")
 	var/total = 0
 	for(var/matID in src.materials)
 		total += src.materials[matID]
@@ -2542,7 +2552,7 @@ proc/getScanDesign(var/obj/O)
 	build_type = PROTOLATHE
 	materials = list (MAT_IRON = 20, MAT_GLASS = 10)
 	category = "Bluespace"
-	build_path = /obj/item/device/radio/beacon
+	build_path = /obj/item/beacon
 
 /datum/design/bag_holding
 	name = "Bag of Holding"
@@ -3099,7 +3109,6 @@ proc/getScanDesign(var/obj/O)
 	category = "Machine Boards"
 	build_path = /obj/item/weapon/circuitboard/mech_bay_power_port
 
-
 /datum/design/mechapowerfloor
 	name = "Circuit Design (Recharge Station)"
 	desc = "Allows for the construction of circuit boards used to build a mech bay recharge station."
@@ -3110,6 +3119,51 @@ proc/getScanDesign(var/obj/O)
 	category = "Machine Boards"
 	build_path = /obj/item/weapon/circuitboard/mech_bay_recharge_station
 
+/datum/design/smeltcomp
+	name = "Circuit Design (Ore Processing Console)"
+	desc = "Allows for the construction of circuit boards used to build an ore processing console."
+	id = "smeltcomp"
+	req_tech = list("materials" = 2, "programming" = 2)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	category = "Console Boards"
+	build_path = /obj/item/weapon/circuitboard/smeltcomp
+
+/datum/design/processing_unit
+	name = "Circuit Design (Ore Processor)"
+	desc = "Allows for the construction of circuit boards used to build an ore processor."
+	id = "smelter"
+	req_tech = list("programming" = 2, "materials" = 3, "engineering" = 3)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	category = "Machine Boards"
+	build_path = /obj/item/weapon/circuitboard/processing_unit
+
+/datum/design/processing_unit/recycling
+	name = "Circuit Design (Recycling Furnace)"
+	desc = "Allows for the construction of circuit boards used to build a recycling furnace."
+	id = "smelter_recycling"
+	build_path = /obj/item/weapon/circuitboard/processing_unit/recycling
+
+/datum/design/stacking_unit_console
+	name = "Circuit Design (Stacking Machine Console)"
+	desc = "Allows for the construction of circuit boards used to build a stacking machine console."
+	id = "stackconsole"
+	req_tech = list("programming" = 2, "materials" = 3, "engineering" = 3)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	category = "Console Boards"
+	build_path = /obj/item/weapon/circuitboard/stacking_machine_console
+
+/datum/design/stacking_unit
+	name = "Circuit Design (Stacking Machine)"
+	desc = "Allows for the construction of circuit boards used to build a stacking machine."
+	id = "stackingmachine"
+	req_tech = list("programming" = 2, "materials" = 3, "engineering" = 3)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	category = "Machine Boards"
+	build_path = /obj/item/weapon/circuitboard/stacking_unit
 
 //////////////////////////////////////////////////////////////////
 // EMBEDDED CONTROLLER BOARDS
@@ -3345,6 +3399,21 @@ proc/getScanDesign(var/obj/O)
 	materials = list(MAT_GLASS = 2000, "sacid" = 20)
 	category = "Machine Boards"
 	build_path = /obj/item/weapon/circuitboard/cell_charger
+
+/datum/design/sorting_machine
+	name = "Circuit Design (Recycling Sorting Machine)"
+	desc = "Allows for the construction of circuit boards used to build a recycling sorting machine"
+	id = "sortingmachine"
+	req_tech = list("materials" = 3, "engineering" = 3, "programming" = 3)
+	build_type = IMPRINTER
+	materials = list(MAT_GLASS = 2000, "sacid" = 20)
+	build_path = /obj/item/weapon/circuitboard/sorting_machine/recycling
+
+/datum/design/sorting_machine/destination
+	name = "Circuit Design (Destinations Sorting Machine)"
+	desc = "Allows for the construction of circuit boards used to build a destinations sorting machine"
+	id = "destsortingmachine"
+	build_path = /obj/item/weapon/circuitboard/sorting_machine/destination
 
 /*
  *

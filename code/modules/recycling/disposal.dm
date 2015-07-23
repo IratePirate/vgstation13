@@ -173,6 +173,8 @@
 // leave the disposal
 /obj/machinery/disposal/proc/go_out(mob/user)
 
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/disposal/proc/go_out() called tick#: [world.time]")
+
 	if (user.client)
 		user.client.eye = user.client.mob
 		user.client.perspective = MOB_PERSPECTIVE
@@ -221,7 +223,7 @@
 	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if(!ui)
 		// the ui does not exist, so we'll create a new() one
-		// for a list of parameters and their descriptions see the code docs in \code\modules\nano\nanoui.dm
+		// for a list of parameters and their descriptions see the code docs in \code\\modules\nano\nanoui.dm
 		ui = new(user, src, ui_key, "disposalsbin.tmpl", "Waste Disposal Unit", 430, 150)
 		// when the ui is first opened this is the data it will use
 		ui.set_initial_data(data)
@@ -265,10 +267,14 @@
 
 		if(href_list["eject"])
 			eject()
+
+		nanomanager.update_uis(src)
+
 	return
 
 // eject the contents of the disposal unit
 /obj/machinery/disposal/proc/eject()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/disposal/proc/eject() called tick#: [world.time]")
 	for(var/atom/movable/AM in src)
 		AM.loc = src.loc
 		AM.pipe_eject(0)
@@ -358,6 +364,8 @@
 // perform a flush
 /obj/machinery/disposal/proc/flush()
 
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/disposal/proc/flush() called tick#: [world.time]")
+
 	flushing = 1
 	flick("[icon_state]-flush", src)
 
@@ -402,6 +410,8 @@
 // called when holder is expelled from a disposal
 // should usually only occur if the pipe network is modified
 /obj/machinery/disposal/proc/expel(var/obj/structure/disposalholder/H)
+
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/machinery/disposal/proc/expel() called tick#: [world.time]")
 
 	var/turf/target
 	playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
@@ -509,13 +519,14 @@
 	dir = 0
 	var/count = 1000	//*** can travel 1000 steps before going inactive (in case of loops)
 	var/has_fat_guy = 0	// true if contains a fat person
-	var/destinationTag = 0 // changes if contains a delivery container
+	var/destinationTag = "DISPOSALS"// changes if contains a delivery container
 	var/tomail = 0 //changes if contains wrapped package
 	var/hasmob = 0 //If it contains a mob
 
 
 	// initialize a holder from the contents of a disposal unit
 	proc/init(var/obj/machinery/disposal/D)
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/init() called tick#: [world.time]")
 		gas = D.air_contents// transfer gas resv. into holder object
 
 		//Check for any living mobs trigger hasmob.
@@ -547,10 +558,10 @@
 				var/obj/item/smallDelivery/T = AM
 				src.destinationTag = T.sortTag
 
-
 	// start the movement process
 	// argument is the disposal unit the holder started in
 	proc/start(var/obj/machinery/disposal/D)
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/start() called tick#: [world.time]")
 		if(!D.trunk)
 			D.expel(src)	// no trunk connected, so expel immediately
 			return
@@ -561,10 +572,9 @@
 		spawn(1)
 			move()		// spawn off the movement process
 
-		return
-
 	// movement process, persists while holder is moving through pipes
 	proc/move()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/move() called tick#: [world.time]")
 		var/obj/structure/disposalpipe/last
 		while(active)
 			/* vg edit
@@ -582,7 +592,8 @@
 			sleep(1)		// was 1
 			if(!loc || isnull(loc))
 				qdel(src)
-				return 0
+				return
+
 			var/obj/structure/disposalpipe/curr = loc
 			last = curr
 			curr = curr.transfer(src)
@@ -598,10 +609,13 @@
 
 	// find the turf which should contain the next pipe
 	proc/nextloc()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/nextloc() called tick#: [world.time]")
 		return get_step(loc,dir)
 
 	// find a matching pipe on a turf
 	proc/findpipe(var/turf/T)
+
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/findpipe() called tick#: [world.time]")
 
 		if(!T)
 			return null
@@ -616,6 +630,7 @@
 	// merge two holder objects
 	// used when a a holder meets a stuck holder
 	proc/merge(var/obj/structure/disposalholder/other)
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/merge() called tick#: [world.time]")
 		for(var/atom/movable/AM in other)
 			AM.forceMove(src)		// move everything in other holder to this one
 			if(ismob(AM))
@@ -640,6 +655,7 @@
 
 	// called to vent all gas in holder to a location
 	proc/vent_gas(var/atom/location)
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/vent_gas() called tick#: [world.time]")
 		location.assume_air(gas)  // vent all gas to turf
 		return
 
@@ -693,12 +709,14 @@
 	// returns the direction of the next pipe object, given the entrance dir
 	// by default, returns the bitmask of remaining directions
 	proc/nextdir(var/fromdir)
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/nextdir() called tick#: [world.time]")
 		return dpdir & (~turn(fromdir, 180))
 
 	// transfer the holder through this pipe segment
 	// overriden for special behaviour
 	//
 	proc/transfer(var/obj/structure/disposalholder/H)
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/transfer() called tick#: [world.time]")
 		var/nextdir = nextdir(H.dir)
 		H.dir = nextdir
 		var/turf/T = H.nextloc()
@@ -720,6 +738,7 @@
 
 	// update the icon_state to reflect hidden status
 	proc/update()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/update() called tick#: [world.time]")
 		var/turf/T = src.loc
 		hide(T.intact && !istype(T,/turf/space))	// space never hides pipes
 
@@ -734,6 +753,7 @@
 	// this will be revealed if a T-scanner is used
 	// if visible, use regular icon_state
 	proc/updateicon()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/updateicon() called tick#: [world.time]")
 		if(invisibility)
 			icon_state = "[base_icon_state]f"
 		else
@@ -746,6 +766,8 @@
 	//
 
 	proc/expel(var/obj/structure/disposalholder/H, var/turf/T, var/direction)
+
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/expel() called tick#: [world.time]")
 
 		var/turf/target
 		if(!T || isnull(T))
@@ -803,6 +825,7 @@
 	// then delete the pipe
 	// remains : set to leave broken pipe pieces in place
 	proc/broken(var/remains = 0)
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/broken() called tick#: [world.time]")
 		if(remains)
 			for(var/D in cardinal)
 				if(D & dpdir)
@@ -852,6 +875,7 @@
 
 	// test health for brokenness
 	proc/healthcheck()
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/healthcheck() called tick#: [world.time]")
 		if(health < -2)
 			broken(0)
 		else if(health<1)
@@ -889,6 +913,8 @@
 	// called when pipe is cut with welder
 	proc/welded()
 
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/welded() called tick#: [world.time]")
+
 		var/obj/structure/disposalconstruct/C = new (src.loc)
 		switch(base_icon_state)
 			if("pipe-s")
@@ -924,148 +950,143 @@
 /obj/structure/disposalpipe/segment
 	icon_state = "pipe-s"
 
-	New()
-		..()
-		if(icon_state == "pipe-s")
-			dpdir = dir | turn(dir, 180)
-		else
-			dpdir = dir | turn(dir, -90)
+/obj/structure/disposalpipe/segment/New()
+	..()
+	if(icon_state == "pipe-s")
+		dpdir = dir | turn(dir, 180)
+	else
+		dpdir = dir | turn(dir, -90)
 
-		update()
-		return
-
-
-
+	update()
 
 //a three-way junction with dir being the dominant direction
 /obj/structure/disposalpipe/junction
 	icon_state = "pipe-j1"
 
-	New()
-		..()
-		if(icon_state == "pipe-j1")
-			dpdir = dir | turn(dir, -90) | turn(dir,180)
-		else if(icon_state == "pipe-j2")
-			dpdir = dir | turn(dir, 90) | turn(dir,180)
-		else // pipe-y
-			dpdir = dir | turn(dir,90) | turn(dir, -90)
-		update()
-		return
+/obj/structure/disposalpipe/junction/New()
+	..()
+	if(icon_state == "pipe-j1")
+		dpdir = dir | turn(dir, -90) | turn(dir,180)
+	else if(icon_state == "pipe-j2")
+		dpdir = dir | turn(dir, 90) | turn(dir,180)
+	else // pipe-y
+		dpdir = dir | turn(dir,90) | turn(dir, -90)
+	update()
+	return
 
+// next direction to move
+// if coming in from secondary dirs, then next is primary dir
+// if coming in from primary dir, then next is equal chance of other dirs
 
-	// next direction to move
-	// if coming in from secondary dirs, then next is primary dir
-	// if coming in from primary dir, then next is equal chance of other dirs
+/obj/structure/disposalpipe/junction/nextdir(var/fromdir)
+	var/flipdir = turn(fromdir, 180)
+	if(flipdir != dir)	// came from secondary dir
+		return dir		// so exit through primary
+	else				// came from primary
+						// so need to choose either secondary exit
+		var/mask = ..(fromdir)
 
-	nextdir(var/fromdir)
-		var/flipdir = turn(fromdir, 180)
-		if(flipdir != dir)	// came from secondary dir
-			return dir		// so exit through primary
-		else				// came from primary
-							// so need to choose either secondary exit
-			var/mask = ..(fromdir)
+		// find a bit which is set
+		var/setbit = 0
+		if(mask & NORTH)
+			setbit = NORTH
+		else if(mask & SOUTH)
+			setbit = SOUTH
+		else if(mask & EAST)
+			setbit = EAST
+		else
+			setbit = WEST
 
-			// find a bit which is set
-			var/setbit = 0
-			if(mask & NORTH)
-				setbit = NORTH
-			else if(mask & SOUTH)
-				setbit = SOUTH
-			else if(mask & EAST)
-				setbit = EAST
-			else
-				setbit = WEST
-
-			if(prob(50))	// 50% chance to choose the found bit or the other one
-				return setbit
-			else
-				return mask & (~setbit)
+		if(prob(50))	// 50% chance to choose the found bit or the other one
+			return setbit
+		else
+			return mask & (~setbit)
 
 //a three-way junction that sorts objects
 /obj/structure/disposalpipe/sortjunction
-
 	icon_state = "pipe-j1s"
-	var/sortType = 0	//Look at the list called TAGGERLOCATIONS in setup.dm
+	var/sortType = 0 //Deprecated, here for legacy support.
+	var/sort_tag //Replacement of the above, more construction friendly.
+
 	var/posdir = 0
 	var/negdir = 0
 	var/sortdir = 0
 
-	proc/updatedesc()
-		desc = "An underfloor disposal pipe with a package sorting mechanism."
-		if(sortType>0)
-			var/tag = uppertext(TAGGERLOCATIONS[sortType])
-			desc += "\nIt's tagged with [tag]"
+/obj/structure/disposalpipe/sortjunction/proc/updatedesc()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/structure/disposalpipe/sortjunction/proc/updatedesc() called tick#: [world.time]")
+	desc = "An underfloor disposal pipe with a package sorting mechanism."
+	if(sort_tag)
+		desc += "\nIt's tagged with [sort_tag]."
 
-	proc/updatedir()
-		posdir = dir
-		negdir = turn(posdir, 180)
+/obj/structure/disposalpipe/sortjunction/proc/updatedir()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/structure/disposalpipe/sortjunction/proc/updatedir() called tick#: [world.time]")
+	posdir = dir
+	negdir = turn(posdir, 180)
 
-		if(icon_state == "pipe-j1s")
-			sortdir = turn(posdir, -90)
-		else
-			icon_state = "pipe-j2s"
-			sortdir = turn(posdir, 90)
+	if(icon_state == "pipe-j1s")
+		sortdir = turn(posdir, -90)
+	else
+		icon_state = "pipe-j2s"
+		sortdir = turn(posdir, 90)
 
-		dpdir = sortdir | posdir | negdir
+	dpdir = sortdir | posdir | negdir
 
-	New()
-		..()
-		updatedir()
-		updatedesc()
-		update()
-		return
+/obj/structure/disposalpipe/sortjunction/New()
+	. = ..()
+	if(sortType && !sort_tag)
+		sort_tag = uppertext(DEFAULT_TAGGER_LOCATIONS[sortType])
 
-	attackby(var/obj/item/I, var/mob/user)
-		if(..())
-			return
+	updatedir()
+	updatedesc()
+	update()
 
-		if(istype(I, /obj/item/device/destTagger))
-			var/obj/item/device/destTagger/O = I
+/obj/structure/disposalpipe/sortjunction/attackby(var/obj/item/I, var/mob/user)
+	if(istype(I, /obj/item/device/destTagger))
+		var/obj/item/device/destTagger/O = I
 
-			if(O.currTag > 0)// Tag set
-				sortType = O.currTag
-				playsound(get_turf(src), 'sound/machines/twobeep.ogg', 100, 1)
-				var/tag = uppertext(TAGGERLOCATIONS[O.currTag])
-				user << "<span class='notice'>Changed filter to [tag]</span>"
-				updatedesc()
+		if(O.currTag)// Tag set
+			sort_tag = uppertext(O.destinations[O.currTag])
+			playsound(get_turf(src), 'sound/machines/twobeep.ogg', 100, 1)
+			user << "<span class='notice'>Changed filter to [sort_tag]</span>"
+			updatedesc()
+		return 1
 
-
+	. = ..()
 	// next direction to move
 	// if coming in from negdir, then next is primary dir or sortdir
 	// if coming in from posdir, then flip around and go back to posdir
 	// if coming in from sortdir, go to posdir
 
-	nextdir(var/fromdir, var/sortTag)
-		//var/flipdir = turn(fromdir, 180)
-		if(fromdir != sortdir)	// probably came from the negdir
+/obj/structure/disposalpipe/sortjunction/nextdir(var/fromdir, var/sortTag)
+	//var/flipdir = turn(fromdir, 180)
+	if(fromdir != sortdir)	// probably came from the negdir
 
-			if(src.sortType == sortTag) //if destination matches filtered type...
-				return sortdir		// exit through sortdirection
-			else
-				return posdir
-		else				// came from sortdir
-							// so go with the flow to positive direction
+		if(sort_tag == sortTag) //if destination matches filtered type...
+			return sortdir		// exit through sortdirection
+		else
 			return posdir
+	else				// came from sortdir
+						// so go with the flow to positive direction
+		return posdir
 
-	transfer(var/obj/structure/disposalholder/H)
-		var/nextdir = nextdir(H.dir, H.destinationTag)
-		H.dir = nextdir
-		var/turf/T = H.nextloc()
-		var/obj/structure/disposalpipe/P = H.findpipe(T)
+/obj/structure/disposalpipe/sortjunction/transfer(var/obj/structure/disposalholder/H)
+	var/nextdir = nextdir(H.dir, H.destinationTag)
+	H.dir = nextdir
+	var/turf/T = H.nextloc()
+	var/obj/structure/disposalpipe/P = H.findpipe(T)
 
-		if(P)
-			// find other holder in next loc, if inactive merge it with current
-			var/obj/structure/disposalholder/H2 = locate() in P
-			if(H2 && !H2.active)
-				H.merge(H2)
+	if(P)
+		// find other holder in next loc, if inactive merge it with current
+		var/obj/structure/disposalholder/H2 = locate() in P
+		if(H2 && !H2.active)
+			H.merge(H2)
 
-			H.forceMove(P)
-		else			// if wasn't a pipe, then set loc to turf
-			H.forceMove(T)
-			return null
+		H.forceMove(P)
+	else			// if wasn't a pipe, then set loc to turf
+		H.forceMove(T)
+		return
 
-		return P
-
+	return P
 
 //a three-way junction that sorts objects destined for the mail office mail table (tomail = 1)
 /obj/structure/disposalpipe/wrapsortjunction
@@ -1076,61 +1097,59 @@
 	var/negdir = 0
 	var/sortdir = 0
 
-	New()
-		..()
-		posdir = dir
-		if(icon_state == "pipe-j1s")
-			sortdir = turn(posdir, -90)
-			negdir = turn(posdir, 180)
-		else
-			icon_state = "pipe-j2s"
-			sortdir = turn(posdir, 90)
-			negdir = turn(posdir, 180)
-		dpdir = sortdir | posdir | negdir
+/obj/structure/disposalpipe/wrapsortjunction/New()
+	. = ..()
 
-		update()
+	update_dir()
+	update()
+
+/obj/structure/disposalpipe/wrapsortjunction/proc/update_dir()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/structure/disposalpipe/wrapsortjunction/proc/update_dir() called tick#: [world.time]")
+	posdir = dir
+	negdir = turn(posdir, 180)
+
+	if(icon_state == "pipe-j1s")
+		sortdir = turn(posdir, -90)
+	else
+		icon_state = "pipe-j2s"
+		sortdir = turn(posdir, 90)
+	dpdir = sortdir | posdir | negdir
+
+// next direction to move
+// if coming in from negdir, then next is primary dir or sortdir
+// if coming in from posdir, then flip around and go back to posdir
+// if coming in from sortdir, go to posdir
+
+/obj/structure/disposalpipe/wrapsortjunction/nextdir(var/fromdir, var/istomail)
+	//var/flipdir = turn(fromdir, 180)
+	if(fromdir != sortdir)	// probably came from the negdir
+
+		if(istomail) //if destination matches filtered type...
+			return sortdir		// exit through sortdirection
+		else
+			return posdir
+	else				// came from sortdir
+						// so go with the flow to positive direction
+		return posdir
+
+/obj/structure/disposalpipe/wrapsortjunction/transfer(var/obj/structure/disposalholder/H)
+	var/nextdir = nextdir(H.dir, H.tomail)
+	H.dir = nextdir
+	var/turf/T = H.nextloc()
+	var/obj/structure/disposalpipe/P = H.findpipe(T)
+
+	if(P)
+		// find other holder in next loc, if inactive merge it with current
+		var/obj/structure/disposalholder/H2 = locate() in P
+		if(H2 && !H2.active)
+			H.merge(H2)
+
+		H.forceMove(P)
+	else			// if wasn't a pipe, then set loc to turf
+		H.forceMove(T)
 		return
 
-
-	// next direction to move
-	// if coming in from negdir, then next is primary dir or sortdir
-	// if coming in from posdir, then flip around and go back to posdir
-	// if coming in from sortdir, go to posdir
-
-	nextdir(var/fromdir, var/istomail)
-		//var/flipdir = turn(fromdir, 180)
-		if(fromdir != sortdir)	// probably came from the negdir
-
-			if(istomail) //if destination matches filtered type...
-				return sortdir		// exit through sortdirection
-			else
-				return posdir
-		else				// came from sortdir
-							// so go with the flow to positive direction
-			return posdir
-
-	transfer(var/obj/structure/disposalholder/H)
-		var/nextdir = nextdir(H.dir, H.tomail)
-		H.dir = nextdir
-		var/turf/T = H.nextloc()
-		var/obj/structure/disposalpipe/P = H.findpipe(T)
-
-		if(P)
-			// find other holder in next loc, if inactive merge it with current
-			var/obj/structure/disposalholder/H2 = locate() in P
-			if(H2 && !H2.active)
-				H.merge(H2)
-
-			H.forceMove(P)
-		else			// if wasn't a pipe, then set loc to turf
-			H.forceMove(T)
-			return null
-
-		return P
-
-
-
-
+	return P
 
 //a trunk joining to a disposal bin or outlet on the same turf
 /obj/structure/disposalpipe/trunk
@@ -1149,6 +1168,7 @@
 	update()
 
 /obj/structure/disposalpipe/trunk/proc/getlinked()
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/obj/structure/disposalpipe/trunk/proc/getlinked() called tick#: [world.time]")
 	disposal = locate() in loc
 
 	if(disposal)
@@ -1322,6 +1342,8 @@
 	// called when the holder exits the outlet
 	proc/expel(var/obj/structure/disposalholder/H)
 
+		//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\proc/expel() called tick#: [world.time]")
+
 		flick("outlet-open", src)
 		playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
 		sleep(20)	//wait until correct animation frame
@@ -1380,6 +1402,7 @@
 // by default does nothing, override for special behaviour
 
 /atom/movable/proc/pipe_eject(var/direction)
+	//writepanic("[__FILE__].[__LINE__] ([src.type])([usr ? usr.ckey : ""])  \\/atom/movable/proc/pipe_eject() called tick#: [world.time]")
 	return
 
 // check if mob has client, if so restore client view on eject
