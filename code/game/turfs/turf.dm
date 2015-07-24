@@ -92,8 +92,8 @@
  * IF YOU HAVE BYOND VERSION BELOW 507.1248 OR ARE ABLE TO WALK THROUGH WINDOORS/BORDER WINDOWS COMMENT OUT
  * #define BORDER_USE_TURF_EXIT
  * FOR MORE INFORMATION SEE: http://www.byond.com/forum/?post=1666940
- */
-/*#ifdef BORDER_USE_TURF_EXIT
+ *
+#ifdef BORDER_USE_TURF_EXIT
 /turf/Exit(atom/movable/mover, atom/target)
 	if(!mover)
 		return 1
@@ -128,7 +128,7 @@
 				mover.Bump(obstacle, 1)
 				return 0
 //#endif
-	//var/list/large_dense = list()
+	var/list/large_dense = list()
 	//Next, check objects to block entry that are on the border
 	for(var/atom/movable/border_obstacle in src)
 		if(border_obstacle.flags&ON_BORDER)
@@ -140,10 +140,7 @@
 				mover.Bump(border_obstacle, 1)
 				return 0
 		else
-			if(!border_obstacle.CanPass(mover, mover.loc) && (forget != border_obstacle) && mover != border_obstacle)
-				mover.Bump(border_obstacle, 1)
-				return 0
-			//large_dense += border_obstacle
+			large_dense += border_obstacle
 
 	//Then, check the turf itself
 	if (!src.CanPass(mover, src))
@@ -151,14 +148,14 @@
 		return 0
 
 	//Finally, check objects/mobs to block entry that are not on the border
-	//for(var/atom/movable/obstacle in large_dense)
+	for(var/atom/movable/obstacle in large_dense)
 		/*if(ismob(mover) && mover:client)
 			world << "<span class='danger'>ENTER</span>target(large_dense): [mover] checking CanPass of [obstacle]"*/
-		//if(!obstacle.CanPass(mover, mover.loc) && (forget != obstacle) && mover != obstacle)
+		if(!obstacle.CanPass(mover, mover.loc) && (forget != obstacle) && mover != obstacle)
 			/*if(ismob(mover) && mover:client)
 				world << "<span class='danger'>ENTER</span>target(large_dense): checking: We are bumping into [obstacle]"*/
-			//
-			//return 0
+			mover.Bump(obstacle, 1)
+			return 0
 	return 1 //Nothing found to block so return success!
 
 /turf/Entered(atom/movable/Obj,atom/OldLoc)
